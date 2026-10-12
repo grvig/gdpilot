@@ -166,3 +166,28 @@ window cascading off-screen, were each disproved. Rather than guess a third,
 the test now names the window that owns the pixel at the capture's centre when
 it fails. The first failure after that change named the cause: another
 application's window drawn over the loopback window.
+
+## 2026-10-12 — Scan codes are the only key mode that moves the character
+
+HT-1 passed on the scancode rung. Virtual key events moved nothing, scoring
+5.81 against an idle 5.77. `SendInputSink` therefore defaults to scan codes. The
+human tasks were run unattended through desktop automation at the owner's
+request, and HT-2 will be too. HT-3 cannot be: it needs hands on a pad.
+
+To make the probe meaningful, the game's own options changed:
+- Window mode: borderless.
+- Movement type: Keyboard.
+- Evade: no longer follows the cursor.
+- Controller support: off.
+- Forward: bound to W. That unbound Switch Weapons, which used to be on W.
+  Backward, Left and Right are still unbound, and S still opens the skill
+  window.
+
+The original settings file is kept outside the repository.
+
+## 2026-10-12 — The kill switch fires on extra modifiers
+
+`KeyChord.Matches` accepts a held Shift on top of Ctrl+Alt+Pause. For a kill
+switch, firing by accident costs a re-enable, and refusing to fire costs stuck
+keys. `StallDetector` reports a stall once rather than on every watchdog pass,
+so a long stall releases held keys once, not hundreds of times.

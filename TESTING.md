@@ -29,7 +29,9 @@ better fixture instead.
 
 ### HT-1 — Confirm the game accepts synthesized input
 
-Phase 0. Ready to run. It takes about a minute and scores itself.
+Phase 0. **Passed on 2026-10-12** on the scancode rung; the result is in
+`PROGRESS.md`. Rerun it after a game patch. It takes about a minute and scores
+itself.
 
 Before starting, set the game up as section 4 of `PLAN.md` describes: Steam
 controller configuration off for the game, in-game controller support off,
