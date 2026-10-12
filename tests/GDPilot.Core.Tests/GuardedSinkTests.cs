@@ -35,6 +35,32 @@ public sealed class GuardedSinkTests
     }
 
     [Fact]
+    public void DisablingReleasesHeldInputAndBlocksTheRest()
+    {
+        GuardedSink sink = new(recorder);
+        sink.Send(new KeyDown(KeyCode.D));
+
+        sink.Disable();
+        sink.Send(new KeyDown(KeyCode.S));
+        sink.Send(new PointerMove(10, 0));
+
+        Assert.False(sink.IsEnabled);
+        Assert.Equal(new InputIntent[] { new KeyDown(KeyCode.D), new KeyUp(KeyCode.D) }, recorder.Sent);
+    }
+
+    [Fact]
+    public void EnablingResumesInjection()
+    {
+        GuardedSink sink = new(recorder);
+        sink.Disable();
+
+        sink.Enable();
+        sink.Send(new KeyDown(KeyCode.Space));
+
+        Assert.Equal(new InputIntent[] { new KeyDown(KeyCode.Space) }, recorder.Sent);
+    }
+
+    [Fact]
     public void OneFailedReleaseDoesNotStrandTheOthers()
     {
         FailingOnceSink failing = new(recorder);
