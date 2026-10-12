@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 using GDPilot.Vision;
 
 namespace GDPilot.Integration.Tests;
@@ -13,24 +15,28 @@ public sealed class ScreenCaptureLoopbackTests
         this.loopback = loopback;
     }
 
+    /// <summary>
+    /// Compares the capture with an independent GDI+ capture of the same region.
+    /// Asserting the loopback window's own colour depended on nothing covering it,
+    /// and another application's always-on-top window did cover it during runs.
+    /// Two captures of whatever is on screen must agree, whatever that is, which
+    /// still checks the size, the row order and the channel order.
+    /// </summary>
     [Fact]
-    public void CapturingTheLoopbackWindowReturnsItsKnownColour()
+    public void CaptureAgreesWithAnIndependentGdiPlusCapture()
     {
         (int X, int Y, int Width, int Height) area = loopback.ClientBounds;
         Stopwatch clock = Stopwatch.StartNew();
-        loopback.RaiseWindow();
         CapturedFrame frame = ScreenCapture.Region(area.X, area.Y, area.Width, area.Height);
-        double matching = FractionMatchingBackground(frame);
+        double matching = AgreementWithReference(frame, area.X, area.Y);
 
-        // The window reports itself shown before its first paint is guaranteed to
-        // reach the screen, and another window can rise over it at any moment.
-        // Retrying with the window raised again tests the capture, not the desktop.
+        // Anything animating on screen can change between the two captures, so a
+        // mismatch is retried briefly before it counts.
         while (matching <= 0.95 && clock.Elapsed < TimeSpan.FromSeconds(2))
         {
             Thread.Sleep(50);
-            loopback.RaiseWindow();
             frame = ScreenCapture.Region(area.X, area.Y, area.Width, area.Height);
-            matching = FractionMatchingBackground(frame);
+            matching = AgreementWithReference(frame, area.X, area.Y);
         }
 
         Assert.Equal(area.Width * area.Height * 4, frame.Pixels.Length);
@@ -43,7 +49,7 @@ public sealed class ScreenCaptureLoopbackTests
         {
             string owner = ScreenOwner.Describe(area.X + area.Width / 2, area.Y + area.Height / 2);
             IntPtr handle = loopback.WindowHandle;
-            Assert.Fail($"Only {matching:P1} of the captured pixels were the window's colour after {clock.Elapsed.TotalSeconds:F1}s. "
+            Assert.Fail($"Only {matching:P1} of the captured pixels matched the reference capture after {clock.Elapsed.TotalSeconds:F1}s. "
                 + $"Most common colour {DominantColour(frame)}. Window at the client centre: {owner}. Bounds {area}. "
                 + $"Loopback window {handle}, topmost {ScreenOwner.IsTopmost(handle)}, raise succeeded {loopback.RaiseWindow()}.");
         }
@@ -73,16 +79,27 @@ public sealed class ScreenCaptureLoopbackTests
         Assert.Throws<ArgumentException>(() => ScreenCapture.Region(0, 0, width, height));
     }
 
-    private double FractionMatchingBackground(CapturedFrame frame)
+    private static double AgreementWithReference(CapturedFrame frame, int x, int y)
     {
-        (int Blue, int Green, int Red) expected = loopback.Background;
+        using Bitmap reference = new(frame.Width, frame.Height, PixelFormat.Format32bppArgb);
+        using (Graphics graphics = Graphics.FromImage(reference))
+        {
+            graphics.CopyFromScreen(x, y, 0, 0, new Size(frame.Width, frame.Height));
+        }
+
         int matched = 0;
 
-        for (int offset = 0; offset < frame.Pixels.Length; offset += 4)
+        for (int row = 0; row < frame.Height; row++)
         {
-            if (frame.Pixels[offset] == expected.Blue && frame.Pixels[offset + 1] == expected.Green && frame.Pixels[offset + 2] == expected.Red)
+            for (int column = 0; column < frame.Width; column++)
             {
-                matched++;
+                Color expected = reference.GetPixel(column, row);
+                int offset = (row * frame.Width + column) * 4;
+
+                if (frame.Pixels[offset] == expected.B && frame.Pixels[offset + 1] == expected.G && frame.Pixels[offset + 2] == expected.R)
+                {
+                    matched++;
+                }
             }
         }
 
