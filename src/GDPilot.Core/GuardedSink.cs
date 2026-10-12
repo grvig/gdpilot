@@ -11,20 +11,55 @@ public sealed class GuardedSink : IInputSink
     private readonly object gate = new();
     private readonly HashSet<KeyCode> heldKeys = new();
     private readonly HashSet<PointerButton> heldButtons = new();
+    private bool enabled = true;
 
     public GuardedSink(IInputSink inner)
     {
         this.inner = inner;
     }
 
+    public bool IsEnabled
+    {
+        get
+        {
+            lock (gate)
+            {
+                return enabled;
+            }
+        }
+    }
+
     public void Send(InputIntent intent)
     {
-        // Locked because releases arrive from other threads, such as a watchdog,
-        // and must never interleave with a press.
+        // Checked here, under the same lock the kill switch takes, rather than once
+        // per tick: the switch fires on the hook thread and can land mid-tick.
         lock (gate)
         {
+            if (!enabled)
+            {
+                return;
+            }
+
             inner.Send(intent);
             Track(intent);
+        }
+    }
+
+    /// <summary>The kill switch: stop injecting, then let go of everything.</summary>
+    public void Disable()
+    {
+        lock (gate)
+        {
+            enabled = false;
+            ReleaseHeld();
+        }
+    }
+
+    public void Enable()
+    {
+        lock (gate)
+        {
+            enabled = true;
         }
     }
 
