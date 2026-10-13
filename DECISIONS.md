@@ -191,3 +191,16 @@ The original settings file is kept outside the repository.
 switch, firing by accident costs a re-enable, and refusing to fire costs stuck
 keys. `StallDetector` reports a stall once rather than on every watchdog pass,
 so a long stall releases held keys once, not hundreds of times.
+
+## 2026-10-13 — The kill switch hook decides nothing itself
+
+All of the kill switch's judgement lives in `ChordWatcher` in `GDPilot.Core`:
+modifier tracking, and reading Cancel as Pause, since Windows renames Pause to
+Cancel while Ctrl is held. `KillSwitchHook` only owns a thread, a message loop
+and the hook, so the decision logic is unit-tested without touching the
+operating system. The hook has its own thread because a kill switch that
+shares the main loop dies when that loop stalls. The callback runs on the
+thread pool, because Windows silently removes a low-level hook that is slow to
+return. The hook swallows nothing, and it accepts injected events. That lets a
+loopback test press the chord, and it lets another remapping tool trigger the
+kill switch too.

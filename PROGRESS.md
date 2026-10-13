@@ -39,7 +39,7 @@ input through different paths.
 | Trace fixtures in `tests/fixtures/traces/` | Not started, arrive with the mapping work |
 | Output intents, `IInputSink`, `RecordingSink` | Done |
 | `SendInputSink`, scan codes by default | Done, loopback-tested |
-| Kill switch, release-all, watchdog | `GuardedSink`, `KeyChord`, `StallDetector` done; hotkey hook and watchdog thread not started |
+| Kill switch, release-all, watchdog | `GuardedSink`, `KeyChord`, `ChordWatcher`, `KillSwitchHook` and `StallDetector` done; the watchdog thread not started |
 | Focus watcher | Not started |
 | Resting stick calibration | Done |
 | Radial deadzone with edge rescaling | Done |
@@ -53,12 +53,14 @@ input through different paths.
 - Key and mouse injection reach the operating system, in both key modes.
 - Grim Dawn moves the character on injected scan codes.
 - `GuardedSink.Disable` releases a held key at operating system level.
+- The kill switch hook fires on an injected Ctrl+Alt+Pause and stays quiet
+  when Alt is missing.
 - Absolute coordinates are correct on this 125% scaled display.
 - Screen capture agrees pixel for pixel with an independent GDI+ capture.
 - Deadzone, calibration, trace parsing, replay, chord parsing and stall
   detection are unit-tested.
 
-77 automated tests, all passing.
+84 automated tests, all passing.
 
 ## Known issues
 
@@ -81,13 +83,10 @@ Nothing.
 
 ## Next session starts here
 
-1. The global kill switch hook in `GDPilot.Output`, on its own thread with its
-   own message loop, so it fires even when the main loop stalls. Holding Ctrl
-   turns Pause into VK_CANCEL (0x03), so the hook must map that back to Pause.
-   It must accept injected events, so a loopback test can press the chord.
-2. The watchdog thread that polls `StallDetector` and calls `ReleaseAll`.
-3. The focus watcher, then the SDL gamepad source. A Cosmic Byte pad is now
-   plugged in, so detection and resting calibration can be checked for real.
+1. The watchdog thread that polls `StallDetector` and calls `ReleaseAll`.
+2. The focus watcher, which suspends when the game is not in front.
+3. The SDL gamepad source. A Cosmic Byte pad is now plugged in, so detection
+   and resting calibration can be checked for real.
 
 The Phase 0 leftovers are no longer needed after the scancode pass: the legacy
 `keybd_event` rung, and the probe's check that its target stayed in front.
