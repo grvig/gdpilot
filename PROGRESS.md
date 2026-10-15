@@ -39,8 +39,8 @@ input through different paths.
 | Trace fixtures in `tests/fixtures/traces/` | Not started, arrive with the mapping work |
 | Output intents, `IInputSink`, `RecordingSink` | Done |
 | `SendInputSink`, scan codes by default | Done, loopback-tested |
-| Kill switch, release-all, watchdog | `GuardedSink`, `KeyChord`, `ChordWatcher`, `KillSwitchHook` and `StallDetector` done; the watchdog thread not started |
-| Focus watcher | Not started |
+| Kill switch, release-all, watchdog | Done: `GuardedSink`, `KillSwitchHook`, `Watchdog`, with `Suspension` keeping the kill switch sticky |
+| Focus watcher | Done: `FocusWatcher` over `ForegroundProbe`; nothing runs it yet, that waits for the host |
 | Resting stick calibration | Done |
 | Radial deadzone with edge rescaling | Done |
 | Left stick to eight-way WASD | Not started |
@@ -60,7 +60,10 @@ input through different paths.
 - Deadzone, calibration, trace parsing, replay, chord parsing and stall
   detection are unit-tested.
 
-84 automated tests, all passing.
+- A stalled loop triggers the watchdog, which survives a failing release.
+- Regaining focus does not undo a kill switch.
+
+96 automated tests, all passing.
 
 ## Known issues
 
@@ -83,10 +86,14 @@ Nothing.
 
 ## Next session starts here
 
-1. The watchdog thread that polls `StallDetector` and calls `ReleaseAll`.
-2. The focus watcher, which suspends when the game is not in front.
-3. The SDL gamepad source. A Cosmic Byte pad is now plugged in, so detection
-   and resting calibration can be checked for real.
+1. Evaluate SDL bindings for .NET, record the choice, and build
+   `SdlGamepadSource` in a new `GDPilot.Input` project. A Cosmic Byte pad is
+   plugged in, so detection and resting calibration can be checked for real.
+2. The mapping: left stick to eight-way WASD, the right stick cursor curve,
+   the button table and the left-trigger chord layer, each driven by trace
+   fixtures through `ReplayGamepadSource` into `RecordingSink`.
+3. A host that wires these together: the safety layer, the focus watcher and
+   the main loop. That ends Phase 1.
 
 The Phase 0 leftovers are no longer needed after the scancode pass: the legacy
 `keybd_event` rung, and the probe's check that its target stayed in front.

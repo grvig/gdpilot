@@ -204,3 +204,13 @@ thread pool, because Windows silently removes a low-level hook that is slow to
 return. The hook swallows nothing, and it accepts injected events. That lets a
 loopback test press the chord, and it lets another remapping tool trigger the
 kill switch too.
+
+## 2026-10-15 — Suspension has reasons, and the watchdog outlives its failures
+
+Section 7 has one `Suspended` state, entered both by the kill switch and by the
+game losing focus. With a single flag, alt-tabbing back would quietly undo a
+kill switch pressed on purpose. `Suspension` records each reason separately and
+re-enables injection only once all have cleared. The `Watchdog` catches and
+records a failing release rather than letting it end the thread, because a
+watchdog that dies on its first failure leaves the next stall unwatched. Focus
+is polled rather than hooked, because a poll cannot miss a transition.
