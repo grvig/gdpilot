@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>GDPilot.Input</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GDPilot.Core\GDPilot.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- MIT. Ships the native SDL3 library for win-x64. See DECISIONS.md, 2026-10-16. -->
+    <PackageReference Include="ppy.SDL3-CS" Version="2026.1002.1" />
+  </ItemGroup>
+
+</Project>
