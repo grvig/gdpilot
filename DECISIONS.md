@@ -214,3 +214,25 @@ re-enables injection only once all have cleared. The `Watchdog` catches and
 records a failing release rather than letting it end the thread, because a
 watchdog that dies on its first failure leaves the next stall unwatched. Focus
 is polled rather than hooked, because a poll cannot miss a transition.
+
+## 2026-10-16 — SDL3 through ppy.SDL3-CS
+
+Section 9 asks for an SDL binding for .NET that restores cleanly. Candidates:
+
+| Package | Downloads | Notes |
+| --- | --- | --- |
+| `ppy.SDL3-CS` | 610k | Chosen |
+| `ppy.SDL2-CS` | 2.1M | SDL2, now in maintenance |
+| `Silk.NET.SDL` | 518k | SDL2 |
+| `SDL3-CS` + `SDL3-CS.Native` | 93k | Smaller, single maintainer |
+
+Chose `ppy.SDL3-CS` 2026.1002.1. It is MIT licensed, so it is compatible with
+this project. It is actively maintained, ships `SDL3.dll` for win-x64 inside
+the package, and restored at the first attempt. No code was copied from it; it
+is a package dependency. SDL's own licence is zlib.
+
+`SdlGamepadSource` sets the joystick background events hint. GDPilot never owns
+the focused window, and without the hint SDL stops reporting input once another
+window has focus. It reopens the first pad whenever none is connected, so a pad
+plugged in later, or flipped between its X and D modes, is picked up without a
+restart.

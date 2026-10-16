@@ -34,7 +34,7 @@ input through different paths.
 | Task | Status |
 | --- | --- |
 | Gamepad snapshot and `IGamepadSource` | Done |
-| SDL binding chosen, `SdlGamepadSource` | Not started |
+| SDL binding chosen, `SdlGamepadSource` | Done with `ppy.SDL3-CS`; not yet read from a real pad, which was unplugged |
 | `ReplayGamepadSource` and the JSON trace format | Done |
 | Trace fixtures in `tests/fixtures/traces/` | Not started, arrive with the mapping work |
 | Output intents, `IInputSink`, `RecordingSink` | Done |
@@ -63,7 +63,14 @@ input through different paths.
 - A stalled loop triggers the watchdog, which survives a failing release.
 - Regaining focus does not undo a kill switch.
 
-96 automated tests, all passing.
+- SDL's native library loads and starts on this machine, and reads at rest
+  with no pad attached.
+
+107 automated tests, all passing.
+
+Not yet verified: reading a real pad. On 2026-10-16 no controller was
+connected. Windows has seen this pad before in both modes, as an "Xbox 360
+Controller for Windows" and as a "HID-compliant game controller".
 
 ## Known issues
 
@@ -86,9 +93,9 @@ Nothing.
 
 ## Next session starts here
 
-1. Evaluate SDL bindings for .NET, record the choice, and build
-   `SdlGamepadSource` in a new `GDPilot.Input` project. A Cosmic Byte pad is
-   plugged in, so detection and resting calibration can be checked for real.
+1. If a pad is connected, read it through `SdlGamepadSource`: name, resting
+   centre through `StickCalibration`, and drift against the deadzone. Check
+   both the X and D positions of its mode switch.
 2. The mapping: left stick to eight-way WASD, the right stick cursor curve,
    the button table and the left-trigger chord layer, each driven by trace
    fixtures through `ReplayGamepadSource` into `RecordingSink`.
