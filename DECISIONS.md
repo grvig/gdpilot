@@ -236,3 +236,19 @@ the focused window, and without the hint SDL stops reporting input once another
 window has focus. It reopens the first pad whenever none is connected, so a pad
 plugged in later, or flipped between its X and D modes, is picked up without a
 restart.
+
+## 2026-10-17 — Mappings describe held state; one differ emits the changes
+
+Every mapping answers one question: what should be held right now. That covers
+stick directions, button layers, and pointer buttons. `HeldInputDiffer` is the
+only code that compares this tick with the last and emits presses and releases.
+That keeps each mapping stateless and testable as a plain function. It also
+gives one place to order events, releases before presses, so swinging the stick
+from up-left to up-right never holds A, W and D at once.
+
+While the left trigger is held, the chord layer replaces the base layer
+outright rather than falling through to it, as section 9 describes a second
+table. The cursor carries the leftover fraction of a pixel into the next tick,
+because a gentle push at 250 Hz asks for under a pixel per tick and would never
+move otherwise. The leftover is dropped on release, so the next push starts
+clean.

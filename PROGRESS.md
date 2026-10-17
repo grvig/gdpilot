@@ -34,7 +34,7 @@ input through different paths.
 | Task | Status |
 | --- | --- |
 | Gamepad snapshot and `IGamepadSource` | Done |
-| SDL binding chosen, `SdlGamepadSource` | Done with `ppy.SDL3-CS`; not yet read from a real pad, which was unplugged |
+| SDL binding chosen, `SdlGamepadSource` | Done with `ppy.SDL3-CS`; reads the real pad, live movement unconfirmed |
 | `ReplayGamepadSource` and the JSON trace format | Done |
 | Trace fixtures in `tests/fixtures/traces/` | Not started, arrive with the mapping work |
 | Output intents, `IInputSink`, `RecordingSink` | Done |
@@ -43,9 +43,10 @@ input through different paths.
 | Focus watcher | Done: `FocusWatcher` over `ForegroundProbe`; nothing runs it yet, that waits for the host |
 | Resting stick calibration | Done |
 | Radial deadzone with edge rescaling | Done |
-| Left stick to eight-way WASD | Not started |
-| Right stick cursor curve | Not started |
-| Button table and chord layer | Not started |
+| Held input to presses and releases | Done: `HeldInputDiffer`, releases before presses |
+| Left stick to eight-way WASD | Done: `StickDirections` |
+| Right stick cursor curve | Done: `CursorMotion`, with sub-pixel carry |
+| Button table and chord layer | Done: `ButtonLayers` |
 
 ## Verified
 
@@ -65,12 +66,21 @@ input through different paths.
 
 - SDL's native library loads and starts on this machine, and reads at rest
   with no pad attached.
+- The real pad reads through `SdlGamepadSource`. On 2026-10-17
+  `GDPilot.Spike --pad` found "Xbox 360 Controller", which means X mode.
+  Both sticks rested at exactly 0.0000 with no jitter over 108 samples, so
+  they fit both default deadzones.
+- Eight-way direction sectors, cursor speed curve and sub-pixel carry, chord
+  layer switching, and press and release ordering are unit-tested.
 
-107 automated tests, all passing.
+135 automated tests, all passing.
 
-Not yet verified: reading a real pad. On 2026-10-16 no controller was
-connected. Windows has seen this pad before in both modes, as an "Xbox 360
-Controller for Windows" and as a "HID-compliant game controller".
+Not yet verified:
+- **Live pad readings.** Exact zeros at rest usually mean the pad's firmware
+  applies its own deadzone, which is common on budget XInput pads. A reading
+  that never updated would look the same. Proving the readings are live
+  needs someone to move a stick while `--pad` runs.
+- **The pad's D mode.** It was in X mode.
 
 ## Known issues
 
@@ -93,14 +103,13 @@ Nothing.
 
 ## Next session starts here
 
-1. If a pad is connected, read it through `SdlGamepadSource`: name, resting
-   centre through `StickCalibration`, and drift against the deadzone. Check
-   both the X and D positions of its mode switch.
-2. The mapping: left stick to eight-way WASD, the right stick cursor curve,
-   the button table and the left-trigger chord layer, each driven by trace
-   fixtures through `ReplayGamepadSource` into `RecordingSink`.
-3. A host that wires these together: the safety layer, the focus watcher and
-   the main loop. That ends Phase 1.
+1. A `Mapper` that combines the pieces each tick: shape both sticks, resolve
+   the buttons, union the held keys, diff them, and add cursor moves.
+2. Trace fixtures in `tests/fixtures/traces/` run through
+   `ReplayGamepadSource`, the `Mapper` and `RecordingSink`, asserting exact
+   intent sequences end to end.
+3. A host that wires these together with the safety layer, the focus watcher
+   and the main loop. That ends Phase 1.
 
 The Phase 0 leftovers are no longer needed after the scancode pass: the legacy
 `keybd_event` rung, and the probe's check that its target stayed in front.
