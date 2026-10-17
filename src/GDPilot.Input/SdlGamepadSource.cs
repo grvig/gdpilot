@@ -27,6 +27,20 @@ public sealed unsafe class SdlGamepadSource : IGamepadSource, IDisposable
 
     public bool IsConnected => pad != null && SDL_GamepadConnected(pad);
 
+    /// <summary>The pad's name as SDL reports it, or null when none is connected.</summary>
+    public string? Name
+    {
+        get
+        {
+            if (!IsConnected)
+            {
+                return null;
+            }
+
+            return SDL_GetGamepadName(pad);
+        }
+    }
+
     public GamepadSnapshot Read()
     {
         SDL_UpdateGamepads();

@@ -27,11 +27,17 @@ internal static class Program
             return Probe();
         }
 
+        if (args.Contains("--pad"))
+        {
+            return PadCheck.Run();
+        }
+
         Console.WriteLine("GDPilot feasibility probe.");
         Console.WriteLine();
         Console.WriteLine("  --windows   List visible top-level windows with their process names.");
         Console.WriteLine("  --target    Count down, then describe whichever window is in front.");
         Console.WriteLine("  --probe     Score whether the game acts on synthesized input.");
+        Console.WriteLine("  --pad       Read the connected pad at rest and check its drift.");
         return 0;
     }
 

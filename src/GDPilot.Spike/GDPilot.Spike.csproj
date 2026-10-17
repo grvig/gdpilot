@@ -12,6 +12,7 @@
     <ProjectReference Include="..\GDPilot.Core\GDPilot.Core.csproj" />
     <ProjectReference Include="..\GDPilot.Output\GDPilot.Output.csproj" />
     <ProjectReference Include="..\GDPilot.Vision\GDPilot.Vision.csproj" />
+    <ProjectReference Include="..\GDPilot.Input\GDPilot.Input.csproj" />
   </ItemGroup>
 
 </Project>
