@@ -26,4 +26,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\fixtures\traces\*.json" LinkBase="traces" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

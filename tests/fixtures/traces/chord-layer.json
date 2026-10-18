@@ -1,0 +1,11 @@
+{
+  "entries": [
+    { "at": 0 },
+    { "at": 100, "buttons": "A" },
+    { "at": 200 },
+    { "at": 300, "leftTrigger": 1.0 },
+    { "at": 400, "buttons": "A", "leftTrigger": 1.0 },
+    { "at": 500, "leftTrigger": 1.0 },
+    { "at": 600 }
+  ]
+}
