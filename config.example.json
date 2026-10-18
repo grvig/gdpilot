@@ -1,0 +1,38 @@
+{
+  "activeProfile": "1920x1080@1.0",
+  "killSwitch": "Ctrl+Alt+Pause",
+  "gameProcess": "Grim Dawn",
+  "input": {
+    "pollHz": 250,
+    "deadzone": { "left": 0.22, "right": 0.18 },
+    "walkThreshold": 0.25,
+    "chordTrigger": 0.5,
+    "calibration": { "leftCenterX": 0.0, "leftCenterY": 0.0 },
+    "cursor": { "baseSpeed": 900, "exponent": 2.0, "maxSpeed": 2600 }
+  },
+  "bindings": {
+    "Combat": {
+      "RightBumper": "mouse:left",
+      "LeftBumper": "mouse:right",
+      "A": "key:Space",
+      "X": "key:2",
+      "Y": "key:3",
+      "B": "key:4",
+      "LT+A": "key:1",
+      "LT+X": "key:5",
+      "LT+Y": "key:6",
+      "LT+B": "key:7",
+      "Back": "key:Tab",
+      "Start": "key:Escape"
+    }
+  },
+  "profiles": {
+    "1920x1080@1.0": {
+      "resolution": [1920, 1080],
+      "uiScale": 1.0,
+      "grids": {
+        "inventory": { "originX": 0, "originY": 0, "pitchX": 0, "pitchY": 0, "columns": 0, "rows": 0 }
+      }
+    }
+  }
+}
