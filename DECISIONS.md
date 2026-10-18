@@ -252,3 +252,22 @@ table. The cursor carries the leftover fraction of a pixel into the next tick,
 because a gentle push at 250 Hz asks for under a pixel per tick and would never
 move otherwise. The leftover is dropped on release, so the next push starts
 clean.
+
+## 2026-10-18 — Configuration additions and what it refuses
+
+Section 7's configuration gains these keys, each with a default, so a file only
+needs to state what it changes:
+
+| Key | Default | Purpose |
+| --- | --- | --- |
+| `gameProcess` | `Grim Dawn` | Process name the focus watcher checks for |
+| `input.walkThreshold` | 0.25 | How far the shaped left stick must lean before movement keys are held |
+| `input.chordTrigger` | 0.5 | How far the left trigger must pull to switch to the chord layer |
+
+Bad values fail at load time with a message naming the entry, rather than at
+the first tick. Unused sections, such as `profiles`, are read past. `grid:`
+actions are refused until Phase 3 gives them a meaning. A key binding that
+writes a modifier, such as `key:Ctrl+Space`, is refused: a binding holds one
+key, and dropping the modifier silently would make it do something other than
+what the file says. Bare digits mean number keys, as in the plan's own
+`"LT+A": "key:1"`.

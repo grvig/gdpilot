@@ -36,7 +36,9 @@ input through different paths.
 | Gamepad snapshot and `IGamepadSource` | Done |
 | SDL binding chosen, `SdlGamepadSource` | Done with `ppy.SDL3-CS`; reads the real pad, live movement unconfirmed |
 | `ReplayGamepadSource` and the JSON trace format | Done |
-| Trace fixtures in `tests/fixtures/traces/` | Not started, arrive with the mapping work |
+| Trace fixtures in `tests/fixtures/traces/` | Done: walking and the chord layer, replayed end to end |
+| `Mapper`, one tick of the whole mapping | Done |
+| Configuration and binding tables | Done: `GDPilotConfig`, `BindingTable`, tracked `config.example.json` |
 | Output intents, `IInputSink`, `RecordingSink` | Done |
 | `SendInputSink`, scan codes by default | Done, loopback-tested |
 | Kill switch, release-all, watchdog | Done: `GuardedSink`, `KillSwitchHook`, `Watchdog`, with `Suspension` keeping the kill switch sticky |
@@ -73,7 +75,12 @@ input through different paths.
 - Eight-way direction sectors, cursor speed curve and sub-pixel carry, chord
   layer switching, and press and release ordering are unit-tested.
 
-135 automated tests, all passing.
+- Scripted pad traces replay through the real mapper into the exact
+  expected key sequence: an eight-way walk, and the left-trigger chord layer.
+- The configuration loads with defaults, rejects bad values at load time, and
+  the tracked example file parses.
+
+162 automated tests, all passing.
 
 Not yet verified:
 - **Live pad readings.** Exact zeros at rest usually mean the pad's firmware
@@ -103,13 +110,18 @@ Nothing.
 
 ## Next session starts here
 
-1. A `Mapper` that combines the pieces each tick: shape both sticks, resolve
-   the buttons, union the held keys, diff them, and add cursor moves.
-2. Trace fixtures in `tests/fixtures/traces/` run through
-   `ReplayGamepadSource`, the `Mapper` and `RecordingSink`, asserting exact
-   intent sequences end to end.
-3. A host that wires these together with the safety layer, the focus watcher
-   and the main loop. That ends Phase 1.
+1. `GDPilot.App`, the host. It loads `config.json`, falling back to the
+   example, and calibrates both sticks at startup. Each tick it polls the pad,
+   beats the stall detector, polls focus, and sends the mapper's output through
+   `GuardedSink`, with the kill switch and the watchdog running alongside.
+   Every exit path releases held input.
+2. A `--dry-run` mode that prints intents instead of injecting them. With the
+   pad plugged in, it shows the whole chain live without touching the game.
+3. In-game keybindings before playing for real. Only Forward is bound, to W.
+   Backward, Left and Right need S, A and D, and S currently opens the Skill
+   window, which would have to move.
+
+That ends Phase 1.
 
 The Phase 0 leftovers are no longer needed after the scancode pass: the legacy
 `keybd_event` rung, and the probe's check that its target stayed in front.
