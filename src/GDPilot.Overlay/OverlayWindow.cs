@@ -49,7 +49,7 @@ public sealed class OverlayWindow : Window
         lines.Children.Add(legend);
 
         Border card = new();
-        card.Background = new SolidColorBrush(Color.FromArgb(170, 16, 16, 16));
+        card.Background = new SolidColorBrush(Color.FromArgb(220, 16, 16, 16));
         card.CornerRadius = new CornerRadius(6);
         card.Padding = new Thickness(10);
         card.Child = lines;

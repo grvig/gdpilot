@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using GDPilot.Core;
 using GDPilot.Input;
 using GDPilot.Output;
+using GDPilot.Overlay;
 
 namespace GDPilot.App;
 
@@ -57,6 +58,11 @@ internal static class Host
         Mapper mapper = new(config.Mapping(), layers[Mode.Combat]);
         Calibrate(pad, mapper);
         ControlLoop loop = new(pad, modes, mapper, guarded, stall, new FocusWatcher(gameInFront, suspension), suspension);
+        using OverlayHost? overlay = StartOverlay(config);
+
+        // About ten redraws a second: enough to feel immediate, cheap enough to ignore.
+        long overlayInterval = Math.Max(1, config.Input.PollHz / 10);
+        Mode shownMode = loop.Mode;
         TimeSpan period = TimeSpan.FromSeconds(1.0 / config.Input.PollHz);
 
         // Windows sleeps in 15.6 ms steps by default, which would cap 250 Hz at about 64.
@@ -74,6 +80,18 @@ internal static class Host
                 loop.Tick(now - last);
                 last = now;
                 ticks++;
+
+                if (loop.Mode != shownMode)
+                {
+                    shownMode = loop.Mode;
+                    Console.WriteLine($"Mode: {shownMode}");
+                }
+
+                if (overlay is not null && ticks % overlayInterval == 0)
+                {
+                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode]);
+                    overlay.Update(state, GameWindow.ClientBounds(config.GameProcess), config.Overlay.Corner);
+                }
                 TimeSpan wait = period - (clock.Elapsed - now);
 
                 if (wait > TimeSpan.Zero)
@@ -91,6 +109,16 @@ internal static class Host
         double seconds = (clock.Elapsed - started).TotalSeconds;
         Console.WriteLine($"Stopped. Everything held has been released. {ticks} ticks at {ticks / seconds:F0} Hz against {config.Input.PollHz} configured.");
         return 0;
+    }
+
+    private static OverlayHost? StartOverlay(GDPilotConfig config)
+    {
+        if (!config.Overlay.Enabled)
+        {
+            return null;
+        }
+
+        return new OverlayHost();
     }
 
     private static void Calibrate(SdlGamepadSource pad, Mapper mapper)

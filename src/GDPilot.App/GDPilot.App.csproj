@@ -5,12 +5,19 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <RootNamespace>GDPilot.App</RootNamespace>
     <AssemblyName>GDPilot</AssemblyName>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\GDPilot.Core\GDPilot.Core.csproj" />
     <ProjectReference Include="..\GDPilot.Input\GDPilot.Input.csproj" />
     <ProjectReference Include="..\GDPilot.Output\GDPilot.Output.csproj" />
+    <ProjectReference Include="..\GDPilot.Overlay\GDPilot.Overlay.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WPF drops this implicit using to avoid its own Path type; the host uses only the file system one. -->
+    <Using Include="System.IO" />
   </ItemGroup>
 
   <ItemGroup>
