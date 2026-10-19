@@ -9,6 +9,16 @@ public sealed class HeldInputDiffer
     private readonly HashSet<KeyCode> heldKeys = new();
     private readonly HashSet<PointerButton> heldButtons = new();
 
+    /// <summary>
+    /// Forgets what is held without releasing it, for when something else has
+    /// already released it. Whatever is still wanted is then pressed afresh.
+    /// </summary>
+    public void Forget()
+    {
+        heldKeys.Clear();
+        heldButtons.Clear();
+    }
+
     public List<InputIntent> Update(IReadOnlySet<KeyCode> wantedKeys, IReadOnlySet<PointerButton> wantedButtons)
     {
         List<InputIntent> intents = new();

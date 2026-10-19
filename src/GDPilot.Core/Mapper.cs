@@ -34,6 +34,16 @@ public sealed class Mapper
     /// <summary>Where the right stick rests, from calibration.</summary>
     public StickPosition RightCentre { get; set; } = StickPosition.Centre;
 
+    /// <summary>
+    /// Forgets held state after a suspension has released everything, so a
+    /// stick still pushed on resume presses its keys again.
+    /// </summary>
+    public void Reset()
+    {
+        differ.Forget();
+        cursor.Reset();
+    }
+
     public List<InputIntent> Tick(GamepadSnapshot snapshot, TimeSpan elapsed)
     {
         StickPosition left = StickShaping.ApplyRadialDeadzone(snapshot.LeftStick, LeftCentre, settings.LeftDeadzone);

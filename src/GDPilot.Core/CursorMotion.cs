@@ -19,6 +19,12 @@ public sealed class CursorMotion
         this.settings = settings;
     }
 
+    public void Reset()
+    {
+        carryX = 0;
+        carryY = 0;
+    }
+
     /// <summary>speed = baseSpeed × magnitude^exponent, clamped to maxSpeed.</summary>
     public double SpeedFor(double magnitude)
     {
