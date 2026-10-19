@@ -53,8 +53,12 @@ public sealed class GDPilotConfigTests
         Dictionary<Mode, KeyCode> keys = GDPilotConfig.Parse("{}").PanelKeys();
 
         Assert.Equal(KeyCode.I, keys[Mode.Inventory]);
+        Assert.Equal(KeyCode.K, keys[Mode.Skills]);
         Assert.Equal(KeyCode.Tab, keys[Mode.WorldMap]);
         Assert.False(keys.ContainsKey(Mode.Stash));
+
+        // The character sheet is the inventory window in this game, so it has no key of its own.
+        Assert.False(keys.ContainsKey(Mode.Character));
     }
 
     [Theory]

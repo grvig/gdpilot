@@ -27,15 +27,19 @@ public sealed class GDPilotConfig
     public Dictionary<string, Dictionary<string, string>> Bindings { get; init; } = new();
 
     /// <summary>
-    /// The game's own key for each panel the tool can open. Grim Dawn's defaults.
-    /// Stash, Vendor and Dialog have none, because the game opens them by clicking
-    /// a character or object, so binding one only declares that it is now open.
+    /// The game's own key for each panel the tool can open. Stash, Vendor and
+    /// Dialog have none, because the game opens them by clicking a character or
+    /// object, so binding one only declares that it is now open.
+    ///
+    /// Character is absent on purpose: in Grim Dawn the character sheet and the
+    /// inventory are one window, bound to both C and I, and tracking them as two
+    /// modes would desync the moment one key toggled the window the other opened.
+    /// Skills is on K because keyboard movement needs S for walking backward.
     /// </summary>
     public Dictionary<string, string> Panels { get; init; } = new()
     {
         ["Inventory"] = "I",
-        ["Character"] = "C",
-        ["Skills"] = "S",
+        ["Skills"] = "K",
         ["Devotion"] = "N",
         ["WorldMap"] = "Tab",
     };

@@ -23,10 +23,9 @@
       "LT+Y": "key:6",
       "LT+B": "key:7",
       "DPadUp": "panel:Inventory",
-      "DPadLeft": "panel:Character",
+      "DPadLeft": "panel:Devotion",
       "DPadRight": "panel:Skills",
       "DPadDown": "panel:WorldMap",
-      "Back": "panel:Devotion",
       "Start": "back"
     },
     "Inventory": {
@@ -39,8 +38,7 @@
   },
   "panels": {
     "Inventory": "I",
-    "Character": "C",
-    "Skills": "S",
+    "Skills": "K",
     "Devotion": "N",
     "WorldMap": "Tab"
   },
