@@ -319,3 +319,25 @@ open.
 **Modes without a section.** A mode with no binding section uses Combat's.
 Otherwise opening a panel bound to nothing would leave no button to back out
 with.
+
+## 2026-10-19 — The overlay owns its thread and places itself in pixels
+
+The overlay runs its own WPF dispatcher thread, so a slow redraw can never
+delay the input loop, and the input loop never has to be a UI thread. WPF can
+make a window see-through but not click-through. The extended styles
+`WS_EX_TRANSPARENT`, `WS_EX_NOACTIVATE` and `WS_EX_LAYERED` do that, and a test
+reads them back from the live window.
+
+The overlay is positioned through `SetWindowPos` in physical pixels, not WPF's
+`Left` and `Top`, which are in scaled units while the game's bounds are
+physical. Topmost is re-asserted on every update. The card was raised to about
+86% opacity after a capture showed text from the window underneath bleeding
+through at 67%.
+
+## 2026-10-19 — What the live check changed
+
+Character is no longer a default panel. The game shows the character sheet and
+the inventory in one window, bound to both C and I, so tracking them as two
+modes would desync as soon as one key closed the window the other had opened.
+Skills defaults to K, because keyboard movement needs S for walking backward.
+Taps stay at 40 ms, which opened and closed the inventory in the game.
