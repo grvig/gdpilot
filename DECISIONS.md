@@ -295,3 +295,27 @@ the verbatim brief, and this entry is the record of the change.
 - **Configuration is found in order:** `config.json` in the working
   directory, then beside the executable, then the shipped
   `config.example.json`, then built-in defaults.
+
+## 2026-10-19 — Modes follow the game's own panel behaviour
+
+**Panel keys.** Grim Dawn's panel keys toggle, so `ModeStack.Toggle` closes a
+panel that is already open. If that panel sits lower in the stack, it is
+removed from where it sits, so the stack never holds a panel twice. Stash,
+Vendor and Dialog have no key, because the game opens them by clicking a
+character or object; binding one of them only records that it is open.
+
+**Back.** `back` sends Escape and pops one level. From Combat it pushes Menu,
+since that is what Escape does in the game.
+
+**Taps.** Mode bindings act once per press, and their keys are held 40 ms. A
+press and release in the same instant can fall between two game frames.
+
+**Panic resync.** Start and Back held for half a second sends one Escape per
+tracked panel and then clears to Combat, as section 10 describes. It cannot
+help when the tracked depth is lower than what is really open. Whether to send
+extra Escapes waits on seeing how the game treats Escape with several panels
+open.
+
+**Modes without a section.** A mode with no binding section uses Combat's.
+Otherwise opening a panel bound to nothing would leave no button to back out
+with.

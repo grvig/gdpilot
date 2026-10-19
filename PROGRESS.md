@@ -48,12 +48,13 @@ The safety layer is complete:
 
 | Task | Status |
 | --- | --- |
-| Mode stack: push, pop, clear to combat | Not started |
-| Panel bindings that send the panel key and push the mode | Not started |
-| Escape pops one level and forwards the key | Not started |
-| Panic resync: Start plus Back held half a second | Not started |
-| Per-mode binding tables from the configuration | Not started |
-| Overlay view-model | Not started |
+| Mode stack: push, pop, clear to combat | Done: `ModeStack`, where a panel's own key toggles it |
+| Panel bindings that send the panel key and push the mode | Done: `panel:Inventory`, keys in the `panels` section |
+| Escape pops one level and forwards the key | Done: `back`; from Combat it opens the menu |
+| Panic resync: Start plus Back held half a second | Done in `ModeController` |
+| Per-mode binding tables from the configuration | Done; a mode without a section uses Combat's |
+| Cross-mode trace fixture | Done: open the inventory, click, back out |
+| Overlay view-model | Done: `OverlayState` |
 | Overlay window: layered, transparent, no-activate, topmost | Not started |
 
 ## Verified
@@ -69,7 +70,11 @@ The safety layer is complete:
 - Scripted traces replay through the real mapper into exact key sequences.
 - The control loop presses a still-held stick again after a suspension.
 
-168 automated tests, all passing.
+- Mode transitions: double opens, closing a panel below the top, Escape at
+  depth zero, held buttons acting once, taps held 40 ms, panic resync and a
+  brief Start plus Back that is not one.
+
+203 automated tests, all passing.
 
 Not yet verified:
 - **Live pad readings.** Both sticks rest at exactly 0.0000, which a firmware
@@ -98,8 +103,11 @@ Nothing.
 
 ## Next session starts here
 
-Work through the Phase 2 checklist in order. The mode stack and transitions
-are pure logic in `GDPilot.Core`. Unit-test every path, including malformed
-sequences and double opens, then extend the trace fixtures across modes. The
-overlay's rendering cannot be asserted, so test its view-model and smoke-test
-that the window opens and closes.
+1. The overlay window in a new `GDPilot.Overlay` WPF project. It is layered,
+   transparent, no-activate, topmost and click-through, follows the game
+   window's bounds, and draws `OverlayState`. Smoke-test that it opens and
+   closes, then host it from `GDPilot.App`.
+2. A live check in the game: bind S, A and D in-game, run the host, and
+   confirm panels open with the tracked mode matching. Taps are held 40 ms,
+   and whether the game needs more is unknown.
+3. Then Phase 3.
