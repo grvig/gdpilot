@@ -271,3 +271,27 @@ writes a modifier, such as `key:Ctrl+Space`, is refused: a binding holds one
 key, and dropping the modifier silently would make it do something other than
 what the file says. Bare digits mean number keys, as in the plan's own
 `"LT+A": "key:1"`.
+
+## 2026-10-18 — Commit size relaxed for this project
+
+The owner raised the commit size guide from 40–90 lines to about 200, treated
+as a soft limit, so a feature and its tests can share a commit. The other
+commit rules are unchanged. `PLAN.md` keeps its original wording, since it is
+the verbatim brief, and this entry is the record of the change.
+
+## 2026-10-19 — Host behaviour
+
+- **Kill switch toggles.** The first press suspends; the next press resumes.
+  The chord watcher ignores key repeat, or holding the chord would flicker it.
+- **Held input is pressed again after a suspension.** The guarded sink has
+  already released everything, so the control loop resets the mapper while
+  suspended. A stick still held on return presses its keys again rather than
+  the mapper believing they never stopped.
+- **The host asks for 1 ms timer resolution.** Windows sleeps in 15.6 ms steps
+  by default, which would cap the configured 250 Hz at about 64 Hz. The host
+  measured 251 Hz on this machine.
+- **A dry run skips the focus check.** That way it shows output with the game
+  closed.
+- **Configuration is found in order:** `config.json` in the working
+  directory, then beside the executable, then the shipped
+  `config.example.json`, then built-in defaults.
