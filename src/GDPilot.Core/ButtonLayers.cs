@@ -7,6 +7,12 @@ public sealed record KeyBinding(KeyCode Key) : ButtonBinding;
 
 public sealed record PointerBinding(PointerButton Button) : ButtonBinding;
 
+/// <summary>Opens or closes a panel: taps its key and toggles its mode. Acts once per press.</summary>
+public sealed record PanelBinding(Mode Mode) : ButtonBinding;
+
+/// <summary>Taps Escape and closes the top panel, or opens the menu from Combat. Acts once per press.</summary>
+public sealed record BackBinding : ButtonBinding;
+
 /// <summary>
 /// The flat button table plus the chord layer section 9 asks for. While the left
 /// trigger is held the chord table replaces the base table outright, which
@@ -28,19 +34,20 @@ public sealed class ButtonLayers
         this.triggerThreshold = triggerThreshold;
     }
 
+    /// <summary>What one button is bound to with the trigger where it is, or null if nothing.</summary>
+    public ButtonBinding? BindingFor(GamepadButtons button, double leftTrigger)
+    {
+        LayerFor(leftTrigger).TryGetValue(button, out ButtonBinding? binding);
+        return binding;
+    }
+
+    /// <summary>The keys and mouse buttons that held bindings want down. Mode bindings act elsewhere.</summary>
     public (HashSet<KeyCode> Keys, HashSet<PointerButton> Buttons) Resolve(GamepadSnapshot snapshot)
     {
-        IReadOnlyDictionary<GamepadButtons, ButtonBinding> layer = baseLayer;
-
-        if (snapshot.LeftTrigger >= triggerThreshold)
-        {
-            layer = chordLayer;
-        }
-
         HashSet<KeyCode> keys = new();
         HashSet<PointerButton> buttons = new();
 
-        foreach ((GamepadButtons button, ButtonBinding binding) in layer)
+        foreach ((GamepadButtons button, ButtonBinding binding) in LayerFor(snapshot.LeftTrigger))
         {
             if (!snapshot.IsPressed(button))
             {
@@ -58,5 +65,15 @@ public sealed class ButtonLayers
         }
 
         return (keys, buttons);
+    }
+
+    private IReadOnlyDictionary<GamepadButtons, ButtonBinding> LayerFor(double leftTrigger)
+    {
+        if (leftTrigger >= triggerThreshold)
+        {
+            return chordLayer;
+        }
+
+        return baseLayer;
     }
 }

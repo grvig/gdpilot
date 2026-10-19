@@ -35,7 +35,26 @@ public sealed class GDPilotConfigTests
         GamepadSnapshot pressed = GamepadSnapshot.Rest with { Buttons = GamepadButtons.A };
 
         Assert.Equal(new[] { KeyCode.Space }, config.ButtonsFor("Combat").Resolve(pressed).Keys);
-        Assert.Empty(config.ButtonsFor("Stash").Resolve(pressed).Keys);
+    }
+
+    [Fact]
+    public void AModeWithoutItsOwnSectionUsesCombats()
+    {
+        GDPilotConfig config = GDPilotConfig.Parse("""{ "bindings": { "Combat": { "A": "key:Space" }, "Inventory": { "A": "mouse:left" } } }""");
+        GamepadSnapshot pressed = GamepadSnapshot.Rest with { Buttons = GamepadButtons.A };
+
+        Assert.Equal(new[] { KeyCode.Space }, config.ButtonsFor("Stash").Resolve(pressed).Keys);
+        Assert.Equal(new[] { PointerButton.Left }, config.ButtonsFor("Inventory").Resolve(pressed).Buttons);
+    }
+
+    [Fact]
+    public void PanelKeysDefaultToTheGamesOwn()
+    {
+        Dictionary<Mode, KeyCode> keys = GDPilotConfig.Parse("{}").PanelKeys();
+
+        Assert.Equal(KeyCode.I, keys[Mode.Inventory]);
+        Assert.Equal(KeyCode.Tab, keys[Mode.WorldMap]);
+        Assert.False(keys.ContainsKey(Mode.Stash));
     }
 
     [Theory]
@@ -44,6 +63,10 @@ public sealed class GDPilotConfigTests
     [InlineData("""{ "input": { "deadzone": { "left": 1.0 } } }""")]
     [InlineData("""{ "input": { "cursor": { "maxSpeed": -1 } } }""")]
     [InlineData("""{ "bindings": { "Combat": { "A": "key:NotAKey" } } }""")]
+    [InlineData("""{ "bindings": { "Combbat": { "A": "key:Space" } } }""")]
+    [InlineData("""{ "bindings": { "Combat": { "A": "panel:Combat" } } }""")]
+    [InlineData("""{ "panels": { "Inventory": "Ctrl+I" } }""")]
+    [InlineData("""{ "panels": { "Lobby": "L" } }""")]
     public void InvalidValuesAreRejectedAtLoad(string json)
     {
         Assert.Throws<FormatException>(() => GDPilotConfig.Parse(json));

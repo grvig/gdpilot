@@ -1,10 +1,15 @@
 namespace GDPilot.Core;
 
-/// <summary>Reads the action half of a binding, such as "key:Space" or "mouse:left".</summary>
+/// <summary>Reads the action half of a binding: "key:Space", "mouse:left", "panel:Inventory" or "back".</summary>
 internal static class BindingAction
 {
     internal static ButtonBinding Parse(string action, string trigger)
     {
+        if (string.Equals(action.Trim(), "back", StringComparison.OrdinalIgnoreCase))
+        {
+            return new BackBinding();
+        }
+
         string[] parts = action.Split(':', 2, StringSplitOptions.TrimEntries);
 
         if (parts.Length != 2)
@@ -18,12 +23,26 @@ internal static class BindingAction
                 return new KeyBinding(Key(parts[1], trigger));
             case "mouse":
                 return new PointerBinding(Pointer(parts[1], trigger));
+            case "panel":
+                return new PanelBinding(Panel(parts[1], trigger));
             default:
                 throw new FormatException($"\"{trigger}\": \"{parts[0]}\" bindings are not supported.");
         }
     }
 
-    private static KeyCode Key(string name, string trigger)
+    internal static Mode Panel(string name, string trigger)
+    {
+        bool known = Enum.TryParse(name, true, out Mode mode) && Enum.IsDefined(mode);
+
+        if (!known || mode is Mode.Combat or Mode.Suspended || char.IsDigit(name[0]))
+        {
+            throw new FormatException($"\"{trigger}\": \"{name}\" is not a panel.");
+        }
+
+        return mode;
+    }
+
+    internal static KeyCode Key(string name, string trigger)
     {
         // The plan's own example writes number keys as bare digits.
         if (name.Length == 1 && char.IsDigit(name[0]))

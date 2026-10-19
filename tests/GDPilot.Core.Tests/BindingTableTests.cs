@@ -22,7 +22,20 @@ public sealed class BindingTableTests
         Assert.Equal(new[] { PointerButton.Right }, layers.Resolve(Pressed(GamepadButtons.RightBumper, 1)).Buttons);
     }
 
+    [Fact]
+    public void PanelAndBackActionsParse()
+    {
+        ButtonLayers layers = Parse(("DPadUp", "panel:inventory"), ("B", " Back "));
+
+        Assert.Equal(new PanelBinding(Mode.Inventory), layers.BindingFor(GamepadButtons.DPadUp, 0));
+        Assert.Equal(new BackBinding(), layers.BindingFor(GamepadButtons.B, 0));
+        Assert.Null(layers.BindingFor(GamepadButtons.Y, 0));
+    }
+
     [Theory]
+    [InlineData("A", "panel:Combat")]
+    [InlineData("A", "panel:Suspended")]
+    [InlineData("A", "panel:Lobby")]
     [InlineData("Turbo", "key:Space")]
     [InlineData("A, B", "key:Space")]
     [InlineData("A", "Space")]

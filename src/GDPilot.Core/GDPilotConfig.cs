@@ -21,6 +21,20 @@ public sealed class GDPilotConfig
     public InputConfig Input { get; init; } = new();
     public Dictionary<string, Dictionary<string, string>> Bindings { get; init; } = new();
 
+    /// <summary>
+    /// The game's own key for each panel the tool can open. Grim Dawn's defaults.
+    /// Stash, Vendor and Dialog have none, because the game opens them by clicking
+    /// a character or object, so binding one only declares that it is now open.
+    /// </summary>
+    public Dictionary<string, string> Panels { get; init; } = new()
+    {
+        ["Inventory"] = "I",
+        ["Character"] = "C",
+        ["Skills"] = "S",
+        ["Devotion"] = "N",
+        ["WorldMap"] = "Tab",
+    };
+
     public static GDPilotConfig Parse(string json)
     {
         GDPilotConfig config = JsonSerializer.Deserialize<GDPilotConfig>(json, Options) ?? new GDPilotConfig();
@@ -34,12 +48,15 @@ public sealed class GDPilotConfig
         return new MappingSettings(Input.Deadzone.Left, Input.Deadzone.Right, Input.WalkThreshold, DirectionKeys.Wasd, cursor);
     }
 
-    /// <summary>The button tables for one mode, such as "Combat". A mode with no section binds nothing.</summary>
+    /// <summary>
+    /// The button tables for one mode. A mode with no section of its own uses
+    /// Combat's, since a panel bound to nothing would leave no way back out of it.
+    /// </summary>
     public ButtonLayers ButtonsFor(string mode)
     {
         Dictionary<string, string>? section;
 
-        if (!Bindings.TryGetValue(mode, out section))
+        if (!Bindings.TryGetValue(mode, out section) && !Bindings.TryGetValue(nameof(Mode.Combat), out section))
         {
             section = new Dictionary<string, string>();
         }
@@ -47,9 +64,29 @@ public sealed class GDPilotConfig
         return BindingTable.Parse(section, Input.ChordTrigger);
     }
 
+    public Dictionary<Mode, KeyCode> PanelKeys()
+    {
+        Dictionary<Mode, KeyCode> keys = new();
+
+        foreach ((string panel, string key) in Panels)
+        {
+            string entry = $"panels.{panel}";
+            keys[BindingAction.Panel(panel, entry)] = BindingAction.Key(key, entry);
+        }
+
+        return keys;
+    }
+
     private void Validate()
     {
         KeyChord.Parse(KillSwitch);
+        PanelKeys();
+
+        foreach (string mode in Bindings.Keys)
+        {
+            Require(Enum.TryParse(mode, false, out Mode parsed) && parsed != Mode.Suspended, $"bindings.{mode} is not a mode.");
+        }
+
         Require(Input.PollHz is >= 30 and <= 1000, "input.pollHz must be between 30 and 1000.");
         Require(Input.Deadzone.Left is >= 0 and < 1 && Input.Deadzone.Right is >= 0 and < 1, "Deadzones must be at least 0 and below 1.");
         Require(Input.WalkThreshold is > 0 and <= 1, "input.walkThreshold must be above 0 and at most 1.");
