@@ -12,13 +12,18 @@ public sealed class ChordWatcher
 
     private readonly KeyChord chord;
     private KeyModifiers held;
+    private bool keyDown;
 
     public ChordWatcher(KeyChord chord)
     {
         this.chord = chord;
     }
 
-    /// <summary>True on the key press that completes the chord.</summary>
+    /// <summary>
+    /// True on the key press that completes the chord, once. Holding the chord
+    /// makes Windows repeat the key, and a toggling kill switch must not flicker
+    /// on every repeat.
+    /// </summary>
     public bool Observe(uint virtualKey, bool isDown)
     {
         KeyModifiers modifier = ModifierFor(virtualKey);
@@ -32,7 +37,14 @@ public sealed class ChordWatcher
             held &= ~modifier;
         }
 
-        return isDown && chord.Matches(KeyFor(virtualKey), held);
+        if (KeyFor(virtualKey) != chord.Key)
+        {
+            return false;
+        }
+
+        bool repeat = isDown && keyDown;
+        keyDown = isDown;
+        return isDown && !repeat && chord.Matches(chord.Key, held);
     }
 
     private static KeyModifiers ModifierFor(uint virtualKey)

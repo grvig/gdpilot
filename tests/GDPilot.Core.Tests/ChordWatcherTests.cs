@@ -49,6 +49,20 @@ public sealed class ChordWatcherTests
     }
 
     [Fact]
+    public void HoldingTheChordFiresOnceDespiteKeyRepeat()
+    {
+        watcher.Observe(LeftControl, true);
+        watcher.Observe(LeftAlt, true);
+
+        Assert.True(watcher.Observe(Pause, true));
+        Assert.False(watcher.Observe(Pause, true));
+        Assert.False(watcher.Observe(Pause, true));
+
+        watcher.Observe(Pause, false);
+        Assert.True(watcher.Observe(Pause, true));
+    }
+
+    [Fact]
     public void GenericAndRightHandModifiersCountToo()
     {
         watcher.Observe(0x11, true);
