@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>GDPilot.App</RootNamespace>
+    <AssemblyName>GDPilot</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GDPilot.Core\GDPilot.Core.csproj" />
+    <ProjectReference Include="..\GDPilot.Input\GDPilot.Input.csproj" />
+    <ProjectReference Include="..\GDPilot.Output\GDPilot.Output.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\config.example.json" Link="config.example.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
