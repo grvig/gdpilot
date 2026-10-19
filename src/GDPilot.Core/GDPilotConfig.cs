@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GDPilot.Core;
 
@@ -14,11 +15,15 @@ public sealed class GDPilotConfig
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
+
+        // Lets the overlay corner be written as "TopRight" rather than a number.
+        Converters = { new JsonStringEnumConverter() },
     };
 
     public string KillSwitch { get; init; } = "Ctrl+Alt+Pause";
     public string GameProcess { get; init; } = "Grim Dawn";
     public InputConfig Input { get; init; } = new();
+    public OverlayConfig Overlay { get; init; } = new();
     public Dictionary<string, Dictionary<string, string>> Bindings { get; init; } = new();
 
     /// <summary>
