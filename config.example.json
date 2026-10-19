@@ -22,9 +22,27 @@
       "LT+X": "key:5",
       "LT+Y": "key:6",
       "LT+B": "key:7",
-      "Back": "key:Tab",
-      "Start": "key:Escape"
+      "DPadUp": "panel:Inventory",
+      "DPadLeft": "panel:Character",
+      "DPadRight": "panel:Skills",
+      "DPadDown": "panel:WorldMap",
+      "Back": "panel:Devotion",
+      "Start": "back"
+    },
+    "Inventory": {
+      "A": "mouse:left",
+      "X": "mouse:right",
+      "B": "back",
+      "DPadUp": "panel:Inventory",
+      "Start": "back"
     }
+  },
+  "panels": {
+    "Inventory": "I",
+    "Character": "C",
+    "Skills": "S",
+    "Devotion": "N",
+    "WorldMap": "Tab"
   },
   "profiles": {
     "1920x1080@1.0": {

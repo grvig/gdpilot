@@ -45,9 +45,18 @@ internal static class Host
         using KillSwitchHook killSwitch = new(KeyChord.Parse(config.KillSwitch), () => Toggle(suspension));
         using SdlGamepadSource pad = new();
 
-        Mapper mapper = new(config.Mapping(), config.ButtonsFor("Combat"));
+        // Parsed once up front, since the loop swaps tables on every mode change.
+        Dictionary<Mode, ButtonLayers> layers = new();
+
+        foreach (Mode mode in Enum.GetValues<Mode>())
+        {
+            layers[mode] = config.ButtonsFor(mode.ToString());
+        }
+
+        ModeController modes = new(config.PanelKeys(), mode => layers[mode]);
+        Mapper mapper = new(config.Mapping(), layers[Mode.Combat]);
         Calibrate(pad, mapper);
-        ControlLoop loop = new(pad, mapper, guarded, stall, new FocusWatcher(gameInFront, suspension), suspension);
+        ControlLoop loop = new(pad, modes, mapper, guarded, stall, new FocusWatcher(gameInFront, suspension), suspension);
         TimeSpan period = TimeSpan.FromSeconds(1.0 / config.Input.PollHz);
 
         // Windows sleeps in 15.6 ms steps by default, which would cap 250 Hz at about 64.

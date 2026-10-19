@@ -19,10 +19,34 @@ public sealed class ControlLoopTests
         GuardedSink guarded = new(recorder);
         suspension = new Suspension(guarded);
         stall = new StallDetector(TimeSpan.FromMilliseconds(100), () => now);
-        Mapper mapper = new(
-            new MappingSettings(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600)),
-            new ButtonLayers(new Dictionary<GamepadButtons, ButtonBinding>(), new Dictionary<GamepadButtons, ButtonBinding>(), 0.5));
-        loop = new ControlLoop(pad, mapper, guarded, stall, new FocusWatcher(() => gameInFront, suspension), suspension);
+        ButtonLayers combat = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "key:Space", ["DPadUp"] = "panel:Inventory" }, 0.5);
+        ButtonLayers inventory = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "mouse:left", ["B"] = "back" }, 0.5);
+        ModeController modes = new(new Dictionary<Mode, KeyCode> { [Mode.Inventory] = KeyCode.I }, mode => LayersFor(mode, combat, inventory));
+        Mapper mapper = new(new MappingSettings(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600)), combat);
+        loop = new ControlLoop(pad, modes, mapper, guarded, stall, new FocusWatcher(() => gameInFront, suspension), suspension);
+    }
+
+    [Fact]
+    public void OpeningAPanelSwitchesTheHeldBindingsToIt()
+    {
+        pad.Snapshot = GamepadSnapshot.Rest with { Buttons = GamepadButtons.DPadUp };
+        loop.Tick(Tick);
+        pad.Snapshot = GamepadSnapshot.Rest with { Buttons = GamepadButtons.A };
+        loop.Tick(Tick);
+
+        Assert.Equal(Mode.Inventory, loop.Mode);
+        Assert.Contains(new PointerDown(PointerButton.Left), recorder.Sent);
+        Assert.DoesNotContain(new KeyDown(KeyCode.Space), recorder.Sent);
+    }
+
+    private static ButtonLayers LayersFor(Mode mode, ButtonLayers combat, ButtonLayers inventory)
+    {
+        if (mode == Mode.Inventory)
+        {
+            return inventory;
+        }
+
+        return combat;
     }
 
     [Fact]

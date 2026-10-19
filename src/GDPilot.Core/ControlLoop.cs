@@ -7,21 +7,25 @@ namespace GDPilot.Core;
 public sealed class ControlLoop
 {
     private readonly IGamepadSource source;
+    private readonly ModeController modes;
     private readonly Mapper mapper;
     private readonly IInputSink sink;
     private readonly StallDetector stall;
     private readonly FocusWatcher focus;
     private readonly Suspension suspension;
 
-    public ControlLoop(IGamepadSource source, Mapper mapper, IInputSink sink, StallDetector stall, FocusWatcher focus, Suspension suspension)
+    public ControlLoop(IGamepadSource source, ModeController modes, Mapper mapper, IInputSink sink, StallDetector stall, FocusWatcher focus, Suspension suspension)
     {
         this.source = source;
+        this.modes = modes;
         this.mapper = mapper;
         this.sink = sink;
         this.stall = stall;
         this.focus = focus;
         this.suspension = suspension;
     }
+
+    public Mode Mode => modes.Current;
 
     public void Tick(TimeSpan elapsed)
     {
@@ -35,10 +39,17 @@ public sealed class ControlLoop
             // Forgetting it here means whatever is still held gets pressed
             // again on resume, instead of the mapper believing it never stopped.
             mapper.Reset();
+            modes.Reset();
             return;
         }
 
-        foreach (InputIntent intent in mapper.Tick(snapshot, elapsed))
+        // Mode changes come first, so a press that opens a panel is followed in
+        // the same tick by that panel's own held bindings.
+        List<InputIntent> intents = modes.Tick(snapshot, elapsed);
+        mapper.Buttons = modes.CurrentLayers;
+        intents.AddRange(mapper.Tick(snapshot, elapsed));
+
+        foreach (InputIntent intent in intents)
         {
             sink.Send(intent);
         }

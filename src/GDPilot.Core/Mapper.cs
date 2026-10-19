@@ -17,16 +17,18 @@ public sealed record MappingSettings(
 public sealed class Mapper
 {
     private readonly MappingSettings settings;
-    private readonly ButtonLayers buttons;
     private readonly HeldInputDiffer differ = new();
     private readonly CursorMotion cursor;
 
     public Mapper(MappingSettings settings, ButtonLayers buttons)
     {
         this.settings = settings;
-        this.buttons = buttons;
+        Buttons = buttons;
         cursor = new CursorMotion(settings.Cursor);
     }
+
+    /// <summary>The held bindings for the current mode. The control loop swaps it as the mode changes.</summary>
+    public ButtonLayers Buttons { get; set; }
 
     /// <summary>Where the left stick rests, from calibration.</summary>
     public StickPosition LeftCentre { get; set; } = StickPosition.Centre;
@@ -49,7 +51,7 @@ public sealed class Mapper
         StickPosition left = StickShaping.ApplyRadialDeadzone(snapshot.LeftStick, LeftCentre, settings.LeftDeadzone);
         StickPosition right = StickShaping.ApplyRadialDeadzone(snapshot.RightStick, RightCentre, settings.RightDeadzone);
 
-        (HashSet<KeyCode> keys, HashSet<PointerButton> pointerButtons) = buttons.Resolve(snapshot);
+        (HashSet<KeyCode> keys, HashSet<PointerButton> pointerButtons) = Buttons.Resolve(snapshot);
         keys.UnionWith(StickDirections.KeysFor(left, settings.WalkThreshold, settings.Movement));
 
         List<InputIntent> intents = differ.Update(keys, pointerButtons);
