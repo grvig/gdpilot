@@ -43,6 +43,61 @@ public sealed class TraceReplayTests
             sent);
     }
 
+    [Fact]
+    public void OpeningTheInventoryClickingAndBackingOutCrossesModes()
+    {
+        GamepadTrace trace = Load("inventory-round-trip.json");
+        TimeSpan now = TimeSpan.Zero;
+        ReplayGamepadSource source = new(trace, () => now);
+        ButtonLayers combat = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "key:Space", ["DPadUp"] = "panel:Inventory" }, 0.5);
+        ButtonLayers inventory = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "mouse:left", ["B"] = "back" }, 0.5);
+        ModeController modes = new(new Dictionary<Mode, KeyCode> { [Mode.Inventory] = KeyCode.I }, LayersFor);
+        Mapper mapper = new(Settings, combat);
+        List<InputIntent> sent = new();
+        List<Mode> visited = new();
+
+        while (now <= TimeSpan.FromMilliseconds(trace.Entries[^1].At))
+        {
+            GamepadSnapshot snapshot = source.Read();
+            sent.AddRange(modes.Tick(snapshot, Tick));
+            mapper.Buttons = modes.CurrentLayers;
+            sent.AddRange(mapper.Tick(snapshot, Tick));
+            visited.Add(modes.Current);
+            now += Tick;
+        }
+
+        Assert.Equal(
+            new InputIntent[]
+            {
+                new KeyDown(KeyCode.I),
+                new KeyUp(KeyCode.I),
+                new PointerDown(PointerButton.Left),
+                new PointerUp(PointerButton.Left),
+                new KeyDown(KeyCode.Escape),
+                new KeyUp(KeyCode.Escape),
+            },
+            sent);
+        Assert.Contains(Mode.Inventory, visited);
+        Assert.Equal(Mode.Combat, visited[^1]);
+
+        ButtonLayers LayersFor(Mode mode)
+        {
+            if (mode == Mode.Inventory)
+            {
+                return inventory;
+            }
+
+            return combat;
+        }
+    }
+
+    private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600));
+
+    private static GamepadTrace Load(string fixture)
+    {
+        return GamepadTrace.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "traces", fixture)));
+    }
+
     private static List<InputIntent> Replay(string fixture)
     {
         GamepadTrace trace = GamepadTrace.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "traces", fixture)));
