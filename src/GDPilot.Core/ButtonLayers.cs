@@ -34,6 +34,23 @@ public sealed class ButtonLayers
         this.triggerThreshold = triggerThreshold;
     }
 
+    /// <summary>Every binding, base layer first, for showing in a legend.</summary>
+    public IEnumerable<(GamepadButtons Button, ButtonBinding Binding, bool Chorded)> Entries
+    {
+        get
+        {
+            foreach ((GamepadButtons button, ButtonBinding binding) in baseLayer.OrderBy(entry => entry.Key))
+            {
+                yield return (button, binding, false);
+            }
+
+            foreach ((GamepadButtons button, ButtonBinding binding) in chordLayer.OrderBy(entry => entry.Key))
+            {
+                yield return (button, binding, true);
+            }
+        }
+    }
+
     /// <summary>What one button is bound to with the trigger where it is, or null if nothing.</summary>
     public ButtonBinding? BindingFor(GamepadButtons button, double leftTrigger)
     {
