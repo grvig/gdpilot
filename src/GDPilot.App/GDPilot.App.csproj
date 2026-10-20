@@ -13,6 +13,7 @@
     <ProjectReference Include="..\GDPilot.Input\GDPilot.Input.csproj" />
     <ProjectReference Include="..\GDPilot.Output\GDPilot.Output.csproj" />
     <ProjectReference Include="..\GDPilot.Overlay\GDPilot.Overlay.csproj" />
+    <ProjectReference Include="..\GDPilot.Vision\GDPilot.Vision.csproj" />
   </ItemGroup>
 
   <ItemGroup>

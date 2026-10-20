@@ -31,6 +31,21 @@ internal static class Program
             return 2;
         }
 
+        int captureAt = Array.IndexOf(args, "--capture");
+
+        if (captureAt >= 0 && captureAt + 1 < args.Length)
+        {
+            string directory = "captures";
+            int toAt = Array.IndexOf(args, "--to");
+
+            if (toAt >= 0 && toAt + 1 < args.Length)
+            {
+                directory = args[toAt + 1];
+            }
+
+            return CaptureMode.Run(config, args[captureAt + 1], directory);
+        }
+
         Console.WriteLine($"GDPilot. Kill switch: {config.KillSwitch}. Press Ctrl+C to quit.");
 
         if (dryRun)
