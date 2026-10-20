@@ -42,7 +42,7 @@ public sealed class BindingTableTests
     [InlineData("A", "key:NotAKey")]
     [InlineData("A", "key:Ctrl+Space")]
     [InlineData("A", "mouse:middle")]
-    [InlineData("DPadRight", "grid:right")]
+    [InlineData("DPadRight", "grid:diagonal")]
     public void MalformedBindingsAreRejected(string trigger, string action)
     {
         Assert.Throws<FormatException>(() => Parse((trigger, action)));

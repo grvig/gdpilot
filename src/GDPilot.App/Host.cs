@@ -54,7 +54,17 @@ internal static class Host
             layers[mode] = config.ButtonsFor(mode.ToString());
         }
 
-        ModeController modes = new(config.PanelKeys(), mode => layers[mode]);
+        // Section 11: grids are checked against the live display once, at startup,
+        // and refused with a reason rather than clicking the wrong pixels.
+        GridReadiness readiness = new(false, "The game was not running when GDPilot started, so grid navigation is off.", new Dictionary<string, GridSpec>());
+
+        if (GameDisplay.Read(config) is LiveDisplay live)
+        {
+            readiness = GridReadiness.Check(config, live);
+        }
+
+        Console.WriteLine($"Grids: {readiness.Message}");
+        ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness));
         Mapper mapper = new(config.Mapping(), layers[Mode.Combat]);
         Calibrate(pad, mapper);
         ControlLoop loop = new(pad, modes, mapper, guarded, stall, new FocusWatcher(gameInFront, suspension), suspension);

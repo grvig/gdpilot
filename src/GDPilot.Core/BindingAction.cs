@@ -25,9 +25,23 @@ internal static class BindingAction
                 return new PointerBinding(Pointer(parts[1], trigger));
             case "panel":
                 return new PanelBinding(Panel(parts[1], trigger));
+            case "grid":
+                return new GridBinding(GridAction(parts[1], trigger));
             default:
                 throw new FormatException($"\"{trigger}\": \"{parts[0]}\" bindings are not supported.");
         }
+    }
+
+    private static string GridAction(string name, string trigger)
+    {
+        string action = name.ToLowerInvariant();
+
+        if (action is not ("up" or "down" or "left" or "right" or "next"))
+        {
+            throw new FormatException($"\"{trigger}\": \"{name}\" is not a grid action. Use up, down, left, right or next.");
+        }
+
+        return action;
     }
 
     internal static Mode Panel(string name, string trigger)

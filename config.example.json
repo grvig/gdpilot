@@ -1,5 +1,5 @@
 {
-  "activeProfile": "1920x1080@1.0",
+  "activeProfile": "1920x1080@0.5",
   "killSwitch": "Ctrl+Alt+Pause",
   "gameProcess": "Grim Dawn",
   "input": {
@@ -29,10 +29,15 @@
       "Start": "back"
     },
     "Inventory": {
+      "DPadUp": "grid:up",
+      "DPadDown": "grid:down",
+      "DPadLeft": "grid:left",
+      "DPadRight": "grid:right",
+      "LeftBumper": "grid:next",
       "A": "mouse:left",
       "X": "mouse:right",
+      "Y": "panel:Inventory",
       "B": "back",
-      "DPadUp": "panel:Inventory",
       "Start": "back"
     }
   },
@@ -43,11 +48,12 @@
     "WorldMap": "Tab"
   },
   "profiles": {
-    "1920x1080@1.0": {
+    "1920x1080@0.5": {
       "resolution": [1920, 1080],
-      "uiScale": 1.0,
+      "uiScale": 0.5,
       "grids": {
-        "inventory": { "originX": 0, "originY": 0, "pitchX": 0, "pitchY": 0, "columns": 0, "rows": 0 }
+        "Inventory": { "originX": 652, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 12, "rows": 8 },
+        "Inventory.Bag2": { "originX": 1044, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 }
       }
     }
   }

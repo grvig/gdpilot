@@ -28,10 +28,13 @@ public sealed class ModeController
     private bool panicFired;
     private GamepadButtons previous;
 
-    public ModeController(IReadOnlyDictionary<Mode, KeyCode> panelKeys, Func<Mode, ButtonLayers> layersFor)
+    private readonly GridNavigator? grids;
+
+    public ModeController(IReadOnlyDictionary<Mode, KeyCode> panelKeys, Func<Mode, ButtonLayers> layersFor, GridNavigator? grids = null)
     {
         this.panelKeys = panelKeys;
         this.layersFor = layersFor;
+        this.grids = grids;
     }
 
     public Mode Current => stack.Current;
@@ -54,7 +57,14 @@ public sealed class ModeController
         {
             if (button != GamepadButtons.None && (pressed & button) != 0)
             {
-                Act(layers.BindingFor(button, snapshot.LeftTrigger));
+                ButtonBinding? binding = layers.BindingFor(button, snapshot.LeftTrigger);
+
+                if (binding is GridBinding grid && grids?.Act(stack.Current, grid.Action) is PointerMoveTo move)
+                {
+                    intents.Add(move);
+                }
+
+                Act(binding);
             }
         }
 
