@@ -341,3 +341,23 @@ the inventory in one window, bound to both C and I, so tracking them as two
 modes would desync as soon as one key closed the window the other had opened.
 Skills defaults to K, because keyboard movement needs S for walking backward.
 Taps stay at 40 ms, which opened and closed the inventory in the game.
+
+## 2026-10-20 — Grids belong to modes, and are checked once at startup
+
+Grids are named after the mode they serve: `Inventory`, then
+`Inventory.Bag2` for a second surface in the same mode. That is because the
+same bag is drawn in different places depending on what else is open: with
+the vendor's trade window up, the inventory panel sits further left and
+higher than when it is open alone. A grid per surface would have clicked the
+wrong pixels in Vendor mode.
+
+`GridReadiness` compares the active profile with the live window size and the
+UI scale read from the game's `options.txt`, once at startup, as section 11
+asks. The game's settings file is only ever read.
+
+The first grid press after entering a mode lands on the top-left cell rather
+than stepping from wherever the cursor happened to be.
+
+The fixture captures are full-frame lossless PNGs, about 4 MB each. That is
+heavy for a repository, but the full frame keeps panel positions, which is
+how the vendor shift was noticed.

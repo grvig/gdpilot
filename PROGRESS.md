@@ -13,7 +13,7 @@ Phase 3 — grid navigation by calibration.
 | 0. Feasibility probe | Done, HT-1 passed on the scancode rung |
 | 1. Input plumbing and safety | Done |
 | 2. Mode state machine and overlay | Done, checked live in the game |
-| 3. Grid navigation by calibration | Next |
+| 3. Grid navigation by calibration | In progress: bags calibrated and navigable |
 | 4. Occupancy detection | Not started |
 | 5. Macros and release | Not started |
 
@@ -42,6 +42,22 @@ Safety:
 - Every exit path releases held input.
 
 `--dry-run` prints what would be sent instead of sending it.
+
+## Phase 3 checklist
+
+| Task | Status |
+| --- | --- |
+| `--capture` mode | Done: saves the game screen and its display profile |
+| HT-2 captures | Bags and vendor done; stash not yet |
+| Grid maths: centres, clamped steps, pitch from corners | Done: `GridSpec` |
+| Profiles and startup validation | Done: `GridReadiness` refuses grids on any mismatch, with a reason |
+| `grid:` bindings and navigation | Done for the bags: `GridNavigator`, `grid:next` between surfaces |
+| Bag grids for 1920×1080 at UI scale 0.5 | Done: measured, checked live and by fixture test |
+| Vendor-mode grids | Not started; the bags move when the trade window is open |
+| Stash grids | Not started; needs a capture |
+| Modifier clicks for splitting and transfer; bumpers for stash tabs | Not started |
+| Calibration wizard and automatic grid detection | Not started |
+| `docs/calibration.md` | Started; kept current as calibration is built |
 
 ## Live check in the game, 2026-10-19
 
@@ -81,7 +97,13 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
 - Scripted traces replay through the real mapper and mode controller into
   exact key sequences, including a round trip through the inventory.
 
-211 automated tests, all passing.
+- The bag calibration lands on real cells. On 2026-10-20 the cursor at the
+  computed centre of the main bag's top-left cell showed its item's tooltip,
+  "Scrap (54)", and the second bag's cell (1, 1) showed the chest armour
+  stored there. A fixture test checks the shipped numbers against the
+  capture, and fails if the origin moves by half a cell.
+
+242 automated tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -104,16 +126,21 @@ Nothing.
 | Task | Phase | Status |
 | --- | --- | --- |
 | HT-1 Confirm the game accepts synthesized input | 0 | Passed 2026-10-12 |
-| HT-2 Capture calibration fixtures | 3 | Next; run unattended at the owner's request |
+| HT-2 Capture calibration fixtures | 3 | Bags and vendor captured 2026-10-20, unattended; stash outstanding |
 | HT-3 Feel tuning | 5 | Not yet raised |
 
 ## Next session starts here
 
-Phase 3, section 11 of the plan:
+The rest of Phase 3, section 11 of the plan:
 
-1. `--capture` mode, which dumps the bag, stash and vendor grids with the live
-   resolution and UI scale into `tests/fixtures/screens/`. HT-2 runs it in
-   Devil's Crossing, which has a stash and vendors nearby.
-2. Grid coordinate maths in `GDPilot.Core`: origin, pitch, bounds and cell
-   centres, all unit-tested.
-3. The calibration wizard and startup validation against the active profile.
+1. Measure the vendor-mode grids from `tests/fixtures/screens/vendor.png`:
+   the vendor's goods and the bags, which sit elsewhere in that mode. Measure
+   them the same way, from line peaks, and add fixture tests.
+2. Capture the stash. Finding it by walking blind with keyboard movement was
+   unreliable on 2026-10-20. Locate it first, for example from the world map,
+   then capture it and add its grids.
+3. Modifier-held clicks for stack splitting and quick transfer, and the
+   bumpers for stash tabs.
+4. The calibration wizard, and automatic grid detection from a capture. The
+   line-peak method used by hand is the obvious start.
+

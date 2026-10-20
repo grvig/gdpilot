@@ -67,7 +67,7 @@ a patch that moves the interface costs a recalibration.
 | 0 | Proof that Grim Dawn accepts synthesized input | **Done.** It does, through keyboard scan codes. |
 | 1 | Pad input, movement, cursor, buttons, safety | **Done** |
 | 2 | Panel tracking, per-panel bindings, overlay | **Done** |
-| 3 | Grid navigation by calibration | Next |
+| 3 | Grid navigation by calibration | **In progress.** Bags done; vendor, stash and the wizard to come. |
 | 4 | Reading item positions off the screen | Not started |
 | 5 | Macros, tray, first-run setup, release | Not started |
 
@@ -84,14 +84,20 @@ tested in X mode; D mode is not yet confirmed.
   - Each panel switches to its own button table.
   - Start and Back held together resets to Combat if the tracked panel ever
     disagrees with the game.
+- **Grid navigation in the bags:** with the inventory open, the D-pad steps the
+  cursor cell by cell and the left bumper switches between the main and second
+  bag. It is calibrated for 1920×1080 at UI scale 0.5 (see
+  [docs/calibration.md](docs/calibration.md)), and refuses to run on any other
+  display rather than click the wrong cells.
 - **Overlay:** a corner card shows the current mode and buttons.
 - **Safety:** the kill switch, the pause when the game is not in front and the
   stuck-key watchdog all work.
 
 **Not yet:**
 
-- Grid navigation, item jumping, macros, the tray icon and a downloadable
-  release.
+- Grid navigation for the stash and vendor windows.
+- The calibration wizard.
+- Item jumping, macros, the tray icon and a downloadable release.
 - For now it is a console program built from source.
 
 [PROGRESS.md](PROGRESS.md) has the detail, and [PLAN.md](PLAN.md) the full
