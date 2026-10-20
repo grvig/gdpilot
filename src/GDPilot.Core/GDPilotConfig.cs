@@ -24,6 +24,12 @@ public sealed class GDPilotConfig
     public string GameProcess { get; init; } = "Grim Dawn";
     public InputConfig Input { get; init; } = new();
     public OverlayConfig Overlay { get; init; } = new();
+
+    /// <summary>Which entry of <see cref="Profiles"/> holds the grids to navigate with.</summary>
+    public string ActiveProfile { get; init; } = string.Empty;
+
+    /// <summary>Grid calibrations, named by resolution and UI scale, for example "1920x1080@0.5".</summary>
+    public Dictionary<string, ProfileConfig> Profiles { get; init; } = new();
     public Dictionary<string, Dictionary<string, string>> Bindings { get; init; } = new();
 
     /// <summary>
