@@ -4,11 +4,21 @@
   "gameProcess": "Grim Dawn",
   "input": {
     "pollHz": 250,
-    "deadzone": { "left": 0.22, "right": 0.18 },
+    "deadzone": {
+      "left": 0.22,
+      "right": 0.18
+    },
     "walkThreshold": 0.25,
     "chordTrigger": 0.5,
-    "calibration": { "leftCenterX": 0.0, "leftCenterY": 0.0 },
-    "cursor": { "baseSpeed": 900, "exponent": 2.0, "maxSpeed": 2600 }
+    "calibration": {
+      "leftCenterX": 0.0,
+      "leftCenterY": 0.0
+    },
+    "cursor": {
+      "baseSpeed": 900,
+      "exponent": 2.0,
+      "maxSpeed": 2600
+    }
   },
   "bindings": {
     "Combat": {
@@ -26,7 +36,9 @@
       "DPadLeft": "panel:Devotion",
       "DPadRight": "panel:Skills",
       "DPadDown": "panel:WorldMap",
-      "Start": "back"
+      "Start": "back",
+      "LT+DPadUp": "panel:Vendor",
+      "LT+DPadDown": "panel:Stash"
     },
     "Inventory": {
       "DPadUp": "grid:up",
@@ -37,6 +49,17 @@
       "A": "mouse:left",
       "X": "mouse:right",
       "Y": "panel:Inventory",
+      "B": "back",
+      "Start": "back"
+    },
+    "Vendor": {
+      "DPadUp": "grid:up",
+      "DPadDown": "grid:down",
+      "DPadLeft": "grid:left",
+      "DPadRight": "grid:right",
+      "LeftBumper": "grid:next",
+      "A": "mouse:left",
+      "X": "mouse:right",
       "B": "back",
       "Start": "back"
     }
@@ -53,7 +76,10 @@
       "uiScale": 0.5,
       "grids": {
         "Inventory": { "originX": 652, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 12, "rows": 8 },
-        "Inventory.Bag2": { "originX": 1044, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 }
+        "Inventory.Bag2": { "originX": 1044, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 },
+        "Vendor": { "originX": 483, "originY": 323, "pitchX": 32, "pitchY": 32, "columns": 10, "rows": 18 },
+        "Vendor.Bag1": { "originX": 824, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 12, "rows": 8 },
+        "Vendor.Bag2": { "originX": 1217, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 }
       }
     }
   }

@@ -13,20 +13,23 @@ namespace GDPilot.Integration.Tests;
 public sealed class CalibrationFixtureTests
 {
     private readonly GDPilotConfig config = GDPilotConfig.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "config.example.json")));
-    private readonly Frame capture = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "inventory.png"));
 
     [Fact]
     public void TheShippedProfileMatchesTheCapturesDisplay()
     {
+        Frame capture = Capture("inventory.png");
         GridReadiness readiness = GridReadiness.Check(config, new LiveDisplay(capture.Width, capture.Height, 0.5));
 
         Assert.True(readiness.Ready, readiness.Message);
     }
 
-    [Fact]
-    public void SecondBagCellEdgesFallOnTheCapturesGridLines()
+    [Theory]
+    [InlineData("inventory.png", "Inventory.Bag2")]
+    [InlineData("vendor.png", "Vendor.Bag2")]
+    public void SecondBagCellEdgesFallOnTheCapturesGridLines(string file, string gridName)
     {
-        GridSpec bag = config.Profiles[config.ActiveProfile].Grids["Inventory.Bag2"].ToSpec();
+        Frame capture = Capture(file);
+        GridSpec bag = config.Profiles[config.ActiveProfile].Grids[gridName].ToSpec();
 
         // Columns 5 to 7 of the second bag are empty in the capture.
         for (int column = 5; column < 8; column++)
@@ -42,10 +45,13 @@ public sealed class CalibrationFixtureTests
         }
     }
 
-    [Fact]
-    public void SecondBagRowEdgesFallOnTheCapturesGridLines()
+    [Theory]
+    [InlineData("inventory.png", "Inventory.Bag2")]
+    [InlineData("vendor.png", "Vendor.Bag2")]
+    public void SecondBagRowEdgesFallOnTheCapturesGridLines(string file, string gridName)
     {
-        GridSpec bag = config.Profiles[config.ActiveProfile].Grids["Inventory.Bag2"].ToSpec();
+        Frame capture = Capture(file);
+        GridSpec bag = config.Profiles[config.ActiveProfile].Grids[gridName].ToSpec();
 
         for (int row = 0; row < 8; row++)
         {
@@ -55,6 +61,11 @@ public sealed class CalibrationFixtureTests
 
             Assert.True(edge > middle * 1.5, $"Row {row}: edge {edge:F1} is not brighter than middle {middle:F1}.");
         }
+    }
+
+    private static Frame Capture(string file)
+    {
+        return Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", file));
     }
 
     private sealed class Frame
