@@ -19,6 +19,13 @@ internal static class Program
             duration = TimeSpan.FromSeconds(double.Parse(args[secondsAt + 1], System.Globalization.CultureInfo.InvariantCulture));
         }
 
+        int detectAt = Array.IndexOf(args, "--detect");
+
+        if (detectAt >= 0 && detectAt + 5 < args.Length)
+        {
+            return DetectMode.Run(args.Skip(detectAt + 1).Take(5).ToArray());
+        }
+
         GDPilotConfig config;
 
         try
