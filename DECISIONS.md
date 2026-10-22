@@ -347,9 +347,10 @@ Taps stay at 40 ms, which opened and closed the inventory in the game.
 Grids are named after the mode they serve: `Inventory`, then
 `Inventory.Bag2` for a second surface in the same mode. That is because the
 same bag is drawn in different places depending on what else is open: with
-the vendor's trade window up, the inventory panel sits further left and
-higher than when it is open alone. A grid per surface would have clicked the
-wrong pixels in Vendor mode.
+the vendor's trade window up, the inventory panel sits 172 pixels further
+right, at the same height, than when it is open alone. A grid per surface
+would have clicked the wrong pixels in Vendor mode. (This entry first said
+further left and higher. Measuring the vendor capture corrected it.)
 
 `GridReadiness` compares the active profile with the live window size and the
 UI scale read from the game's `options.txt`, once at startup, as section 11
@@ -361,3 +362,32 @@ than stepping from wherever the cursor happened to be.
 The fixture captures are full-frame lossless PNGs, about 4 MB each. That is
 heavy for a repository, but the full frame keeps panel positions, which is
 how the vendor shift was noticed.
+
+## 2026-10-22 — Detection, the wizard, tabs and modifier clicks
+
+Grid detection reads brightness profiles along rows and columns and looks for
+an evenly spaced run of local peaks, walked out in both directions with 2.5
+pixels of tolerance. A run counts only if at least three quarters of its
+positions have a peak. Item art and half-cell artefacts add peaks between
+lines, which first made the detector report a 16 pixel pitch. So when
+neighbouring peaks alternate in strength across most of the run, the spacing
+is doubled. A mean profile is used; a median was tried and did worse.
+
+The wizard trusts a detected grid only when its first and last cell centres
+sit within half a cell of the two points the person chose. It tries search
+margins of 20, 32, 48 and 64 pixels in turn, because the right margin grows
+with the UI scale, and a margin that is too wide takes in the panel border and
+finds an extra row. When nothing agrees, the counts are set by hand and pitch
+comes from the corners, as section 11 describes.
+
+A stash tab strip is a one-row grid named `Stash.Tabs`. Treating it as a grid
+reuses calibration, profiles and the readiness check. `grid:next` skips any
+`.Tabs` grid, and the bumpers click through it, wrapping at the ends.
+
+A modified click such as `mouse:ctrl+left` presses the key before the button
+and releases the button before the key. The reverse release order would let
+the game see a bare click at the end of the press.
+
+Calibrations are saved by parsing the configuration and writing it back,
+which loses comments. Keeping them would need a hand-written JSON editor, and
+a lost comment is a smaller cost than a corrupted configuration.
