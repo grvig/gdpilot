@@ -66,9 +66,18 @@ public sealed class GridSpecTests
     [Theory]
     [InlineData(1, 8)]
     [InlineData(12, 1)]
-    public void ASingleRowOrColumnCannotBeMeasured(int columns, int rows)
+    public void ASingleRowOrColumnNeedsItsCornersInLine(int columns, int rows)
     {
         Assert.Throws<ArgumentException>(() => GridSpec.FromCorners(520, 610, 960, 890, columns, rows));
+    }
+
+    [Fact]
+    public void ATabStripIsOneRowWithLevelCorners()
+    {
+        GridSpec tabs = GridSpec.FromCorners(520, 300, 700, 300, 4, 1);
+
+        Assert.Equal((640, 300), tabs.Centre(new GridCell(2, 0)));
+        Assert.Equal(1, tabs.Rows);
     }
 
     [Fact]

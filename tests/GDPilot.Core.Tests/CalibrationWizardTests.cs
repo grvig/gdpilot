@@ -95,6 +95,20 @@ public sealed class CalibrationWizardTests
     }
 
     [Fact]
+    public void NearlyLevelPointsMakeAOneRowTabStrip()
+    {
+        CalibrationWizard wizard = new(Detect(null));
+        wizard.Confirm((520, 300));
+        wizard.Confirm((701, 305));
+        Assert.Equal((2, 1), wizard.Counts);
+
+        wizard.Adjust(2, -1);
+        wizard.Confirm((0, 0));
+
+        Assert.Equal(new GridSpec(520, 300, 60.333333333333336, 1, 4, 1), wizard.Result);
+    }
+
+    [Fact]
     public void BackFromReviewStartsAgainAndBackElsewhereCancels()
     {
         CalibrationWizard wizard = new(Detect(Bags));

@@ -23,23 +23,34 @@ public sealed record GridSpec(double OriginX, double OriginY, double PitchX, dou
     /// <summary>
     /// Section 11's calibration: the centres of the top-left and bottom-right
     /// cells plus the counts. Pitch is the span divided by count minus one.
+    /// A single row, such as the stash's tab strip, has its corners level.
     /// </summary>
     public static GridSpec FromCorners(double firstX, double firstY, double lastX, double lastY, int columns, int rows)
     {
-        if (columns < 2 || rows < 2)
+        return new GridSpec(firstX, firstY, Pitch(firstX, lastX, columns), Pitch(firstY, lastY, rows), columns, rows);
+    }
+
+    private static double Pitch(double first, double last, int count)
+    {
+        // A lone row or column is never stepped across, so any positive pitch serves.
+        if (count == 1 && last == first)
         {
-            throw new ArgumentException("A grid needs at least two columns and two rows to measure its pitch.");
+            return 1;
         }
 
-        double pitchX = (lastX - firstX) / (columns - 1);
-        double pitchY = (lastY - firstY) / (rows - 1);
+        if (count < 2)
+        {
+            throw new ArgumentException("A single row or column needs its two corners in line.");
+        }
 
-        if (pitchX <= 0 || pitchY <= 0)
+        double pitch = (last - first) / (count - 1);
+
+        if (pitch <= 0)
         {
             throw new ArgumentException("The bottom-right cell must lie below and to the right of the top-left cell.");
         }
 
-        return new GridSpec(firstX, firstY, pitchX, pitchY, columns, rows);
+        return pitch;
     }
 
     /// <summary>Where to put the cursor for a cell, rounded to a whole pixel.</summary>

@@ -22,6 +22,9 @@ public sealed class CalibrationWizard
     /// <summary>How far past the pointed cell centres the detector looks, to take in the outer lines.</summary>
     private const int SearchMargin = 48;
 
+    /// <summary>Half the smallest cell: two points closer than this in one direction are a single row or column.</summary>
+    private const int LevelSlack = 8;
+
     private readonly Func<ScreenRect, GridSpec?> detect;
     private (int X, int Y) first;
     private (int X, int Y) last;
@@ -82,12 +85,12 @@ public sealed class CalibrationWizard
         }
     }
 
-    /// <summary>In the count step, changes the column and row counts, never below two.</summary>
+    /// <summary>In the count step, changes the column and row counts, never below two unless the points were level.</summary>
     public void Adjust(int columns, int rows)
     {
         if (Step == WizardStep.CountCells)
         {
-            Counts = (Math.Max(2, Counts.Columns + columns), Math.Max(2, Counts.Rows + rows));
+            Counts = (Math.Max(Fewest(first.X, last.X), Counts.Columns + columns), Math.Max(Fewest(first.Y, last.Y), Counts.Rows + rows));
         }
     }
 
@@ -106,13 +109,25 @@ public sealed class CalibrationWizard
 
     private void AcceptLastCell((int X, int Y) cursor)
     {
+        // Placed by stick, a tab strip's far end is never exactly level, so near enough is.
+        if (Math.Abs(cursor.Y - first.Y) <= LevelSlack)
+        {
+            cursor.Y = first.Y;
+        }
+
+        if (Math.Abs(cursor.X - first.X) <= LevelSlack)
+        {
+            cursor.X = first.X;
+        }
+
         // A bottom-right cell above or left of the top-left one was a slip; ask again.
-        if (cursor.X <= first.X || cursor.Y <= first.Y)
+        if (cursor.X < first.X || cursor.Y < first.Y || cursor == first)
         {
             return;
         }
 
         last = cursor;
+        Counts = (Fewest(first.X, last.X), Fewest(first.Y, last.Y));
         ScreenRect area = new(first.X - SearchMargin, first.Y - SearchMargin, last.X - first.X + SearchMargin * 2, last.Y - first.Y + SearchMargin * 2);
         GridSpec? found = detect(area);
 
@@ -124,6 +139,16 @@ public sealed class CalibrationWizard
         }
 
         Step = WizardStep.CountCells;
+    }
+
+    private static int Fewest(int first, int last)
+    {
+        if (first == last)
+        {
+            return 1;
+        }
+
+        return 2;
     }
 
     /// <summary>
