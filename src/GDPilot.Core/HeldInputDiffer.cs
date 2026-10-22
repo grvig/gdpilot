@@ -24,15 +24,17 @@ public sealed class HeldInputDiffer
         List<InputIntent> intents = new();
 
         // Releases go first. Swinging the stick from up-left to up-right would
-        // otherwise hold A, W and D together for a moment.
-        foreach (KeyCode key in heldKeys.Except(wantedKeys).Order())
-        {
-            intents.Add(new KeyUp(key));
-        }
-
+        // otherwise hold A, W and D together for a moment. Mouse buttons are let
+        // go before keys and pressed after them, so a modifier held for a click,
+        // such as Ctrl to split a stack, covers the whole click at both ends.
         foreach (PointerButton button in heldButtons.Except(wantedButtons).Order())
         {
             intents.Add(new PointerUp(button));
+        }
+
+        foreach (KeyCode key in heldKeys.Except(wantedKeys).Order())
+        {
+            intents.Add(new KeyUp(key));
         }
 
         foreach (KeyCode key in wantedKeys.Except(heldKeys).Order())

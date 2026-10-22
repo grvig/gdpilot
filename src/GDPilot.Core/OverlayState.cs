@@ -41,6 +41,21 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
         return null;
     }
 
+    private static string ModifierName(KeyCode modifier)
+    {
+        switch (modifier)
+        {
+            case KeyCode.LeftControl:
+                return "Ctrl";
+            case KeyCode.LeftShift:
+                return "Shift";
+            case KeyCode.LeftAlt:
+                return "Alt";
+            default:
+                return modifier.ToString();
+        }
+    }
+
     private static string Describe(ButtonBinding binding)
     {
         switch (binding)
@@ -49,6 +64,8 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
                 return ((int)(key.Key - KeyCode.D0)).ToString();
             case KeyBinding key:
                 return key.Key.ToString();
+            case PointerBinding pointer when pointer.Modifier != KeyCode.None:
+                return $"{ModifierName(pointer.Modifier)}+{pointer.Button} click";
             case PointerBinding pointer:
                 return $"{pointer.Button} click";
             case PanelBinding panel:

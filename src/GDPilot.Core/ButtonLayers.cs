@@ -5,7 +5,8 @@ public abstract record ButtonBinding;
 
 public sealed record KeyBinding(KeyCode Key) : ButtonBinding;
 
-public sealed record PointerBinding(PointerButton Button) : ButtonBinding;
+/// <summary>Holds a mouse button, optionally with a modifier key held for the whole click.</summary>
+public sealed record PointerBinding(PointerButton Button, KeyCode Modifier = KeyCode.None) : ButtonBinding;
 
 /// <summary>Opens or closes a panel: taps its key and toggles its mode. Acts once per press.</summary>
 public sealed record PanelBinding(Mode Mode) : ButtonBinding;
@@ -78,6 +79,11 @@ public sealed class ButtonLayers
             else if (binding is PointerBinding pointer)
             {
                 buttons.Add(pointer.Button);
+
+                if (pointer.Modifier != KeyCode.None)
+                {
+                    keys.Add(pointer.Modifier);
+                }
             }
         }
 

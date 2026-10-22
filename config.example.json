@@ -42,6 +42,7 @@
     },
     "Inventory": {
       "DPadUp": "grid:up",
+      "LT+A": "mouse:ctrl+left",
       "DPadDown": "grid:down",
       "DPadLeft": "grid:left",
       "DPadRight": "grid:right",
@@ -54,6 +55,7 @@
     },
     "Vendor": {
       "DPadUp": "grid:up",
+      "LT+A": "mouse:ctrl+left",
       "DPadDown": "grid:down",
       "DPadLeft": "grid:left",
       "DPadRight": "grid:right",

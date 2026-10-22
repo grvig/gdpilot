@@ -22,7 +22,7 @@ internal static class BindingAction
             case "key":
                 return new KeyBinding(Key(parts[1], trigger));
             case "mouse":
-                return new PointerBinding(Pointer(parts[1], trigger));
+                return Mouse(parts[1], trigger);
             case "panel":
                 return new PanelBinding(Panel(parts[1], trigger));
             case "grid":
@@ -74,6 +74,42 @@ internal static class BindingAction
         }
 
         return chord.Key;
+    }
+
+    /// <summary>"left", "right", or either with one modifier, such as "ctrl+left" to split a stack.</summary>
+    private static PointerBinding Mouse(string target, string trigger)
+    {
+        string[] parts = target.Split('+', StringSplitOptions.TrimEntries);
+
+        if (parts.Length == 1)
+        {
+            return new PointerBinding(Pointer(parts[0], trigger));
+        }
+
+        if (parts.Length != 2)
+        {
+            throw new FormatException($"\"{trigger}\": \"{target}\" holds more than one modifier.");
+        }
+
+        KeyCode modifier;
+
+        switch (parts[0].ToLowerInvariant())
+        {
+            case "ctrl":
+            case "control":
+                modifier = KeyCode.LeftControl;
+                break;
+            case "shift":
+                modifier = KeyCode.LeftShift;
+                break;
+            case "alt":
+                modifier = KeyCode.LeftAlt;
+                break;
+            default:
+                throw new FormatException($"\"{trigger}\": \"{parts[0]}\" is not a modifier. Use Ctrl, Shift or Alt.");
+        }
+
+        return new PointerBinding(Pointer(parts[1], trigger), modifier);
     }
 
     private static PointerButton Pointer(string name, string trigger)
