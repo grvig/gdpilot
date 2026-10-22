@@ -66,7 +66,7 @@ public static class ConfigEditor
     }
 
     /// <summary>Grids are found by mode name, so a grid named after no mode could never be used.</summary>
-    private static void RequireModeName(string gridName)
+    public static void RequireModeName(string gridName)
     {
         string mode = gridName.Split('.', 2)[0];
 

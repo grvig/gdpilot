@@ -53,6 +53,13 @@ internal static class Program
             return CaptureMode.Run(config, args[captureAt + 1], directory);
         }
 
+        int calibrateAt = Array.IndexOf(args, "--calibrate");
+
+        if (calibrateAt >= 0 && calibrateAt + 1 < args.Length)
+        {
+            return CalibrateMode.Run(config, args[calibrateAt + 1]);
+        }
+
         Console.WriteLine($"GDPilot. Kill switch: {config.KillSwitch}. Press Ctrl+C to quit.");
 
         if (dryRun)
