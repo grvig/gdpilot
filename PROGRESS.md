@@ -13,7 +13,7 @@ Phase 3 — grid navigation by calibration.
 | 0. Feasibility probe | Done, HT-1 passed on the scancode rung |
 | 1. Input plumbing and safety | Done |
 | 2. Mode state machine and overlay | Done, checked live in the game |
-| 3. Grid navigation by calibration | In progress: bags calibrated and navigable |
+| 3. Grid navigation by calibration | In progress: all code written; stash calibration and live checks remain |
 | 4. Occupancy detection | Not started |
 | 5. Macros and release | Not started |
 
@@ -53,11 +53,13 @@ Safety:
 | Profiles and startup validation | Done: `GridReadiness` refuses grids on any mismatch, with a reason |
 | `grid:` bindings and navigation | Done for the bags: `GridNavigator`, `grid:next` between surfaces |
 | Bag grids for 1920×1080 at UI scale 0.5 | Done: measured, checked live and by fixture test |
-| Vendor-mode grids | Not started; the bags move when the trade window is open |
-| Stash grids | Not started; needs a capture |
-| Modifier clicks for splitting and transfer; bumpers for stash tabs | Not started |
-| Calibration wizard and automatic grid detection | Not started |
-| `docs/calibration.md` | Started; kept current as calibration is built |
+| Vendor-mode grids | Done: goods and both bags, measured by detection, fixture-tested; not yet checked live |
+| Stash grids and tab strip | Not started; needs a capture, then `--calibrate Stash` and `--calibrate Stash.Tabs` |
+| Modifier clicks for splitting and transfer | Done: `mouse:ctrl+left` and the like, bound to LT+A in panels; not yet checked live |
+| Bumpers for stash tabs | Done: `tab:next` and `tab:previous` click through a one-row `Stash.Tabs` grid |
+| Automatic grid detection | Done: `GridDetector`, and `--detect` on a saved capture |
+| Calibration wizard | Done: `--calibrate GridName`, saving through `ConfigEditor`; not yet run live |
+| `docs/calibration.md` | Done for everything built so far |
 
 ## Live check in the game, 2026-10-19
 
@@ -103,7 +105,14 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   stored there. A fixture test checks the shipped numbers against the
   capture, and fails if the origin moves by half a cell.
 
-242 automated tests, all passing.
+- Grid detection finds all five grids in the two captures on its own, and the
+  wizard's logic, fed those captures, lands on each grid from points a few
+  pixels off its corner cells.
+
+253 core tests, all passing. On 2026-10-22 the machine was in use, so only the
+integration suite's fixture tests were run, 15 of them, all passing. The rest
+of that suite shows windows and injects input, so it waits for the next
+session.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -112,6 +121,8 @@ Not yet verified:
 - **The pad's D mode.**
 - **A real button press reaching the game end to end.** Each link is checked
   separately, but nobody has pressed the pad with the game running.
+- **The vendor grids, tab switching, modifier clicks and the wizard in the
+  game.** All are tested against captures and traces only.
 
 ## Known issues
 
@@ -131,16 +142,15 @@ Nothing.
 
 ## Next session starts here
 
-The rest of Phase 3, section 11 of the plan:
+The rest of Phase 3, section 11 of the plan. The code is written; what is left
+needs the game and the pad, so wait until the machine is free.
 
-1. Measure the vendor-mode grids from `tests/fixtures/screens/vendor.png`:
-   the vendor's goods and the bags, which sit elsewhere in that mode. Measure
-   them the same way, from line peaks, and add fixture tests.
-2. Capture the stash. Finding it by walking blind with keyboard movement was
-   unreliable on 2026-10-20. Locate it first, for example from the world map,
-   then capture it and add its grids.
-3. Modifier-held clicks for stack splitting and quick transfer, and the
-   bumpers for stash tabs.
-4. The calibration wizard, and automatic grid detection from a capture. The
-   line-peak method used by hand is the obvious start.
-
+1. Run the whole integration suite, which shows windows and injects input.
+2. Check the vendor grids live: open a trader, step through the goods and both
+   bags, and confirm tooltips match the cells.
+3. Find the stash in Devil's Crossing, for example from the world map, since
+   walking blind on 2026-10-20 was unreliable. Capture it, then run
+   `--calibrate Stash` and `--calibrate Stash.Tabs`, copy the results into
+   `config.example.json`, and add fixture tests.
+4. Check Ctrl+click splitting and tab switching in the game.
+5. Settle the open items under "Not yet verified", then close Phase 3.

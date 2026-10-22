@@ -67,7 +67,7 @@ a patch that moves the interface costs a recalibration.
 | 0 | Proof that Grim Dawn accepts synthesized input | **Done.** It does, through keyboard scan codes. |
 | 1 | Pad input, movement, cursor, buttons, safety | **Done** |
 | 2 | Panel tracking, per-panel bindings, overlay | **Done** |
-| 3 | Grid navigation by calibration | **In progress.** Bags done; vendor, stash and the wizard to come. |
+| 3 | Grid navigation by calibration | **In progress.** Bags, vendor and the wizard done; the stash and live checks to come. |
 | 4 | Reading item positions off the screen | Not started |
 | 5 | Macros, tray, first-run setup, release | Not started |
 
@@ -89,14 +89,20 @@ tested in X mode; D mode is not yet confirmed.
   bag. It is calibrated for 1920×1080 at UI scale 0.5 (see
   [docs/calibration.md](docs/calibration.md)), and refuses to run on any other
   display rather than click the wrong cells.
+- **Grid navigation while trading:** the vendor's goods and both bags are
+  calibrated, and LT+A sends Ctrl+click for splitting stacks.
+- **A calibration wizard:** `GDPilot.exe --calibrate Inventory`, with the panel
+  open, asks you to point at two corner cells with the right stick. It reads
+  the grid lines itself, or asks for the counts if it cannot, and saves the
+  result into `config.json`.
 - **Overlay:** a corner card shows the current mode and buttons.
 - **Safety:** the kill switch, the pause when the game is not in front and the
   stuck-key watchdog all work.
 
 **Not yet:**
 
-- Grid navigation for the stash and vendor windows.
-- The calibration wizard.
+- Grid navigation for the stash, and its tab switching on the bumpers. The
+  code is there; the stash has not been calibrated yet.
 - Item jumping, macros, the tray icon and a downloadable release.
 - For now it is a console program built from source.
 
