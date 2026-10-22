@@ -38,6 +38,43 @@ public sealed class GridDetectionFixtureTests
         Assert.Equal(rows, grid.Rows);
     }
 
+    [Theory]
+    [InlineData("inventory.png", 652, 645, 1004, 869)]
+    [InlineData("inventory.png", 1044, 645, 1268, 869)]
+    [InlineData("vendor.png", 483, 323, 771, 867)]
+    [InlineData("vendor.png", 824, 645, 1176, 869)]
+    [InlineData("vendor.png", 1217, 645, 1441, 869)]
+    public void TheWizardFindsEachGridFromItsCornerCells(string capture, int firstX, int firstY, int lastX, int lastY)
+    {
+        CapturedFrame frame = Load(capture);
+        CalibrationWizard wizard = new(area => Detect(frame, area));
+
+        // A few pixels off centre, as a stick would leave it.
+        wizard.Confirm((firstX + 3, firstY - 2));
+        wizard.Confirm((lastX - 2, lastY + 3));
+
+        Assert.Equal(WizardStep.Review, wizard.Step);
+        Assert.InRange(wizard.Result!.OriginX, firstX - 1.5, firstX + 1.5);
+        Assert.InRange(wizard.Result.OriginY, firstY - 1.5, firstY + 1.5);
+        Assert.Equal(32, wizard.Result.PitchX);
+        Assert.Equal(32, wizard.Result.PitchY);
+    }
+
+    private static GridSpec? Detect(CapturedFrame frame, ScreenRect area)
+    {
+        int right = area.X + area.Width;
+        int bottom = area.Y + area.Height;
+        LineRun? columnLines = GridDetector.FindLines(BrightnessProfile.Columns(frame, area.X, right, area.Y, bottom), 16, 96);
+        LineRun? rowLines = GridDetector.FindLines(BrightnessProfile.Rows(frame, area.X, right, area.Y, bottom), 16, 96);
+
+        if (columnLines is null || rowLines is null)
+        {
+            return null;
+        }
+
+        return GridDetector.ToGrid(columnLines.Value, rowLines.Value, area.X, area.Y);
+    }
+
     private static CapturedFrame Load(string capture)
     {
         string path = Path.Combine(AppContext.BaseDirectory, "screens", capture);

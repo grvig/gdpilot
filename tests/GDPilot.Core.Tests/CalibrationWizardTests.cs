@@ -6,7 +6,7 @@ public sealed class CalibrationWizardTests
 {
     private static readonly GridSpec Bags = new(652, 645, 32, 32, 12, 8);
 
-    private ScreenRect? searched;
+    private readonly List<ScreenRect> searched = new();
 
     [Fact]
     public void PointingAtBothCornersOfADetectableGridGoesStraightToReview()
@@ -29,7 +29,18 @@ public sealed class CalibrationWizardTests
         wizard.Confirm((652, 645));
         wizard.Confirm((1004, 869));
 
-        Assert.Equal(new ScreenRect(604, 597, 448, 320), searched);
+        Assert.Equal(new[] { new ScreenRect(632, 625, 392, 264) }, searched);
+    }
+
+    [Fact]
+    public void WiderMarginsAreTriedUntilOneFindsThePointedGrid()
+    {
+        CalibrationWizard wizard = new(Detect(null));
+
+        wizard.Confirm((652, 645));
+        wizard.Confirm((1004, 869));
+
+        Assert.Equal(new[] { 20, 32, 48, 64 }, searched.Select(area => 652 - area.X));
     }
 
     [Fact]
@@ -127,7 +138,7 @@ public sealed class CalibrationWizardTests
     {
         return area =>
         {
-            searched = area;
+            searched.Add(area);
             return found;
         };
     }

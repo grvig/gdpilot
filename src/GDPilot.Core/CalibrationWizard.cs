@@ -19,8 +19,13 @@ public enum WizardStep
 /// </summary>
 public sealed class CalibrationWizard
 {
-    /// <summary>How far past the pointed cell centres the detector looks, to take in the outer lines.</summary>
-    private const int SearchMargin = 48;
+    /// <summary>
+    /// How far past the pointed cell centres the detector looks, to take in the
+    /// outer lines. Too little misses them and too much takes in the panel's
+    /// border, and the right amount grows with the UI scale, so each is tried in
+    /// turn until one finds the grid that was pointed at.
+    /// </summary>
+    private static readonly int[] SearchMargins = { 20, 32, 48, 64 };
 
     /// <summary>Half the smallest cell: two points closer than this in one direction are a single row or column.</summary>
     private const int LevelSlack = 8;
@@ -128,14 +133,18 @@ public sealed class CalibrationWizard
 
         last = cursor;
         Counts = (Fewest(first.X, last.X), Fewest(first.Y, last.Y));
-        ScreenRect area = new(first.X - SearchMargin, first.Y - SearchMargin, last.X - first.X + SearchMargin * 2, last.Y - first.Y + SearchMargin * 2);
-        GridSpec? found = detect(area);
 
-        if (found is not null && Agrees(found))
+        foreach (int margin in SearchMargins)
         {
-            Result = found;
-            Step = WizardStep.Review;
-            return;
+            ScreenRect area = new(first.X - margin, first.Y - margin, last.X - first.X + margin * 2, last.Y - first.Y + margin * 2);
+            GridSpec? found = detect(area);
+
+            if (found is not null && Agrees(found))
+            {
+                Result = found;
+                Step = WizardStep.Review;
+                return;
+            }
         }
 
         Step = WizardStep.CountCells;
