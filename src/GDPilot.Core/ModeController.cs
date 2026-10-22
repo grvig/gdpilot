@@ -64,6 +64,11 @@ public sealed class ModeController
                     intents.Add(move);
                 }
 
+                if (binding is TabBinding tab && grids is not null)
+                {
+                    intents.AddRange(grids.Tab(stack.Current, tab.Step));
+                }
+
                 Act(binding);
             }
         }

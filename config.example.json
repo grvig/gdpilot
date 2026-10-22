@@ -53,6 +53,20 @@
       "B": "back",
       "Start": "back"
     },
+    "Stash": {
+      "LT+A": "mouse:ctrl+left",
+      "DPadUp": "grid:up",
+      "DPadDown": "grid:down",
+      "DPadLeft": "grid:left",
+      "DPadRight": "grid:right",
+      "Back": "grid:next",
+      "LeftBumper": "tab:previous",
+      "RightBumper": "tab:next",
+      "A": "mouse:left",
+      "X": "mouse:right",
+      "B": "back",
+      "Start": "back"
+    },
     "Vendor": {
       "DPadUp": "grid:up",
       "LT+A": "mouse:ctrl+left",

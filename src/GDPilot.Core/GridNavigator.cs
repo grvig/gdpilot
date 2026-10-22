@@ -3,6 +3,9 @@ namespace GDPilot.Core;
 /// <summary>A grid action from a binding: "grid:up", "grid:down", "grid:left", "grid:right" or "grid:next".</summary>
 public sealed record GridBinding(string Action) : ButtonBinding;
 
+/// <summary>"tab:next" or "tab:previous": clicks the neighbouring stash tab. Step is +1 or -1.</summary>
+public sealed record TabBinding(int Step) : ButtonBinding;
+
 /// <summary>
 /// Moves the cursor cell by cell over the grids calibrated for the current mode.
 /// A mode can have several surfaces, such as the main bag and the second bag,
@@ -10,7 +13,10 @@ public sealed record GridBinding(string Action) : ButtonBinding;
 /// </summary>
 public sealed class GridNavigator
 {
+    private const string TabsSuffix = ".Tabs";
+
     private readonly GridReadiness readiness;
+    private int tab;
     private Mode mode = Mode.Suspended;
     private List<string> surfaces = new();
     private int surface;
@@ -38,7 +44,13 @@ public sealed class GridNavigator
         {
             // Each mode starts fresh on its first surface, since its panel may sit elsewhere on screen.
             mode = current;
-            surfaces = readiness.Grids.Keys.Where(name => name == current.ToString() || name.StartsWith(current + ".", StringComparison.Ordinal)).Order().ToList();
+
+            // A tab strip is a one-row grid too, but it is clicked through, not walked.
+            surfaces = readiness.Grids.Keys
+                .Where(name => name == current.ToString() || name.StartsWith(current + ".", StringComparison.Ordinal))
+                .Where(name => !name.EndsWith(TabsSuffix, StringComparison.Ordinal))
+                .Order()
+                .ToList();
             surface = 0;
             placed = false;
         }
@@ -71,6 +83,36 @@ public sealed class GridNavigator
         Notice = null;
         (int x, int y) = grid.Centre(cell);
         return new PointerMoveTo(x, y);
+    }
+
+    /// <summary>
+    /// Clicks the next or previous tab, wrapping round, for a mode whose profile
+    /// has a tab strip calibrated as a one-row grid named "Stash.Tabs". The game
+    /// switches stash tabs only by clicking them, so a tab change is a move and a click.
+    /// </summary>
+    public List<InputIntent> Tab(Mode current, int step)
+    {
+        List<InputIntent> intents = new();
+
+        if (!readiness.Ready)
+        {
+            Notice = readiness.Message;
+            return intents;
+        }
+
+        if (!readiness.Grids.TryGetValue(current + TabsSuffix, out GridSpec? tabs))
+        {
+            Notice = $"No tabs are calibrated for {current}.";
+            return intents;
+        }
+
+        tab = ((tab + step) % tabs.Columns + tabs.Columns) % tabs.Columns;
+        (int x, int y) = tabs.Centre(new GridCell(tab, 0));
+        intents.Add(new PointerMoveTo(x, y));
+        intents.Add(new PointerDown(PointerButton.Left));
+        intents.Add(new PointerUp(PointerButton.Left));
+        Notice = null;
+        return intents;
     }
 
     private static GridDirection Direction(string action)

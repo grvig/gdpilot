@@ -70,6 +70,14 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
                 return $"{pointer.Button} click";
             case PanelBinding panel:
                 return panel.Mode.ToString();
+            case GridBinding grid when grid.Action == "next":
+                return "Next grid";
+            case GridBinding grid:
+                return $"Cell {grid.Action}";
+            case TabBinding tab when tab.Step > 0:
+                return "Next tab";
+            case TabBinding:
+                return "Previous tab";
             case BackBinding:
                 return "Back";
             default:

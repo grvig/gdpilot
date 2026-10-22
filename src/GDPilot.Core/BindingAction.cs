@@ -27,8 +27,23 @@ internal static class BindingAction
                 return new PanelBinding(Panel(parts[1], trigger));
             case "grid":
                 return new GridBinding(GridAction(parts[1], trigger));
+            case "tab":
+                return new TabBinding(TabStep(parts[1], trigger));
             default:
                 throw new FormatException($"\"{trigger}\": \"{parts[0]}\" bindings are not supported.");
+        }
+    }
+
+    private static int TabStep(string name, string trigger)
+    {
+        switch (name.ToLowerInvariant())
+        {
+            case "next":
+                return 1;
+            case "previous":
+                return -1;
+            default:
+                throw new FormatException($"\"{trigger}\": \"{name}\" is not a tab action. Use next or previous.");
         }
     }
 
