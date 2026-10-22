@@ -1,0 +1,146 @@
+namespace GDPilot.Core;
+
+public enum WizardStep
+{
+    PointAtFirstCell,
+    PointAtLastCell,
+    CountCells,
+    Review,
+    Done,
+    Cancelled,
+}
+
+/// <summary>
+/// Section 11's calibration, as steps a pad can drive: point at the centre of
+/// the top-left cell and confirm, then the bottom-right cell. Where grid lines
+/// can be read between those two points the grid is detected and the person
+/// only confirms it. Where they cannot, the cell counts are set by hand and the
+/// pitch follows from the corners.
+/// </summary>
+public sealed class CalibrationWizard
+{
+    /// <summary>How far past the pointed cell centres the detector looks, to take in the outer lines.</summary>
+    private const int SearchMargin = 48;
+
+    private readonly Func<ScreenRect, GridSpec?> detect;
+    private (int X, int Y) first;
+    private (int X, int Y) last;
+
+    public CalibrationWizard(Func<ScreenRect, GridSpec?> detect)
+    {
+        this.detect = detect;
+    }
+
+    public WizardStep Step { get; private set; } = WizardStep.PointAtFirstCell;
+
+    /// <summary>The grid found or built, once the wizard reaches review.</summary>
+    public GridSpec? Result { get; private set; }
+
+    /// <summary>The counts being set by hand in the count step.</summary>
+    public (int Columns, int Rows) Counts { get; private set; } = (2, 2);
+
+    public string Prompt
+    {
+        get
+        {
+            switch (Step)
+            {
+                case WizardStep.PointAtFirstCell:
+                    return "Move the cursor to the centre of the top-left cell and press A.";
+                case WizardStep.PointAtLastCell:
+                    return "Now the centre of the bottom-right cell, and press A.";
+                case WizardStep.CountCells:
+                    return $"Grid lines could not be read. Set the size with the D-pad: {Counts.Columns} columns, {Counts.Rows} rows. Press A when right.";
+                case WizardStep.Review:
+                    return $"Found {Result!.Columns} by {Result.Rows} cells, {Result.PitchX:0.#} pixels apart. Press A to save, B to start again.";
+                case WizardStep.Done:
+                    return "Saved.";
+                default:
+                    return "Calibration cancelled. Nothing was saved.";
+            }
+        }
+    }
+
+    public void Confirm((int X, int Y) cursor)
+    {
+        switch (Step)
+        {
+            case WizardStep.PointAtFirstCell:
+                first = cursor;
+                Step = WizardStep.PointAtLastCell;
+                break;
+            case WizardStep.PointAtLastCell:
+                AcceptLastCell(cursor);
+                break;
+            case WizardStep.CountCells:
+                Result = GridSpec.FromCorners(first.X, first.Y, last.X, last.Y, Counts.Columns, Counts.Rows);
+                Step = WizardStep.Review;
+                break;
+            case WizardStep.Review:
+                Step = WizardStep.Done;
+                break;
+        }
+    }
+
+    /// <summary>In the count step, changes the column and row counts, never below two.</summary>
+    public void Adjust(int columns, int rows)
+    {
+        if (Step == WizardStep.CountCells)
+        {
+            Counts = (Math.Max(2, Counts.Columns + columns), Math.Max(2, Counts.Rows + rows));
+        }
+    }
+
+    /// <summary>B: from review, starts again; anywhere else, gives up.</summary>
+    public void Back()
+    {
+        if (Step == WizardStep.Review)
+        {
+            Result = null;
+            Step = WizardStep.PointAtFirstCell;
+            return;
+        }
+
+        Step = WizardStep.Cancelled;
+    }
+
+    private void AcceptLastCell((int X, int Y) cursor)
+    {
+        // A bottom-right cell above or left of the top-left one was a slip; ask again.
+        if (cursor.X <= first.X || cursor.Y <= first.Y)
+        {
+            return;
+        }
+
+        last = cursor;
+        ScreenRect area = new(first.X - SearchMargin, first.Y - SearchMargin, last.X - first.X + SearchMargin * 2, last.Y - first.Y + SearchMargin * 2);
+        GridSpec? found = detect(area);
+
+        if (found is not null && Agrees(found))
+        {
+            Result = found;
+            Step = WizardStep.Review;
+            return;
+        }
+
+        Step = WizardStep.CountCells;
+    }
+
+    /// <summary>
+    /// A detected grid is trusted only if its first and last cells sit under the
+    /// two points the person chose, within half a cell. Otherwise the detector
+    /// latched onto something else, such as a neighbouring panel.
+    /// </summary>
+    private bool Agrees(GridSpec found)
+    {
+        (int firstX, int firstY) = found.Centre(new GridCell(0, 0));
+        (int lastX, int lastY) = found.Centre(new GridCell(found.Columns - 1, found.Rows - 1));
+        double slackX = found.PitchX / 2;
+        double slackY = found.PitchY / 2;
+
+        return Math.Abs(firstX - first.X) <= slackX
+            && Math.Abs(firstY - first.Y) <= slackY
+            && Math.Abs(lastX - last.X) <= slackX
+            && Math.Abs(lastY - last.Y) <= slackY;
+    }
+}
