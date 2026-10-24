@@ -82,6 +82,17 @@ public sealed class Mapper
     private (double X, double Y) sentMove;
     private TimeSpan sinceMove;
 
+    /// <summary>
+    /// Twin-stick aiming in the game's own camera: out in the world the right
+    /// stick points the cursor at the ground round the character instead of
+    /// pushing it about the screen, so skills go where the stick points, as in a
+    /// game made for a controller. Panels keep the free cursor.
+    /// </summary>
+    public bool TwinStick { get; set; }
+
+    /// <summary>The way twin-stick aiming last pointed, as a screen angle; up the screen to begin with.</summary>
+    private double aimAngle = -Math.PI / 2;
+
     /// <summary>Soft aim, drawing the cursor onto an enemy near the aim point in third person; null when turned off.</summary>
     public SoftAim? SoftAim { get; set; }
 
@@ -376,6 +387,36 @@ public sealed class Mapper
         return AimPoint;
     }
 
+    /// <summary>
+    /// Where twin-stick aiming puts the cursor: the ground the right stick points
+    /// at, further out the further it leans; with the stick let go, the ground
+    /// ahead of the walk, or where it last pointed. An enemy close to that spot
+    /// draws it, as soft aim does in third person.
+    /// </summary>
+    private (int X, int Y)? Aimed(StickPosition left, StickPosition right, TimeSpan elapsed, ScreenRect bounds)
+    {
+        double reach = 1;
+
+        if (right.Magnitude > 0)
+        {
+            aimAngle = Math.Atan2(-right.Y, right.X);
+            reach = 0.5 + right.Magnitude;
+        }
+        else if (left.Magnitude >= settings.WalkThreshold)
+        {
+            aimAngle = Math.Atan2(-left.Y, left.X);
+        }
+
+        ScreenSpot spot = GroundAim.Spot(Near, aimAngle, reach, Aspect());
+
+        if (SoftAim is not null && SoftAim.Pick(Seen, spot.X, spot.Y, Aspect()) is SeenTarget soft && Glided(soft, elapsed) is (int X, int Y) onEnemy)
+        {
+            return onEnemy;
+        }
+
+        return ((int)Math.Round(bounds.X + spot.X * bounds.Width), (int)Math.Round(bounds.Y + spot.Y * bounds.Height));
+    }
+
     private double Aspect()
     {
         if (GameBounds is ScreenRect bounds && bounds.Height > 0)
@@ -530,9 +571,16 @@ public sealed class Mapper
         }
 
         // Leaving third person with the stick still over must not leave the camera turning.
+        Look(0, 0, intents);
+
+        if (TwinStick && InWorld && GameBounds is ScreenRect bounds)
+        {
+            Park(Aimed(left, right, elapsed, bounds), intents);
+            return intents;
+        }
+
         cursorAt = null;
         SoftAim?.Forget();
-        Look(0, 0, intents);
         PointerMove? move = cursor.Step(right, elapsed);
 
         if (move is not null)
