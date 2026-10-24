@@ -95,7 +95,11 @@
         "Inventory.Bag2": { "originX": 1044, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 },
         "Vendor": { "originX": 483, "originY": 323, "pitchX": 32, "pitchY": 32, "columns": 10, "rows": 18 },
         "Vendor.Bag1": { "originX": 824, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 12, "rows": 8 },
-        "Vendor.Bag2": { "originX": 1217, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 }
+        "Vendor.Bag2": { "originX": 1217, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 },
+        "Stash": { "originX": 529, "originY": 293, "pitchX": 32, "pitchY": 32, "columns": 10, "rows": 19 },
+        "Stash.Bag1": { "originX": 870, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 12, "rows": 8 },
+        "Stash.Bag2": { "originX": 1263, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 },
+        "Stash.Tabs": { "originX": 473, "originY": 463, "pitchX": 1, "pitchY": 38, "columns": 1, "rows": 2 }
       }
     }
   }

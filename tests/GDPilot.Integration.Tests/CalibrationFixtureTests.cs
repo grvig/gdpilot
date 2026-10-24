@@ -26,6 +26,7 @@ public sealed class CalibrationFixtureTests
     [Theory]
     [InlineData("inventory.png", "Inventory.Bag2")]
     [InlineData("vendor.png", "Vendor.Bag2")]
+    [InlineData("stash.png", "Stash.Bag2")]
     public void SecondBagCellEdgesFallOnTheCapturesGridLines(string file, string gridName)
     {
         Frame capture = Capture(file);
@@ -48,6 +49,7 @@ public sealed class CalibrationFixtureTests
     [Theory]
     [InlineData("inventory.png", "Inventory.Bag2")]
     [InlineData("vendor.png", "Vendor.Bag2")]
+    [InlineData("stash.png", "Stash.Bag2")]
     public void SecondBagRowEdgesFallOnTheCapturesGridLines(string file, string gridName)
     {
         Frame capture = Capture(file);
