@@ -120,6 +120,19 @@ public sealed class CalibrationWizardTests
     }
 
     [Fact]
+    public void AColumnOfTabsReportsItsSpacingDownwards()
+    {
+        CalibrationWizard wizard = new(Detect(null));
+        wizard.Confirm((473, 463));
+        wizard.Confirm((475, 501));
+
+        wizard.Confirm((0, 0));
+
+        Assert.Equal(new GridSpec(473, 463, 1, 38, 1, 2), wizard.Result);
+        Assert.Contains("1 by 2 cells, 38 pixels apart", wizard.Prompt);
+    }
+
+    [Fact]
     public void BackFromReviewStartsAgainAndBackElsewhereCancels()
     {
         CalibrationWizard wizard = new(Detect(Bags));

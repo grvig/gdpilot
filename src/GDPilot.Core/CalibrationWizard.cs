@@ -60,7 +60,7 @@ public sealed class CalibrationWizard
                 case WizardStep.CountCells:
                     return $"Grid lines could not be read. Set the size with the D-pad: {Counts.Columns} columns, {Counts.Rows} rows. Press A when right.";
                 case WizardStep.Review:
-                    return $"Found {Result!.Columns} by {Result.Rows} cells, {Result.PitchX:0.#} pixels apart. Press A to save, B to start again.";
+                    return $"Found {Result!.Columns} by {Result.Rows} cells, {Spacing(Result):0.#} pixels apart. Press A to save, B to start again.";
                 case WizardStep.Done:
                     return "Saved.";
                 default:
@@ -148,6 +148,17 @@ public sealed class CalibrationWizard
         }
 
         Step = WizardStep.CountCells;
+    }
+
+    /// <summary>A single column's horizontal pitch is a placeholder, so its spacing is read downwards.</summary>
+    private static double Spacing(GridSpec grid)
+    {
+        if (grid.Columns == 1)
+        {
+            return grid.PitchY;
+        }
+
+        return grid.PitchX;
     }
 
     private static int Fewest(int first, int last)
