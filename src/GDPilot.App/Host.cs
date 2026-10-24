@@ -89,7 +89,7 @@ internal static class Host
         }
 
         ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness, jumping));
-        Mapper mapper = new(config.Mapping(), layers[Mode.Combat]) { Wheel = config.Wheel(), Lock = config.LockOn(), SoftAim = config.SoftAim() };
+        Mapper mapper = new(config.Mapping(), layers[Mode.Combat]) { Wheel = config.Wheel(), Lock = config.LockOn(), SoftAim = config.SoftAim(), TwinStick = config.Input.TwinStick };
 
         // A replay is timed from the first tick, so startup does not eat into it.
         Stopwatch replayClock = new();

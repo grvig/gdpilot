@@ -85,6 +85,13 @@ public sealed class GDPilotConfigTests
     }
 
     [Fact]
+    public void TwinStickAimingIsOnUnlessTurnedOff()
+    {
+        Assert.True(GDPilotConfig.Parse("{}").Input.TwinStick);
+        Assert.False(GDPilotConfig.Parse("""{ "input": { "twinStick": false } }""").Input.TwinStick);
+    }
+
+    [Fact]
     public void AnalogMovementIsOnUnlessTurnedOff()
     {
         Assert.True(GDPilotConfig.Parse("{}").Input.AnalogMovement);

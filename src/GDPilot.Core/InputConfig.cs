@@ -61,6 +61,13 @@ public sealed class InputConfig
     public bool AnalogMovement { get; init; } = true;
 
     /// <summary>
+    /// Whether, in the game's own camera and out in the world, the right stick
+    /// points the cursor at the ground round the character rather than pushing a
+    /// free cursor about. Panels always keep the free cursor.
+    /// </summary>
+    public bool TwinStick { get; init; } = true;
+
+    /// <summary>
     /// Whether grid presses read the screen and jump between items. Off, they
     /// step one cell at a time, which never depends on what the screen shows.
     /// </summary>

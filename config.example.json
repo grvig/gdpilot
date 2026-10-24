@@ -18,6 +18,7 @@
     "lockRange": 25,
     "softAim": true,
     "analogMovement": true,
+    "twinStick": true,
     "jumpToItems": true,
     "calibration": {
       "leftCenterX": 0.0,
