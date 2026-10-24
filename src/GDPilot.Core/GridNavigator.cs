@@ -106,8 +106,17 @@ public sealed class GridNavigator
             return intents;
         }
 
-        tab = ((tab + step) % tabs.Columns + tabs.Columns) % tabs.Columns;
-        (int x, int y) = tabs.Centre(new GridCell(tab, 0));
+        // The stash draws its tabs as a column down its left edge, but a row is just as possible.
+        int count = Math.Max(tabs.Columns, tabs.Rows);
+        tab = ((tab + step) % count + count) % count;
+        GridCell cell = new(tab, 0);
+
+        if (tabs.Columns == 1)
+        {
+            cell = new GridCell(0, tab);
+        }
+
+        (int x, int y) = tabs.Centre(cell);
         intents.Add(new PointerMoveTo(x, y));
         intents.Add(new PointerDown(PointerButton.Left));
         intents.Add(new PointerUp(PointerButton.Left));

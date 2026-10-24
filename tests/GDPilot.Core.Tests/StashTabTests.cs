@@ -33,6 +33,19 @@ public sealed class StashTabTests
     }
 
     [Fact]
+    public void ATabColumnIsSteppedDownwards()
+    {
+        GridReadiness column = new(
+            true,
+            "ready",
+            new Dictionary<string, GridSpec> { ["Stash.Tabs"] = new GridSpec(473, 463, 1, 38, 1, 2) });
+        GridNavigator navigator = new(column);
+
+        Assert.Equal(new PointerMoveTo(473, 501), navigator.Tab(Mode.Stash, 1)[0]);
+        Assert.Equal(new PointerMoveTo(473, 463), navigator.Tab(Mode.Stash, 1)[0]);
+    }
+
+    [Fact]
     public void TheTabStripIsNotOneOfTheGridsNextCyclesThrough()
     {
         GridNavigator navigator = new(Ready);
