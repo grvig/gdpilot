@@ -2853,9 +2853,11 @@ DWORD WINAPI Link(LPVOID)
     {
         HANDLE pipe = CreateFileW(PipePath, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
 
+        // Half a second: live, a press in the first two seconds after GDPilot started found
+        // nothing connected yet. Trying to open a pipe that is not there costs nothing.
         if (pipe == INVALID_HANDLE_VALUE)
         {
-            Sleep(2000);
+            Sleep(500);
             continue;
         }
 

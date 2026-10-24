@@ -27,7 +27,7 @@ it.
    It runs `--check-game` first and refuses on any mismatch. Once loaded, it
    stays until the game exits; a new build needs a game restart.
 
-3. Run GDPilot as usual. The in-game part connects to it within two seconds.
+3. Run GDPilot as usual. The in-game part connects to it within half a second.
 
 | Control | What it does |
 | --- | --- |
