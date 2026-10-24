@@ -8,7 +8,7 @@ public sealed class InteractMappingTests
 
     private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600));
 
-    private static readonly ButtonLayers Combat = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "interact:Space" }, 0.5);
+    private static readonly ButtonLayers Combat = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "interact:Space", ["RightBumper"] = "mouse:left" }, 0.5);
 
     private static readonly GamepadSnapshot Press = GamepadSnapshot.Rest with { Buttons = GamepadButtons.A };
 
@@ -74,5 +74,37 @@ public sealed class InteractMappingTests
         mapper.Tick(GamepadSnapshot.Rest, Tick);
 
         Assert.Null(mapper.Offered);
+    }
+
+    [Fact]
+    public void AnAttackHeldThroughAClickIsPressedAgainAfterIt()
+    {
+        Mapper mapper = Near(new NearbyThing(1, ThingKind.Loot, 0.5, 0.6, 2));
+        GamepadSnapshot attacking = GamepadSnapshot.Rest with { Buttons = GamepadButtons.RightBumper };
+        mapper.Tick(attacking, Tick);
+        List<InputIntent> sent = new();
+
+        sent.AddRange(mapper.Tick(attacking with { Buttons = GamepadButtons.RightBumper | GamepadButtons.A }, Tick));
+
+        for (int tick = 0; tick < 12; tick++)
+        {
+            sent.AddRange(mapper.Tick(attacking, Tick));
+        }
+
+        // The last word on the left button is that it is down again, as the bumper still asks.
+        Assert.Equal(new PointerDown(PointerButton.Left), sent.Last(intent => intent is PointerDown or PointerUp));
+    }
+
+    [Fact]
+    public void ASuspensionMidClickLeavesNothingHeldOrStuck()
+    {
+        Mapper mapper = Near(new NearbyThing(1, ThingKind.Loot, 0.5, 0.6, 2));
+        mapper.Tick(Press, Tick);
+
+        mapper.Reset();
+        List<InputIntent> sent = mapper.Tick(GamepadSnapshot.Rest, Tick);
+
+        Assert.DoesNotContain(new PointerUp(PointerButton.Left), sent);
+        Assert.Contains(new PointerMoveTo(960, 410), sent);
     }
 }

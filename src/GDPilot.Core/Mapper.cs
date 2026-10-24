@@ -353,6 +353,9 @@ public sealed class Mapper
         intents.Add(new PointerUp(PointerButton.Left));
         clicking = false;
         cursorAt = null;
+
+        // An attack held through the click was let go with it, and is pressed again on the next tick.
+        differ.Forget(PointerButton.Left);
         return true;
     }
 

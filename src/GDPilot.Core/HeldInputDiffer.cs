@@ -19,6 +19,16 @@ public sealed class HeldInputDiffer
         heldButtons.Clear();
     }
 
+    /// <summary>
+    /// Forgets one mouse button without releasing it, for when a click of its
+    /// own has already let it go; if it is still wanted, the next update presses
+    /// it again.
+    /// </summary>
+    public void Forget(PointerButton button)
+    {
+        heldButtons.Remove(button);
+    }
+
     public List<InputIntent> Update(IReadOnlySet<KeyCode> wantedKeys, IReadOnlySet<PointerButton> wantedButtons)
     {
         List<InputIntent> intents = new();
