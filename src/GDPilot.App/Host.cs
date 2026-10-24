@@ -13,7 +13,8 @@ internal static class Host
     private static readonly TimeSpan StallThreshold = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan WatchdogPoll = TimeSpan.FromMilliseconds(50);
 
-    internal static int Run(GDPilotConfig config, bool dryRun, TimeSpan? duration)
+    /// <param name="replay">A recorded pad performance to play instead of reading the real pad, or null.</param>
+    internal static int Run(GDPilotConfig config, bool dryRun, TimeSpan? duration, GamepadTrace? replay)
     {
         IInputSink output = new SendInputSink();
         Func<bool> gameInFront = () => ForegroundProbe.IsInFront(config.GameProcess);
@@ -44,7 +45,6 @@ internal static class Host
         StallDetector stall = new(StallThreshold, () => clock.Elapsed);
         using Watchdog watchdog = new(stall, WatchdogPoll, guarded.ReleaseAll);
         using KillSwitchHook killSwitch = new(KeyChord.Parse(config.KillSwitch), () => Toggle(suspension));
-        using SdlGamepadSource pad = new();
 
         // Parsed once up front, since the loop swaps tables on every mode change.
         Dictionary<Mode, ButtonLayers> layers = new();
@@ -66,7 +66,24 @@ internal static class Host
         Console.WriteLine($"Grids: {readiness.Message}");
         ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness));
         Mapper mapper = new(config.Mapping(), layers[Mode.Combat]);
-        Calibrate(pad, mapper);
+
+        // A replay is timed from the first tick, so startup does not eat into it.
+        Stopwatch replayClock = new();
+        using SdlGamepadSource? sdl = OpenPad(replay);
+        IGamepadSource pad;
+
+        if (sdl is not null)
+        {
+            pad = sdl;
+            Calibrate(sdl, mapper);
+        }
+        else
+        {
+            pad = new ReplayGamepadSource(replay!, () => replayClock.Elapsed);
+            duration = TimeSpan.FromMilliseconds(replay!.Entries[^1].At + 500);
+            Console.WriteLine($"Replaying {replay.Entries.Count} pad states over {duration.Value.TotalSeconds:F1} s instead of reading the pad.");
+        }
+
         ControlLoop loop = new(pad, modes, mapper, guarded, stall, new FocusWatcher(gameInFront, suspension), suspension);
         using OverlayHost? overlay = StartOverlay(config);
 
@@ -83,6 +100,7 @@ internal static class Host
         try
         {
             TimeSpan last = clock.Elapsed;
+            replayClock.Start();
 
             while (!stop.IsCancellationRequested && (duration is null || clock.Elapsed < duration))
             {
@@ -119,6 +137,16 @@ internal static class Host
         double seconds = (clock.Elapsed - started).TotalSeconds;
         Console.WriteLine($"Stopped. Everything held has been released. {ticks} ticks at {ticks / seconds:F0} Hz against {config.Input.PollHz} configured.");
         return 0;
+    }
+
+    private static SdlGamepadSource? OpenPad(GamepadTrace? replay)
+    {
+        if (replay is not null)
+        {
+            return null;
+        }
+
+        return new SdlGamepadSource();
     }
 
     private static OverlayHost? StartOverlay(GDPilotConfig config)

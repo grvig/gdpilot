@@ -67,6 +67,14 @@ internal static class Program
             Console.WriteLine("Dry run: nothing is injected; intents are printed instead.");
         }
 
-        return Host.Run(config, dryRun, duration);
+        GamepadTrace? replay = null;
+        int replayAt = Array.IndexOf(args, "--replay");
+
+        if (replayAt >= 0 && replayAt + 1 < args.Length)
+        {
+            replay = GamepadTrace.Parse(File.ReadAllText(args[replayAt + 1]));
+        }
+
+        return Host.Run(config, dryRun, duration, replay);
     }
 }
