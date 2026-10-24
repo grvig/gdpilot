@@ -391,3 +391,27 @@ the game see a bare click at the end of the press.
 Calibrations are saved by parsing the configuration and writing it back,
 which loses comments. Keeping them would need a hand-written JSON editor, and
 a lost comment is a smaller cost than a corrupted configuration.
+
+## 2026-10-24 — The stash, its tabs, and checking without a pad
+
+The stash's tabs are a column of buttons down its left edge, so a tab strip
+may be one column as well as one row. The navigator steps along whichever
+way the strip runs.
+
+Below the owned tabs, the stash shows a coin button and padlocks, and clicking
+either offers to sell another tab for iron bits. One click during calibration
+bought a second tab, for 25,000 iron bits of a test character's money. So a tab
+strip covers only owned tabs, and the shipped one has two. Wrapping at the
+ends, rather than stepping past them, is what keeps the purchase prompt out of
+reach.
+
+`--replay` plays a recorded pad trace through the real host, injection and
+overlay included, in place of the pad. It was added to check the whole chain
+in the game with nobody at the pad, and it is how the stash was checked end to
+end. The same trace is a test, so what was seen in the game stays pinned.
+
+The wizard takes `--at` and `--counts` for the same reason, and for setups
+where pointing with a stick is awkward. Both routes run the same wizard steps.
+
+Right click uses or equips the item under it. It does not move items into the
+stash, so no transfer binding is shipped.
