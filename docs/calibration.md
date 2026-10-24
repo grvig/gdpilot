@@ -59,24 +59,34 @@ lands on the top-left cell.
 | `Vendor`, the trader's goods | (483, 323) | 32 | 10 × 18 |
 | `Vendor.Bag1`, the main bag | (824, 645) | 32 | 12 × 8 |
 | `Vendor.Bag2`, the second bag | (1217, 645) | 32 | 8 × 8 |
+| `Stash`, the stash's current tab | (529, 293) | 32 | 10 × 19 |
+| `Stash.Bag1`, the main bag | (870, 645) | 32 | 12 × 8 |
+| `Stash.Bag2`, the second bag | (1263, 645) | 32 | 8 × 8 |
+| `Stash.Tabs`, the tab buttons | (473, 463) | 38 down | 1 × 2 |
 
-The bags appear twice because the game draws them in two places. With a
-trader's window open, the inventory panel moves right by 172 pixels and stays
-at the same height. A grid per surface, rather than per mode, would have
-clicked the wrong cells while trading.
+The bags appear three times because the game draws them in three places. With
+a trader's window open, the inventory panel moves right by 172 pixels and
+stays at the same height; with the stash open, by 218. A grid per surface,
+rather than per mode, would have clicked the wrong cells while trading or
+storing.
 
 The numbers were measured from the captures in `tests/fixtures/screens`.
 Empty cells are dark and edged with thin bright lines. Averaging brightness
 along rows and columns through a grid gives sharp peaks every 32 pixels, and
 cell centres sit halfway between them.
 
-Two checks confirmed the bag grids:
-- **Live.** Moving the cursor to the computed centre of each bag's top-left
-  cell showed that item's tooltip.
+Three checks confirmed them:
+- **Live.** Moving the cursor to the computed centre of a top-left cell showed
+  that item's tooltip, in every mode: the bags alone, the trader's first item
+  and both bags while trading, and the stash's first item and both bags.
+- **End to end.** On 2026-10-24 GDPilot itself, fed a recorded pad trace with
+  `--replay`, walked the stash cells, switched to the second tab and back,
+  cycled every grid and opened the game's split dialog with LT+A. That trace is
+  `tests/fixtures/traces/stash-tour.json`, and a test pins what it sends.
 - **Automated.** `CalibrationFixtureTests` checks the shipped numbers against
   the captures on every integration test run. It fails if an origin moves by
-  half a cell. `GridDetectionFixtureTests` checks that the detector finds all
-  five grids on its own.
+  half a cell. `GridDetectionFixtureTests` checks that the detector, and the
+  wizard's search, find all eight grids on their own.
 
 ## Measuring a capture
 
@@ -118,10 +128,24 @@ profile for the live display, which becomes the active profile. A first save
 starts from `config.example.json`, so its bindings come along. The file is
 read and written back whole, so comments in it are not kept.
 
+Without a pad, give the two corner cells as numbers instead:
+`--calibrate Stash --at 529 293 817 869`. If the lines cannot be read there,
+add the size as `--counts <columns> <rows>`. A grid that is detected is saved
+as found, and the counts are ignored.
+
 A tab strip is calibrated the same way, with the first and last tabs as the
-two points. Points within a few pixels of level make a single row. Name it
-after its mode with `.Tabs`, as in `Stash.Tabs`. The bumpers' `tab:next` and
-`tab:previous` click through it and wrap at the ends. `grid:next` skips it.
+two points. Points within a few pixels of level make a single row, and points
+within a few pixels of each other across make a single column, which is how
+the stash draws its tabs. Tab buttons have no grid lines to read, so give the
+count: `--calibrate Stash.Tabs --at 473 463 473 501 --counts 1 2`. Name a
+strip after its mode with `.Tabs`. The bumpers' `tab:next` and `tab:previous`
+click through it and wrap at the ends. `grid:next` skips it.
+
+**Count only the tabs you own.** Below the stash's tabs sit a coin button and
+padlocks. Clicking either asks to buy another tab for iron bits, so a strip
+that reached them would put a purchase prompt one bumper press away. The
+shipped strip has two tabs. When you buy more, calibrate the strip again with
+the new count.
 
 To calibrate by hand instead, run `GDPilot.exe --capture <name>` to save the
 client area and its profile, then measure with `--detect` or an image editor.
@@ -132,11 +156,16 @@ Pitch is the span divided by the count minus one: `(lastX - firstX) / (columns -
 A `mouse:` binding can carry one modifier, held across the whole click:
 `mouse:ctrl+left`, `mouse:shift+right`, `mouse:alt+left`. The example binds
 Ctrl+Left click to LT+A in the panel modes. The modifier goes down before the
-button and comes up after it, so the game never sees a bare click.
+button and comes up after it, so the game never sees a bare click. In the game
+it opens the split dialog on a stack, in the bags, while trading and at the
+stash.
+
+Right click, on X in the panel modes, uses or equips the item under the
+cursor. It does not move an item into the stash.
 
 ## Known gaps
 
-- **The stash** has no capture, grids or tab strip yet. Its bindings are in
-  the example, waiting for `--calibrate Stash` and `--calibrate Stash.Tabs`.
-- **Live checks** of the vendor grids, the wizard, tab switching and modifier
-  clicks are still to do. The bag grids are the only ones confirmed in the game.
+- **Only 1920×1080 at UI scale 0.5 is shipped.** Any other display needs its
+  own grids, from the wizard.
+- **The pad-driven wizard** has not been run in the game, since nobody was at
+  the pad. Its steps are tested, and the same steps run live through `--at`.
