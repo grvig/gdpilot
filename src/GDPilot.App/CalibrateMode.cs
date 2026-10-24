@@ -128,7 +128,8 @@ internal static class CalibrateMode
         int width = area.Width - (left - area.X);
         int height = area.Height - (top - area.Y);
         CapturedFrame frame = ScreenCapture.Region(left, top, width, height);
-        GridSpec? found = DetectMode.Find(frame, 0, 0, width, height);
+        // Find takes its right and bottom edges inclusively.
+        GridSpec? found = DetectMode.Find(frame, 0, 0, width - 1, height - 1);
 
         if (found is null)
         {
