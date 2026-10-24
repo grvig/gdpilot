@@ -57,7 +57,7 @@ internal static class Program
 
         if (calibrateAt >= 0 && calibrateAt + 1 < args.Length)
         {
-            return CalibrateMode.Run(config, args[calibrateAt + 1]);
+            return CalibrateMode.Run(config, args[calibrateAt + 1], Numbers(args, "--at", 4), Counts(args));
         }
 
         Console.WriteLine($"GDPilot. Kill switch: {config.KillSwitch}. Press Ctrl+C to quit.");
@@ -76,5 +76,30 @@ internal static class Program
         }
 
         return Host.Run(config, dryRun, duration, replay);
+    }
+
+    /// <summary>The given number of whole numbers after a flag, or null when the flag is absent or short.</summary>
+    private static int[]? Numbers(string[] args, string flag, int count)
+    {
+        int at = Array.IndexOf(args, flag);
+
+        if (at < 0 || at + count >= args.Length)
+        {
+            return null;
+        }
+
+        return args.Skip(at + 1).Take(count).Select(value => int.Parse(value, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+    }
+
+    private static (int Columns, int Rows)? Counts(string[] args)
+    {
+        int[]? counts = Numbers(args, "--counts", 2);
+
+        if (counts is null)
+        {
+            return null;
+        }
+
+        return (counts[0], counts[1]);
     }
 }
