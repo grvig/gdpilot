@@ -91,6 +91,56 @@ public sealed class TraceReplayTests
         }
     }
 
+    /// <summary>
+    /// The tour that was played live into the game on 2026-10-24 through --replay,
+    /// with the shipped configuration: stash cells, the first bag, both tabs, every
+    /// grid in turn, and a Ctrl+click that opened the game's split dialog.
+    /// </summary>
+    [Fact]
+    public void TheStashTourSendsTheCellsTabsAndSplitClickThatWorkedInTheGame()
+    {
+        GDPilotConfig config = GDPilotConfig.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "config.example.json")));
+        GridReadiness readiness = GridReadiness.Check(config, new LiveDisplay(1920, 1080, 0.5));
+        GamepadTrace trace = Load("stash-tour.json");
+        TimeSpan now = TimeSpan.Zero;
+        ReplayGamepadSource source = new(trace, () => now);
+        ModeController modes = new(config.PanelKeys(), mode => config.ButtonsFor(mode.ToString()), new GridNavigator(readiness));
+        Mapper mapper = new(config.Mapping(), config.ButtonsFor(nameof(Mode.Combat)));
+        List<InputIntent> sent = new();
+
+        while (now <= TimeSpan.FromMilliseconds(trace.Entries[^1].At))
+        {
+            GamepadSnapshot snapshot = source.Read();
+            sent.AddRange(modes.Tick(snapshot, Tick));
+            mapper.Buttons = modes.CurrentLayers;
+            sent.AddRange(mapper.Tick(snapshot, Tick));
+            now += Tick;
+        }
+
+        Assert.Equal(
+            new InputIntent[]
+            {
+                new PointerMoveTo(529, 293),
+                new PointerMoveTo(561, 293),
+                new PointerMoveTo(561, 325),
+                new PointerMoveTo(870, 645),
+                new PointerMoveTo(473, 501),
+                new PointerDown(PointerButton.Left),
+                new PointerUp(PointerButton.Left),
+                new PointerMoveTo(473, 463),
+                new PointerDown(PointerButton.Left),
+                new PointerUp(PointerButton.Left),
+                new PointerMoveTo(1263, 645),
+                new PointerMoveTo(529, 293),
+                new PointerMoveTo(870, 645),
+                new KeyDown(KeyCode.LeftControl),
+                new PointerDown(PointerButton.Left),
+                new PointerUp(PointerButton.Left),
+                new KeyUp(KeyCode.LeftControl),
+            },
+            sent);
+    }
+
     private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600));
 
     private static GamepadTrace Load(string fixture)
