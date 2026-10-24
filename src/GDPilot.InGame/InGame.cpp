@@ -1602,9 +1602,11 @@ std::string RingText(const Ring& around)
 // the region, then the position, then the rotation.
 using EntitiesInSphere = void (*)(const void* world, void* found, void* region, const float* sphere, bool flag, int kind);
 using CoordsOf = const unsigned char* (*)(const void* entity);
+using BoxOf = const float* (*)(const void* entity, bool flag);
 
 EntitiesInSphere entitiesInSphere = nullptr;
 CoordsOf coordsOf = nullptr;
+BoxOf boxOf = nullptr;
 void** engineGlobal = nullptr;
 const unsigned char* itemClass = nullptr;
 const unsigned char* oneShotClass = nullptr;
@@ -1635,6 +1637,7 @@ void FindInteractables()
     HMODULE engine = GetModuleHandleW(L"Engine.dll");
     void* query = reinterpret_cast<void*>(GetProcAddress(engine, "?GetEntitiesInSphere@World@GAME@@QEBAXAEAV?$vector@PEAVEntity@GAME@@@mem@@PEAVRegion@2@AEBVSphere@2@_NW4EntityListType@2@@Z"));
     void* coords = reinterpret_cast<void*>(GetProcAddress(engine, "?GetCoordsUnparented@Entity@GAME@@QEBAAEBVWorldCoords@2@XZ"));
+    void* box = reinterpret_cast<void*>(GetProcAddress(engine, "?GetRegionBoundingBox@Entity@GAME@@QEBAAEBVABBox@2@_N@Z"));
     engineGlobal = reinterpret_cast<void**>(GetProcAddress(engine, "?gEngine@GAME@@3PEAVEngine@1@EA"));
     itemClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@Item@GAME@@1VRTTI_ClassInfo@2@B"));
     oneShotClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@OneShot@GAME@@1VRTTI_ClassInfo@2@B"));
@@ -1644,7 +1647,7 @@ void FindInteractables()
     portalClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@DynamicTeleporter@GAME@@1VRTTI_ClassInfo@2@B"));
     const void* reached = reinterpret_cast<const unsigned char*>(game) + WorldReached;
 
-    if (query == nullptr || coords == nullptr || engineGlobal == nullptr || itemClass == nullptr || oneShotClass == nullptr || fixedItemClass == nullptr || leverClass == nullptr || gateClass == nullptr || portalClass == nullptr || !StartsWith(query, "4d85c00f847a0100004c8bdc4d894b20") || !StartsWith(coords, "488d81d8000000c3") || !StartsWith(reached, "488b4950") || targetsInRadius == nullptr)
+    if (query == nullptr || coords == nullptr || engineGlobal == nullptr || itemClass == nullptr || oneShotClass == nullptr || fixedItemClass == nullptr || leverClass == nullptr || gateClass == nullptr || portalClass == nullptr || !StartsWith(query, "4d85c00f847a0100004c8bdc4d894b20") || !StartsWith(coords, "488d81d8000000c3") || box == nullptr || !StartsWith(box, "84d2740b807974") || !StartsWith(reached, "488b4950") || targetsInRadius == nullptr)
     {
         entitiesInSphere = nullptr;
         Say("Smart interact off: the game's entity query or its world has changed.");
@@ -1653,6 +1656,7 @@ void FindInteractables()
 
     entitiesInSphere = reinterpret_cast<EntitiesInSphere>(query);
     coordsOf = reinterpret_cast<CoordsOf>(coords);
+    boxOf = reinterpret_cast<BoxOf>(box);
     Say("Found the game's entity query; smart interact can see loot, townsfolk and the world's fixed things.");
 }
 
@@ -1738,19 +1742,26 @@ int ScanThings(void* camera, const int viewport[4], Thing seenThings[], int most
                 ahead -= (relative[axis] - back[axis]) * back[axis];
             }
 
-            // Loot lies on the ground; a townsman is clicked at the chest; a fixed thing a little up.
-            float lift = 0.8f;
-
+            // Loot is clicked at the middle of its bounds: live, a dropped item lay a unit
+            // from its own position, and a click there missed, while one at the middle of
+            // its bounds picked it up. The bounds are a centre then half their size, in the
+            // entity's region. A townsman is clicked at the chest, a fixed thing a little up,
+            // as opened Kerrick's shop and the rift gate live.
             if (kind == 1)
             {
-                lift = 0.15f;
+                const float* bounds = boxOf(*entity, false);
+                where.x = bounds[0];
+                where.y = bounds[1];
+                where.z = bounds[2];
             }
             else if (kind == 2)
             {
-                lift = actorHeight(*entity) * 0.6f;
+                (&where.x)[Up] += actorHeight(*entity) * 0.6f;
             }
-
-            (&where.x)[Up] += lift;
+            else
+            {
+                (&where.x)[Up] += 0.8f;
+            }
             float screen[2]{};
             projectPoint(camera, screen, &where, viewport);
             float x = screen[0] / static_cast<float>(viewport[2]);

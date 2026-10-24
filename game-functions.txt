@@ -72,6 +72,7 @@ Game.dll ?HandleActionFromJoystick@ControllerPlayer@GAME@@QEAA_NAEBVWorldVec3@2@
 # a click picks up, talks to or uses.
 Engine.dll ?GetEntitiesInSphere@World@GAME@@QEBAXAEAV?$vector@PEAVEntity@GAME@@@mem@@PEAVRegion@2@AEBVSphere@2@_NW4EntityListType@2@@Z
 Engine.dll ?gEngine@GAME@@3PEAVEngine@1@EA
+Engine.dll ?GetRegionBoundingBox@Entity@GAME@@QEBAAEBVABBox@2@_N@Z
 Game.dll ?classInfo@Item@GAME@@1VRTTI_ClassInfo@2@B
 Game.dll ?classInfo@OneShot@GAME@@1VRTTI_ClassInfo@2@B
 Game.dll ?classInfo@FixedItem@GAME@@1VRTTI_ClassInfo@2@B
