@@ -18,6 +18,9 @@ public sealed class GridDetectionFixtureTests
     [InlineData("vendor.png", 460, 295, 800, 895, 483, 323, 10, 18)]
     [InlineData("vendor.png", 800, 620, 1196, 895, 824, 645, 12, 8)]
     [InlineData("vendor.png", 1190, 620, 1465, 895, 1217, 645, 8, 8)]
+    [InlineData("stash.png", 506, 270, 840, 890, 529, 293, 10, 19)]
+    [InlineData("stash.png", 850, 622, 1245, 892, 870, 645, 12, 8)]
+    [InlineData("stash.png", 1240, 622, 1510, 892, 1263, 645, 8, 8)]
     public void EachGridInTheCapturesIsFound(string capture, int left, int top, int right, int bottom, int originX, int originY, int columns, int rows)
     {
         CapturedFrame frame = Load(capture);
@@ -44,6 +47,9 @@ public sealed class GridDetectionFixtureTests
     [InlineData("vendor.png", 483, 323, 771, 867)]
     [InlineData("vendor.png", 824, 645, 1176, 869)]
     [InlineData("vendor.png", 1217, 645, 1441, 869)]
+    [InlineData("stash.png", 529, 293, 817, 869)]
+    [InlineData("stash.png", 870, 645, 1222, 869)]
+    [InlineData("stash.png", 1263, 645, 1487, 869)]
     public void TheWizardFindsEachGridFromItsCornerCells(string capture, int firstX, int firstY, int lastX, int lastY)
     {
         CapturedFrame frame = Load(capture);
