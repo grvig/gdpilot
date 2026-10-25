@@ -441,3 +441,52 @@ surroundings and a covered one 3 to 5.
 Grouping a multi-cell item into one target is not done yet. Neither grid lines
 nor box edges mark item boundaries reliably in the captures: common items have
 no box, and some boxes let lines show through.
+
+## 2026-10-25 — A controller-first overhaul, with an in-game part
+
+The owner widened GDPilot from a controller layer to a controller-first
+overhaul: a third-person action camera, lock-on, radial skills and snapping
+menus. A camera cannot be moved with key presses, so the founding rule against
+touching the game process is amended, not dropped: an optional in-game part
+may load into the game to drive the camera and read game state. It never
+changes anything that affects how the game plays out.
+
+Why it is feasible, checked on the installed game that day:
+- The game's own DLLs export their functions by name. Game.dll names 25,113,
+  including `GameCamera::SetZoom`, `WorldCamera::SetCameraPitch` and
+  `InventorySack::GetInventory`, which returns every item's rectangle.
+- GrimAction, an MIT-licensed third-person camera from September 2026, already
+  maps the camera. Its pinned build no longer matches the installed game, but
+  all 29 camera functions it uses are still present by name; only their
+  addresses moved, and in five, a field offset shifted.
+
+Why a hybrid rather than all of it inside the game:
+- The kill switch must work when the game hangs, so it stays outside.
+- A patch that breaks the in-game part must not take the controls with it.
+  Outside, input has never depended on game internals.
+- GrimAction found that reading the pad from inside the game broke the game's
+  own controller input.
+The user still sees one thing: one download, and the controller side loads
+the in-game part itself. A drop-in loader in the game folder replaces that for
+the public release.
+
+The two parts talk over a named pipe restricted to the current user, in
+one-line JSON reports carrying a protocol number. A mismatched pair says to
+update both, once, instead of misreading. Reports the controller side does not
+know are skipped, so either side can grow first.
+
+Multi-cell items are taken from the game's rectangles, not the screen. Colour
+along the shared edge of two cells separated items well in four of five grids,
+but merged two same-coloured neighbours in the crowded main bag, and a merge
+makes an item unreachable. The screen reading stays as the fallback, with every
+cell its own stop.
+
+Pressing a direction from an item now measures from that item's far edge, not
+its top-left cell, so a press down from a tall sword goes below the sword
+rather than to the item beside it.
+
+`game-functions.txt` lists every function the in-game part may call, and
+`--check-game` reads the installed DLLs' export tables to confirm them. All 33
+were present on 2026-10-25.
+
+Gyro aiming was considered and shelved by the owner.
