@@ -15,6 +15,13 @@ public sealed class GDPilotConfigTests
     }
 
     [Fact]
+    public void JumpingBetweenItemsIsOnUnlessTurnedOff()
+    {
+        Assert.True(GDPilotConfig.Parse("{}").Input.JumpToItems);
+        Assert.False(GDPilotConfig.Parse("""{ "input": { "jumpToItems": false } }""").Input.JumpToItems);
+    }
+
+    [Fact]
     public void CommentsTrailingCommasAndAnyCaseAreAccepted()
     {
         GDPilotConfig config = GDPilotConfig.Parse("""

@@ -10,6 +10,7 @@
     },
     "walkThreshold": 0.25,
     "chordTrigger": 0.5,
+    "jumpToItems": true,
     "calibration": {
       "leftCenterX": 0.0,
       "leftCenterY": 0.0

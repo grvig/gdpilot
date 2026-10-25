@@ -64,7 +64,14 @@ internal static class Host
         }
 
         Console.WriteLine($"Grids: {readiness.Message}");
-        ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness));
+        IOccupancySource? occupancy = null;
+
+        if (config.Input.JumpToItems)
+        {
+            occupancy = new ScreenOccupancy();
+        }
+
+        ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness, occupancy));
         Mapper mapper = new(config.Mapping(), layers[Mode.Combat]);
 
         // A replay is timed from the first tick, so startup does not eat into it.

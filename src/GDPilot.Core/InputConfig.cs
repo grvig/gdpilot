@@ -13,6 +13,12 @@ public sealed class InputConfig
     public double ChordTrigger { get; init; } = 0.5;
 
     public CursorConfig Cursor { get; init; } = new();
+
+    /// <summary>
+    /// Whether grid presses read the screen and jump between items. Off, they
+    /// step one cell at a time, which never depends on what the screen shows.
+    /// </summary>
+    public bool JumpToItems { get; init; } = true;
 }
 
 public sealed class DeadzoneConfig
