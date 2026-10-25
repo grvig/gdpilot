@@ -1,9 +1,9 @@
 namespace GDPilot.Core;
 
-/// <summary>Reads a grid's occupancy from wherever its pixels come from, or null when it cannot.</summary>
+/// <summary>Reads a grid's occupancy, by its profile name such as "Inventory.Bag2", or null when it cannot.</summary>
 public interface IOccupancySource
 {
-    OccupancyMap? Read(GridSpec grid, OccupancyMap? previous);
+    OccupancyMap? Read(string name, GridSpec grid, OccupancyMap? previous);
 }
 
 /// <summary>One item's place in a grid, in cells, as the game itself records it. Ids are never 0.</summary>

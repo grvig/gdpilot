@@ -18,7 +18,7 @@ internal static class OccupancyMode
         }
 
         GridSpec grid = entry.ToSpec();
-        OccupancyMap? map = new ScreenOccupancy().Read(grid, null);
+        OccupancyMap? map = new ScreenOccupancy().Read(gridName, grid, null);
 
         if (map is null)
         {

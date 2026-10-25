@@ -197,7 +197,7 @@ public sealed class TraceReplayTests
             this.rows = rows;
         }
 
-        public OccupancyMap? Read(GridSpec grid, OccupancyMap? previous)
+        public OccupancyMap? Read(string name, GridSpec grid, OccupancyMap? previous)
         {
             CellState[,] states = new CellState[grid.Columns, grid.Rows];
 

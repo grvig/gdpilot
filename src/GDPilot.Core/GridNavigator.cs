@@ -151,7 +151,7 @@ public sealed class GridNavigator
         }
 
         known.TryGetValue(name, out OccupancyMap? previous);
-        OccupancyMap? map = occupancy.Read(grid, previous);
+        OccupancyMap? map = occupancy.Read(name, grid, previous);
 
         if (map is null || !map.IsConfident)
         {

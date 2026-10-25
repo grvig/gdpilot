@@ -187,7 +187,7 @@ public sealed class ItemJumpTests
 
         public OccupancyMap? LastPrevious { get; private set; }
 
-        public OccupancyMap? Read(GridSpec grid, OccupancyMap? previous)
+        public OccupancyMap? Read(string name, GridSpec grid, OccupancyMap? previous)
         {
             LastPrevious = previous;
             return map;

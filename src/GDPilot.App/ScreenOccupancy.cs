@@ -13,7 +13,7 @@ internal sealed class ScreenOccupancy : IOccupancySource
     /// <summary>Room around the outer lines, so the line check beside the edge cells stays inside the capture.</summary>
     private const int Margin = 6;
 
-    public OccupancyMap? Read(GridSpec grid, OccupancyMap? previous)
+    public OccupancyMap? Read(string name, GridSpec grid, OccupancyMap? previous)
     {
         int left = (int)Math.Floor(grid.OriginX - grid.PitchX / 2) - Margin;
         int top = (int)Math.Floor(grid.OriginY - grid.PitchY / 2) - Margin;
