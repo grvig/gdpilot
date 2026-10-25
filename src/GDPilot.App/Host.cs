@@ -64,14 +64,24 @@ internal static class Host
         }
 
         Console.WriteLine($"Grids: {readiness.Message}");
-        IOccupancySource? occupancy = null;
+        IOccupancySource? screen = null;
 
         if (config.Input.JumpToItems)
         {
-            occupancy = new ScreenOccupancy();
+            screen = new ScreenOccupancy();
         }
 
-        ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness, occupancy));
+        // The in-game part, when it runs, reports exact item layouts; until then the screen is read.
+        ReportedOccupancy occupancy = new(screen);
+        using GameLink link = new(occupancy, Console.WriteLine);
+        IOccupancySource? jumping = null;
+
+        if (config.Input.JumpToItems)
+        {
+            jumping = occupancy;
+        }
+
+        ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness, jumping));
         Mapper mapper = new(config.Mapping(), layers[Mode.Combat]);
 
         // A replay is timed from the first tick, so startup does not eat into it.
