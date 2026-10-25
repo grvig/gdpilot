@@ -26,6 +26,13 @@ public sealed class InputConfig
     /// </summary>
     public double FollowSpeed { get; init; } = 0;
 
+    /// <summary>
+    /// How fast the right stick's up and down tilts the third-person camera, in
+    /// degrees per second at full tilt; the left trigger held makes it zoom
+    /// instead. Zero leaves the stick zooming, as it did before tilting.
+    /// </summary>
+    public double TiltSpeed { get; init; } = 60;
+
     /// <summary>Whether the pad rumbles for heavy blows and low health, which needs the in-game part's health reports.</summary>
     public bool Rumble { get; init; } = true;
 

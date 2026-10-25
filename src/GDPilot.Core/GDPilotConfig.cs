@@ -60,7 +60,7 @@ public sealed class GDPilotConfig
     public MappingSettings Mapping()
     {
         CursorSettings cursor = new(Input.Cursor.BaseSpeed, Input.Cursor.Exponent, Input.Cursor.MaxSpeed);
-        return new MappingSettings(Input.Deadzone.Left, Input.Deadzone.Right, Input.WalkThreshold, DirectionKeys.Wasd, cursor, Input.LookSpeed, Input.ZoomSpeed, Input.FollowSpeed);
+        return new MappingSettings(Input.Deadzone.Left, Input.Deadzone.Right, Input.WalkThreshold, DirectionKeys.Wasd, cursor, Input.LookSpeed, Input.ZoomSpeed, Input.FollowSpeed, Input.TiltSpeed);
     }
 
     /// <summary>
@@ -137,6 +137,7 @@ public sealed class GDPilotConfig
         Require(Input.Cursor.BaseSpeed > 0 && Input.Cursor.Exponent > 0 && Input.Cursor.MaxSpeed > 0, "Cursor speeds and exponent must be positive.");
         Wheel();
         Require(Input.LockRange > 0, $"input.lockRange must be above zero, not {Input.LockRange}.");
+        Require(Input.TiltSpeed >= 0, $"input.tiltSpeed cannot be negative, not {Input.TiltSpeed}.");
 
         foreach (string mode in Bindings.Keys)
         {

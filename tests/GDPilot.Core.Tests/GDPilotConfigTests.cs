@@ -11,7 +11,7 @@ public sealed class GDPilotConfigTests
 
         Assert.Equal("Ctrl+Alt+Pause", config.KillSwitch);
         Assert.Equal(250, config.Input.PollHz);
-        Assert.Equal(new MappingSettings(0.22, 0.18, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600)), config.Mapping());
+        Assert.Equal(new MappingSettings(0.22, 0.18, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600), TiltDegreesPerSecond: 60), config.Mapping());
     }
 
     [Fact]
@@ -79,6 +79,7 @@ public sealed class GDPilotConfigTests
     [InlineData("""{ "panels": { "Inventory": "Ctrl+I" } }""")]
     [InlineData("""{ "panels": { "Lobby": "L" } }""")]
     [InlineData("""{ "input": { "lockRange": 0 } }""")]
+    [InlineData("""{ "input": { "tiltSpeed": -1 } }""")]
     public void InvalidValuesAreRejectedAtLoad(string json)
     {
         Assert.Throws<FormatException>(() => GDPilotConfig.Parse(json));
