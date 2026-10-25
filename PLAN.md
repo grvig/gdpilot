@@ -4,6 +4,11 @@ GDPilot — an external controller layer for Grim Dawn v1.3 (Fangs of Asterkarn)
 
 This document is the single source of truth. Work through it in order.
 
+**Expanded on 2026-10-25.** The owner widened the project from a controller
+layer to a controller-first overhaul, with an optional in-game part for the
+camera and for game data. Sections 1 to 16 are the original plan, amended
+where marked. Section 17 holds the new phases, and supersedes section 13.
+
 ---
 
 ## 1. What this is
@@ -25,14 +30,18 @@ Permanent. Do not add them.
 - No game files are modified. No `.dbr` records, no `.arc` archives, no Asset
   Manager work. The official modding tools cannot alter input handling or UI
   navigation — that is compiled into the engine.
-- No process memory is read or written. No injection, no hooking, no signature
-  scanning.
+- ~~No process memory is read or written. No injection, no hooking, no signature
+  scanning.~~ **Amended 2026-10-25:** an optional in-game part may load into
+  the game to drive the camera and read game state, under the rules in section
+  17. It never writes anything that affects how the game plays out, and the
+  controller side must keep working without it.
 - No game assets redistributed.
 - No changes to balance, drops, stats, or progression.
 
-The tool synthesizes operating-system input events and nothing else. That is the
-most patch-resilient class of tool available and it is what keeps this
-maintainable by one person.
+The controller side synthesizes operating-system input events and nothing else.
+That is the most patch-resilient class of tool available, which is why
+everything that can live there does, and why it never depends on the in-game
+part.
 
 ---
 
@@ -72,6 +81,10 @@ Deliberate refusal to touch the process, trading power for surviving patches.
 - Binding layouts are design, not code. Studying published reWASD presets and
   Steam Input configs to inform the default binding table is legitimate and
   encouraged.
+- GrimAction (github.com/Ophemist/GrimAction) is open source under MIT. Its
+  code may be adapted for the in-game part, keeping its copyright notice and
+  recording each reuse in `DECISIONS.md`. This does not extend to the
+  closed-source tools above.
 - Code may be reused from general-purpose open-source input tools — Gopher360,
   AntiMicroX, JoyShockMapper and similar solve stick-to-cursor curves, deadzone
   handling and chorded layers.
@@ -507,6 +520,9 @@ Estimated commits: 14 to 18.
 
 ## 13. Phase 5 — Macros and release
 
+**Superseded 2026-10-25 by section 17, where this becomes Phase 8.** Kept for
+the detail it still carries.
+
 ### Scoped in
 
 - **Fast travel.** Open the world map, template-match the riftgate icon in the
@@ -542,7 +558,9 @@ Estimated commits: 18 to 24.
 | Pad not detected in DirectInput mode | Blocks all use | SDL rather than raw XInput. Document the X/D switch. |
 | Stick drift read as movement | Constant phantom input | Calibration and radial deadzone in Phase 1. |
 | UI scale or resolution change | Wrong clicks | Profile keys include both. Refuse to navigate on mismatch. |
-| Game patch moves the UI | Recalibration | Pixel-based design means a patch costs a calibration run, not a rewrite. This is why memory reading was rejected. |
+| Game patch moves the UI | Recalibration | Pixel-based design means a patch costs a calibration run, not a rewrite. |
+| Game patch breaks the in-game part | Camera and exact data lost until fixed | Functions are found by exported name, not address; `--check-game` reports a gap at once; the in-game part refuses to start on any mismatch, and the controller side falls back to screen reading. |
+| Antivirus flags the in-game part | Install friction | Public source, reproducible builds, no evasion of any kind. A drop-in loader for the public release, which antivirus treats more kindly than reaching into a running process. |
 | Mode desync | Confusing wrong inputs | Panic resync chord, overlay always showing tracked mode. |
 | Untestable logic creeping into adapters | Loss of autonomy | Pure logic lives in `Core`. If it needs hardware to test, it is in the wrong project. |
 | Scope creep | Project identity | Non-goals in section 1 are fixed. |
@@ -551,8 +569,10 @@ Estimated commits: 18 to 24.
 
 ## 15. Publishing
 
-Safe to publish. Original code only, no game assets, no decompiled code, no
-process access, and no anti-cheat to interact with.
+Safe to publish. Original code and MIT-licensed reuse only, no game assets, no
+decompiled code, and no anti-cheat to interact with. The in-game part calls
+functions the game exports by name; it does not ship anything taken from the
+game.
 
 Requirements: MIT licence, an unaffiliated-with-Crate disclaimer in the README,
 minimal screenshots used only where calibration needs explaining, no CI
@@ -567,3 +587,79 @@ phase. Work only within that phase.
 
 End of session: update `PROGRESS.md`, append to `DECISIONS.md` if an open choice
 was resolved, ensure the suite is green, and push.
+
+---
+
+## 17. Expanded vision (2026-10-25)
+
+A controller-first overhaul: a third-person action camera, lock-on, radial
+skills, menus that snap to items, and controls that adapt to what is on screen.
+
+### Architecture: one install, two parts
+
+- **Controller side** (`GDPilot.exe`, C#, everything built so far). Reads the
+  pad, injects input, draws the overlay, owns the kill switch. Never depends on
+  the in-game part.
+- **In-game part** (a native DLL, C++). Loaded into Grim Dawn when it starts.
+  Drives the camera and reports game state over a local named pipe as one-line
+  JSON (`GameReport`, protocol 1): open panels, item layouts, later enemy
+  positions.
+- **Loading.** While building: `GDPilot.exe` loads the in-game part into the
+  running game itself, the way GrimAction does. For the public release: a
+  drop-in loader in the game folder, so starting the game starts everything.
+  The code is the same either way.
+
+### Rules for the in-game part
+
+1. **Find by name.** Every game function is resolved by its exported name.
+   Field offsets inside game objects are read from the code of the game's own
+   getter functions where possible, so a patch that moves things does not need
+   a release. `game-functions.txt` lists every name; `--check-game` checks it.
+2. **Fail closed.** Anything missing or unexpected at load means the in-game
+   part stays off and says why. The controller side carries on with screen
+   reading and the classic camera.
+3. **Write only the camera.** Camera position, angle and zoom. Nothing that
+   changes damage, drops, stats or progression, ever.
+4. **Never read the pad inside the game.** GrimAction found that polling the
+   pad from inside broke the game's own input. The controller side reads it.
+5. **The kill switch outranks everything.** It lives in the controller side,
+   so it works even if the game hangs.
+
+### Phase 5 — The in-game part and the action camera
+
+- Build toolchain for a native DLL, and the loader.
+- Port GrimAction's camera to the installed game build, resolving by name.
+- Third-person camera with shoulder swap, collision and zoom, toggled from the
+  pad. Right stick looks around in third person; a dot marks the aim point.
+- Report open panels (ends mode desync) and exact item layouts (multi-cell
+  items become one stop).
+
+### Phase 6 — Combat feel
+
+- **Lock-on.** Nearest or strongest enemy; flick the stick to switch. Needs
+  enemy positions from the in-game part.
+- **Camera-relative movement.** The left stick's "up" is always away from the
+  camera, whatever its turn.
+- **Smart interact.** One button for the nearest loot, character or chest.
+
+### Phase 7 — Every skill and every menu
+
+- **Radial skills.** Face buttons stay instant, four more on LT plus face.
+  Holding View opens a wheel of every other hotbar slot on the overlay; the
+  right stick picks, release casts, the left stick keeps walking. Icons are
+  copied from the on-screen hotbar. Pressing a face button while pointing at a
+  slot swaps that skill onto it.
+- **Rumble.** Low health, heavy hits, rare drops.
+- **Snapping in every menu.** Skill tree nodes, devotion stars, dialogue
+  choices, the blacksmith's recipe list.
+- **Button icons** matching the connected pad.
+
+### Phase 8 — Shortcuts, profiles and release
+
+Section 13's scope, plus profiles per character. Fast travel, quick-sell,
+portal and return, tray icon, first-run setup, feel tuning (HT-3), and a
+single release download using the drop-in loader.
+
+### Shelved
+
+- **Gyro aiming.** Possible through SDL, set aside by the owner on 2026-10-25.
