@@ -53,6 +53,13 @@ internal static class Program
             return CaptureMode.Run(config, args[captureAt + 1], directory);
         }
 
+        int occupancyAt = Array.IndexOf(args, "--occupancy");
+
+        if (occupancyAt >= 0 && occupancyAt + 1 < args.Length)
+        {
+            return OccupancyMode.Run(config, args[occupancyAt + 1]);
+        }
+
         int calibrateAt = Array.IndexOf(args, "--calibrate");
 
         if (calibrateAt >= 0 && calibrateAt + 1 < args.Length)
