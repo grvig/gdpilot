@@ -7,15 +7,19 @@ public sealed record GridBinding(string Action) : ButtonBinding;
 public sealed record TabBinding(int Step) : ButtonBinding;
 
 /// <summary>
-/// Moves the cursor cell by cell over the grids calibrated for the current mode.
-/// A mode can have several surfaces, such as the main bag and the second bag,
-/// named "Inventory" and "Inventory.Bag2"; "grid:next" moves between them.
+/// Moves the cursor over the grids calibrated for the current mode. A mode can
+/// have several surfaces, such as the main bag and the second bag, named
+/// "Inventory" and "Inventory.Bag2"; "grid:next" moves between them. With an
+/// occupancy source, presses jump from item to item over empty cells; without
+/// one, or when a reading is in doubt, they step one cell at a time.
 /// </summary>
 public sealed class GridNavigator
 {
     private const string TabsSuffix = ".Tabs";
 
     private readonly GridReadiness readiness;
+    private readonly IOccupancySource? occupancy;
+    private readonly Dictionary<string, OccupancyMap> known = new();
     private int tab;
     private Mode mode = Mode.Suspended;
     private List<string> surfaces = new();
@@ -23,10 +27,14 @@ public sealed class GridNavigator
     private GridCell cell;
     private bool placed;
 
-    public GridNavigator(GridReadiness readiness)
+    public GridNavigator(GridReadiness readiness, IOccupancySource? occupancy = null)
     {
         this.readiness = readiness;
+        this.occupancy = occupancy;
     }
+
+    /// <summary>Whether the last press jumped between items, rather than stepping a cell.</summary>
+    public bool Jumping { get; private set; }
 
     /// <summary>Why the last grid press did nothing, or null when it worked.</summary>
     public string? Notice { get; private set; }
@@ -67,16 +75,23 @@ public sealed class GridNavigator
         {
             surface = (surface + 1) % surfaces.Count;
             grid = readiness.Grids[surfaces[surface]];
-            cell = new GridCell(0, 0);
         }
-        else if (!placed)
+
+        OccupancyMap? map = Occupancy(surfaces[surface], grid);
+        Jumping = map is not null;
+
+        if (action == "next" || !placed)
         {
-            // The first press lands on the top-left cell rather than stepping from wherever the cursor was.
-            cell = new GridCell(0, 0);
+            // The first press lands on the first item, or the top-left cell, rather than stepping from wherever the cursor was.
+            cell = map?.FirstItem() ?? new GridCell(0, 0);
+        }
+        else if (map is null)
+        {
+            cell = grid.Step(cell, Direction(action));
         }
         else
         {
-            cell = grid.Step(cell, Direction(action));
+            cell = map.NextItem(cell, Direction(action)) ?? cell;
         }
 
         placed = true;
@@ -122,6 +137,26 @@ public sealed class GridNavigator
         intents.Add(new PointerUp(PointerButton.Left));
         Notice = null;
         return intents;
+    }
+
+    /// <summary>A fresh, trusted reading of a surface, or null to step instead.</summary>
+    private OccupancyMap? Occupancy(string name, GridSpec grid)
+    {
+        if (occupancy is null)
+        {
+            return null;
+        }
+
+        known.TryGetValue(name, out OccupancyMap? previous);
+        OccupancyMap? map = occupancy.Read(grid, previous);
+
+        if (map is null || !map.IsConfident)
+        {
+            return null;
+        }
+
+        known[name] = map;
+        return map;
     }
 
     private static GridDirection Direction(string action)

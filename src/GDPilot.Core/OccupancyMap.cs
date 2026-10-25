@@ -1,5 +1,11 @@
 namespace GDPilot.Core;
 
+/// <summary>Reads a grid's occupancy from wherever its pixels come from, or null when it cannot.</summary>
+public interface IOccupancySource
+{
+    OccupancyMap? Read(GridSpec grid, OccupancyMap? previous);
+}
+
 public enum CellState
 {
     Empty,
@@ -80,6 +86,75 @@ public sealed class OccupancyMap
             }
 
             return unsure <= states.Length * MostUnsure;
+        }
+    }
+
+    /// <summary>The first cell holding something, reading row by row, or null in an empty grid.</summary>
+    public GridCell? FirstItem()
+    {
+        for (int row = 0; row < Rows; row++)
+        {
+            for (int column = 0; column < Columns; column++)
+            {
+                if (states[column, row] == CellState.Occupied)
+                {
+                    return new GridCell(column, row);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The nearest occupied cell in a direction, or null when nothing lies that
+    /// way. Drifting sideways costs three times as much as going straight, so a
+    /// press stays in its row or column while that row or column has anything.
+    /// </summary>
+    public GridCell? NextItem(GridCell from, GridDirection direction)
+    {
+        GridCell? best = null;
+        int bestCost = int.MaxValue;
+
+        for (int column = 0; column < Columns; column++)
+        {
+            for (int row = 0; row < Rows; row++)
+            {
+                if (states[column, row] != CellState.Occupied)
+                {
+                    continue;
+                }
+
+                (int along, int across) = Offset(from, new GridCell(column, row), direction);
+                int cost = along + across * 3;
+
+                if (along > 0 && cost < bestCost)
+                {
+                    best = new GridCell(column, row);
+                    bestCost = cost;
+                }
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>How far a cell lies in the direction, and how far to one side of it.</summary>
+    private static (int Along, int Across) Offset(GridCell from, GridCell to, GridDirection direction)
+    {
+        int right = to.Column - from.Column;
+        int down = to.Row - from.Row;
+
+        switch (direction)
+        {
+            case GridDirection.Up:
+                return (-down, Math.Abs(right));
+            case GridDirection.Down:
+                return (down, Math.Abs(right));
+            case GridDirection.Left:
+                return (-right, Math.Abs(down));
+            default:
+                return (right, Math.Abs(down));
         }
     }
 
