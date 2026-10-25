@@ -28,18 +28,25 @@ public sealed record ToggleCameraCommand : GameCommand
 }
 
 /// <summary>
-/// How fast to turn the third-person camera, in radians per second, and to zoom
-/// it, in the game's zoom blend per second (positive is closer), until the next
-/// look command. The game tilts the camera with its zoom, so zooming in also
-/// levels the view. Zero stops either. Sent when a rate changes, not every tick.
+/// How fast to turn the third-person camera, in radians per second, to zoom it,
+/// in the game's zoom blend per second (positive is closer), and to tilt it, in
+/// degrees per second (positive looks up), until the next look command. The
+/// game tilts the camera with its zoom as well, so zooming in also levels the
+/// view. Zero stops each. Sent when a rate changes, not every tick.
 /// </summary>
-public sealed record LookCommand(double YawPerSecond, double ZoomPerSecond) : GameCommand
+public sealed record LookCommand(double YawPerSecond, double ZoomPerSecond, double TiltPerSecond = 0) : GameCommand
 {
     public override string Write()
     {
         JsonObject root = Start("look");
         root["yaw"] = Math.Round(YawPerSecond, 4);
         root["zoom"] = Math.Round(ZoomPerSecond, 4);
+
+        if (TiltPerSecond != 0)
+        {
+            root["tilt"] = Math.Round(TiltPerSecond, 2);
+        }
+
         return root.ToJsonString();
     }
 }
@@ -103,7 +110,7 @@ public static class GameCommands
             case "toggle-camera":
                 return new ToggleCameraCommand();
             case "look":
-                return new LookCommand(root["yaw"]?.GetValue<double>() ?? 0, root["zoom"]?.GetValue<double>() ?? 0);
+                return new LookCommand(root["yaw"]?.GetValue<double>() ?? 0, root["zoom"]?.GetValue<double>() ?? 0, root["tilt"]?.GetValue<double>() ?? 0);
             case "lock":
                 return new LockCommand(root["id"]?.GetValue<uint>() ?? 0);
             case "recenter":

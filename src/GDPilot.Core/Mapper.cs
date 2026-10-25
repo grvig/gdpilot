@@ -9,7 +9,8 @@ public sealed record MappingSettings(
     CursorSettings Cursor,
     double LookRadiansPerSecond = 2.5,
     double ZoomBlendPerSecond = 0.6,
-    double FollowRadiansPerSecond = 0);
+    double FollowRadiansPerSecond = 0,
+    double TiltDegreesPerSecond = 0);
 
 /// <summary>
 /// One tick of the whole controller mapping: shape both sticks, decide what
@@ -55,6 +56,7 @@ public sealed class Mapper
 
     private double sentYaw;
     private double sentZoom;
+    private double sentTilt;
     private KeyCode? casting;
     private TimeSpan castHeldFor;
 
@@ -136,6 +138,7 @@ public sealed class Mapper
         // A stick still held on resume steers again at once.
         sentMove = (0, 0);
         sentZoom = 0;
+        sentTilt = 0;
 
         // A wheel open when input stopped must not cast when it resumes.
         Wheel?.Close();
@@ -490,16 +493,17 @@ public sealed class Mapper
     }
 
     /// <summary>Sends turn and zoom rates only when one has changed enough to matter, so the pipe carries changes, not a stream.</summary>
-    private void Look(double yaw, double zoom, List<InputIntent> intents)
+    private void Look(double yaw, double zoom, List<InputIntent> intents, double tilt = 0)
     {
-        if (Same(yaw, sentYaw) && Same(zoom, sentZoom))
+        if (Same(yaw, sentYaw) && Same(zoom, sentZoom) && Same(tilt, sentTilt))
         {
             return;
         }
 
         sentYaw = yaw;
         sentZoom = zoom;
-        intents.Add(new GameCommandIntent(new LookCommand(yaw, zoom)));
+        sentTilt = tilt;
+        intents.Add(new GameCommandIntent(new LookCommand(yaw, zoom, tilt)));
     }
 
     /// <summary>Close enough not to resend, though a change to or from stopped always counts.</summary>
@@ -564,6 +568,14 @@ public sealed class Mapper
             if (right.Magnitude == 0)
             {
                 yaw = Follow(left);
+            }
+
+            // As in action games the stick's up and down tilts the view; with the left
+            // trigger held, it zooms instead. With no tilt speed set, it only zooms.
+            if (settings.TiltDegreesPerSecond > 0 && snapshot.LeftTrigger < 0.5)
+            {
+                Look(yaw, 0, intents, right.Y * settings.TiltDegreesPerSecond);
+                return intents;
             }
 
             Look(yaw, right.Y * settings.ZoomBlendPerSecond, intents);

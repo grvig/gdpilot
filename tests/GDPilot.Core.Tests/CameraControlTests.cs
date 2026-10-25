@@ -142,4 +142,22 @@ public sealed class CameraControlTests
         Assert.Equal("Camera: third person; right stick turns and zooms", OverlayState.Build(Mode.Combat, SuspendReason.None, NoButtons, thirdPerson: true).Legend[0]);
         Assert.Empty(OverlayState.Build(Mode.Combat, SuspendReason.None, NoButtons).Legend);
     }
+
+    [Fact]
+    public void WithATiltSpeedTheStickUpTiltsAndTheTriggerMakesItZoom()
+    {
+        Mapper mapper = new(Settings with { TiltDegreesPerSecond = 60 }, NoButtons) { Looking = true };
+        GamepadSnapshot up = GamepadSnapshot.Rest with { RightStick = new StickPosition(0, 1) };
+
+        Assert.Equal(new InputIntent[] { new GameCommandIntent(new LookCommand(0, 0, 60)) }, mapper.Tick(up, Tick));
+        Assert.Equal(new InputIntent[] { new GameCommandIntent(new LookCommand(0, 0.6, 0)) }, mapper.Tick(up with { LeftTrigger = 1 }, Tick));
+    }
+
+    [Fact]
+    public void ATiltIsCarriedOnTheLookLineOnlyWhenThereIsOne()
+    {
+        Assert.Equal("""{"protocol":1,"type":"look","yaw":0,"zoom":0,"tilt":-30}""", new LookCommand(0, 0, -30).Write());
+        Assert.Equal(new LookCommand(0, 0, -30), GameCommands.Parse(new LookCommand(0, 0, -30).Write()));
+        Assert.DoesNotContain("tilt", new LookCommand(1, 0).Write());
+    }
 }
