@@ -15,7 +15,7 @@ needs a person at the pad; see "Not yet verified".
 | 1. Input plumbing and safety | Done |
 | 2. Mode state machine and overlay | Done, checked live in the game |
 | 3. Grid navigation by calibration | Done, checked live in the game end to end through `--replay` |
-| 4. Occupancy detection | Not started |
+| 4. Occupancy detection | In progress: reading and jumping done and checked live; multi-cell items next |
 | 5. Macros and release | Not started |
 
 ## What exists
@@ -63,6 +63,20 @@ Safety:
 | Calibration wizard | Done: `--calibrate GridName` from the pad, or `--at` and `--counts` without one; the latter run live |
 | `--replay` | Done: drives the real host from a recorded pad trace, for end-to-end checks with nobody at the pad |
 | `docs/calibration.md` | Done for everything built so far |
+
+## Phase 4 checklist
+
+| Task | Status |
+| --- | --- |
+| Recognise empty cells | Done: fixed brightness and colour thresholds, no stored colour; see DECISIONS |
+| Occupancy grid from the screen | Done: `OccupancyMap`, read per press by `ScreenOccupancy` for one grid's rectangle |
+| Synthetic tests | Done: line-drawn panels with items, larger cells, doubtful readings, covered cells |
+| Hand-labelled captures | Done: `tests/fixtures/screens/occupancy.txt`, all eight grids read back cell for cell |
+| Cells under a tooltip or carried item | Done: keep their last trusted state unless they now read as an item |
+| Jump to the nearest item in a direction | Done: checked live, the cursor skipped empty cells in the second bag |
+| Fall back to stepping, shown on the overlay | Done: past a tenth unsure, with "Grid: stepping, screen unclear" |
+| `--occupancy` diagnostic | Done |
+| Multi-cell items as one target | Not started: item boundaries are not yet readable |
 
 ## Live check in the game, 2026-10-19
 
@@ -131,7 +145,13 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
     character's money; another was declined. A ring equipped by a right-click
     test was swapped back.
 
-255 core tests and 48 integration tests, all passing.
+- **2026-10-25, live, unattended:** `--occupancy` read both bags off the
+  screen correctly and confidently. `tests/fixtures/traces/bag-jumps.json`,
+  replayed into the game, took the cursor to (0,0), (0,1), (0,2), then (0,4)
+  over the empty (0,3), (0,5), then (2,5) over the empty (1,5), (3,5), and up
+  to (4,2) when row 5 ran out. A test pins that path.
+
+278 core tests and 57 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -145,7 +165,11 @@ Not yet verified:
 
 ## Known issues
 
-None open.
+- An item larger than one cell takes one press per cell to cross, as before
+  Phase 4. A three-cell sword was three stops in the live run.
+- With the panel closed but the tool still in a panel mode, the reading sees
+  the world, which reads as all items, so presses step as they did in Phase 3.
+  Harmless, and only after a mode desync, which Start and Back resolve.
 
 ## Blocked
 
@@ -161,16 +185,17 @@ Nothing.
 
 ## Next session starts here
 
-Phase 4, section 12 of the plan: occupancy detection.
+The rest of Phase 4, section 12 of the plan.
 
-1. Decide how an empty cell is recognised. The plan stores the empty-slot
-   colour at calibration time; the captures show empty cells as dark interiors
-   inside bright lines, so a dark-centre test may need no stored colour at all.
-2. Build the occupancy grid in Core from a frame and a `GridSpec`, tested on
-   synthetic bitmaps first, then against hand-labelled occupancy for the three
-   captures in `tests/fixtures/screens`.
-3. Group multi-cell items into single targets, then move the D-pad to the
-   nearest occupied target, falling back to Phase 3 stepping on low confidence.
+1. Find where one item ends and the next begins. Grid lines and box edges
+   alone did not mark it reliably in the captures, so measure first: compare
+   neighbouring cells' box tint and edge glow across the labelled captures,
+   then decide. A three-cell sword in the second bag's first column is a good
+   live case.
+2. Treat each item's cells as one target, so a press leaves the item rather
+   than stepping inside it, and land on the item's top-left cell.
+3. Add the grouping to the occupancy labels and the bag trace, then check it
+   live with `--replay`.
 
 When someone is at the pad, also settle "Not yet verified": move the sticks
 during `--dry-run`, try D mode, and run `--calibrate` with the stick.

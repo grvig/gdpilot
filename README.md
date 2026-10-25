@@ -68,7 +68,7 @@ a patch that moves the interface costs a recalibration.
 | 1 | Pad input, movement, cursor, buttons, safety | **Done** |
 | 2 | Panel tracking, per-panel bindings, overlay | **Done** |
 | 3 | Grid navigation by calibration | **Done.** Bags, vendor and stash, checked in the game. |
-| 4 | Reading item positions off the screen | Not started |
+| 4 | Reading item positions off the screen | **In progress.** The D-pad jumps between items; large items still take a press per cell. |
 | 5 | Macros, tray, first-run setup, release | Not started |
 
 **Working today:** `GDPilot.exe` reads an Xbox-layout pad through SDL. It is
@@ -84,9 +84,10 @@ tested in X mode; D mode is not yet confirmed.
   - Each panel switches to its own button table.
   - Start and Back held together resets to Combat if the tracked panel ever
     disagrees with the game.
-- **Grid navigation in the bags:** with the inventory open, the D-pad steps the
-  cursor cell by cell and the left bumper switches between the main and second
-  bag. It is calibrated for 1920×1080 at UI scale 0.5 (see
+- **Grid navigation in the bags:** with the inventory open, the D-pad moves the
+  cursor to the nearest item in that direction, skipping empty cells, and the
+  left bumper switches between the main and second bag. If the screen cannot
+  be read clearly it steps cell by cell instead, and the overlay says so. It is calibrated for 1920×1080 at UI scale 0.5 (see
   [docs/calibration.md](docs/calibration.md)), and refuses to run on any other
   display rather than click the wrong cells.
 - **Grid navigation while trading and at the stash:** the vendor's goods, the
@@ -104,9 +105,9 @@ tested in X mode; D mode is not yet confirmed.
 
 **Not yet:**
 
-- Jumping straight to the next item instead of stepping cell by cell. That is
-  Phase 4, next.
-- Item jumping, macros, the tray icon and a downloadable release.
+- Treating an item that fills several cells as one stop. That is the rest of
+  Phase 4.
+- Macros, the tray icon and a downloadable release.
 - For now it is a console program built from source.
 
 [PROGRESS.md](PROGRESS.md) has the detail, and [PLAN.md](PLAN.md) the full
