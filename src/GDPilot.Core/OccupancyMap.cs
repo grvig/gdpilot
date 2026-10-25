@@ -6,6 +6,9 @@ public interface IOccupancySource
     OccupancyMap? Read(GridSpec grid, OccupancyMap? previous);
 }
 
+/// <summary>One item's place in a grid, in cells, as the game itself records it. Ids are never 0.</summary>
+public readonly record struct ItemRect(int Id, int Column, int Row, int Width, int Height);
+
 public enum CellState
 {
     Empty,
@@ -60,9 +63,37 @@ public sealed class OccupancyMap
 
     private readonly CellState[,] states;
 
-    public OccupancyMap(CellState[,] states)
+    /// <summary>Which item fills each cell, 0 for none, when that is known; null when cells were read one by one.</summary>
+    private readonly int[,]? owners;
+
+    public OccupancyMap(CellState[,] states, int[,]? owners = null)
     {
         this.states = states;
+        this.owners = owners;
+    }
+
+    /// <summary>
+    /// A map from the game's own record of where items are. Every cell is known,
+    /// and an item larger than one cell is a single stop.
+    /// </summary>
+    public static OccupancyMap FromItems(int columns, int rows, IEnumerable<ItemRect> items)
+    {
+        CellState[,] states = new CellState[columns, rows];
+        int[,] owners = new int[columns, rows];
+
+        foreach (ItemRect item in items)
+        {
+            for (int column = Math.Max(0, item.Column); column < Math.Min(columns, item.Column + item.Width); column++)
+            {
+                for (int row = Math.Max(0, item.Row); row < Math.Min(rows, item.Row + item.Height); row++)
+                {
+                    states[column, row] = CellState.Occupied;
+                    owners[column, row] = item.Id;
+                }
+            }
+        }
+
+        return new OccupancyMap(states, owners);
     }
 
     public int Columns => states.GetLength(0);
@@ -98,7 +129,7 @@ public sealed class OccupancyMap
             {
                 if (states[column, row] == CellState.Occupied)
                 {
-                    return new GridCell(column, row);
+                    return Anchor(new GridCell(column, row));
                 }
             }
         }
@@ -107,25 +138,28 @@ public sealed class OccupancyMap
     }
 
     /// <summary>
-    /// The nearest occupied cell in a direction, or null when nothing lies that
-    /// way. Drifting sideways costs three times as much as going straight, so a
-    /// press stays in its row or column while that row or column has anything.
+    /// The nearest other item in a direction, by its top-left cell, or null when
+    /// nothing lies that way. Drifting sideways costs three times as much as going
+    /// straight, so a press stays in its row or column while that row or column
+    /// has anything. Cells of the item already under the cursor are passed over.
     /// </summary>
     public GridCell? NextItem(GridCell from, GridDirection direction)
     {
         GridCell? best = null;
         int bestCost = int.MaxValue;
+        int current = Owner(from);
+        (GridCell topLeft, GridCell bottomRight) = Extent(from);
 
         for (int column = 0; column < Columns; column++)
         {
             for (int row = 0; row < Rows; row++)
             {
-                if (states[column, row] != CellState.Occupied)
+                if (states[column, row] != CellState.Occupied || Owner(new GridCell(column, row)) == current)
                 {
                     continue;
                 }
 
-                (int along, int across) = Offset(from, new GridCell(column, row), direction);
+                (int along, int across) = Offset(topLeft, bottomRight, new GridCell(column, row), direction);
                 int cost = along + across * 3;
 
                 if (along > 0 && cost < bestCost)
@@ -136,26 +170,99 @@ public sealed class OccupancyMap
             }
         }
 
-        return best;
+        if (best is null)
+        {
+            return null;
+        }
+
+        return Anchor(best.Value);
     }
 
-    /// <summary>How far a cell lies in the direction, and how far to one side of it.</summary>
-    private static (int Along, int Across) Offset(GridCell from, GridCell to, GridDirection direction)
+    /// <summary>The item filling a cell. Without the game's record, every cell counts as its own item.</summary>
+    private int Owner(GridCell cell)
     {
-        int right = to.Column - from.Column;
-        int down = to.Row - from.Row;
+        if (owners is not null)
+        {
+            return owners[cell.Column, cell.Row];
+        }
+
+        return -(cell.Row * Columns + cell.Column + 1);
+    }
+
+    /// <summary>The top-left cell of the item filling this cell, where the cursor lands on it.</summary>
+    private GridCell Anchor(GridCell cell)
+    {
+        return Extent(cell).TopLeft;
+    }
+
+    /// <summary>The corners of the item filling this cell, or of the cell alone when items are not known.</summary>
+    private (GridCell TopLeft, GridCell BottomRight) Extent(GridCell cell)
+    {
+        if (owners is null || owners[cell.Column, cell.Row] == 0)
+        {
+            return (cell, cell);
+        }
+
+        int owner = owners[cell.Column, cell.Row];
+        int left = cell.Column;
+        int top = cell.Row;
+        int right = cell.Column;
+        int bottom = cell.Row;
+
+        for (int column = 0; column < Columns; column++)
+        {
+            for (int row = 0; row < Rows; row++)
+            {
+                if (owners[column, row] == owner)
+                {
+                    left = Math.Min(left, column);
+                    top = Math.Min(top, row);
+                    right = Math.Max(right, column);
+                    bottom = Math.Max(bottom, row);
+                }
+            }
+        }
+
+        return (new GridCell(left, top), new GridCell(right, bottom));
+    }
+
+    /// <summary>
+    /// How far a cell lies beyond the current item's edge in the direction, and
+    /// how far to one side of the item's span. A cell beside a tall item is not
+    /// "below" it just because it is lower than the item's top.
+    /// </summary>
+    private static (int Along, int Across) Offset(GridCell topLeft, GridCell bottomRight, GridCell to, GridDirection direction)
+    {
+        int sideways = Gap(to.Column, topLeft.Column, bottomRight.Column);
+        int upright = Gap(to.Row, topLeft.Row, bottomRight.Row);
 
         switch (direction)
         {
             case GridDirection.Up:
-                return (-down, Math.Abs(right));
+                return (topLeft.Row - to.Row, sideways);
             case GridDirection.Down:
-                return (down, Math.Abs(right));
+                return (to.Row - bottomRight.Row, sideways);
             case GridDirection.Left:
-                return (-right, Math.Abs(down));
+                return (topLeft.Column - to.Column, upright);
             default:
-                return (right, Math.Abs(down));
+                return (to.Column - bottomRight.Column, upright);
         }
+    }
+
+    /// <summary>How far a position lies outside a span, 0 when inside it.</summary>
+    private static int Gap(int position, int first, int last)
+    {
+        if (position < first)
+        {
+            return first - position;
+        }
+
+        if (position > last)
+        {
+            return position - last;
+        }
+
+        return 0;
     }
 
     /// <summary>
