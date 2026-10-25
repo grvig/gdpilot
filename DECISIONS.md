@@ -415,3 +415,29 @@ where pointing with a stick is awkward. Both routes run the same wizard steps.
 
 Right click uses or equips the item under it. It does not move items into the
 stash, so no transfer binding is shipped.
+
+## 2026-10-25 — How occupancy is read
+
+The plan stores an empty-slot colour at calibration time. The captures made
+that unnecessary: every empty cell, in every panel, is near-black and
+colourless in its middle, so a fixed pair of thresholds on brightness and
+colour separates empty from occupied with room to spare. Nothing extra is
+stored, and an existing calibration gains jumping without being redone.
+
+Between the two thresholds a cell is unsure rather than guessed. More than a
+tenth of a grid unsure doubts the whole reading, and that press steps instead,
+as the plan's "degrade, never freeze" asks.
+
+The plan polls at about 8 Hz. Occupancy is read at the moment of a grid press
+instead, for only that grid's rectangle. A press needs the screen as it is
+then, a poll would spend captures while nobody is pressing, and nothing runs
+outside a panel mode.
+
+Cells hidden by a tooltip or the carried item keep their last trusted state
+unless they now read as occupied. A hidden cell is recognised by its grid
+lines not showing, since a visible line stands 46 to 96 brighter than its
+surroundings and a covered one 3 to 5.
+
+Grouping a multi-cell item into one target is not done yet. Neither grid lines
+nor box edges mark item boundaries reliably in the captures: common items have
+no box, and some boxes let lines show through.
