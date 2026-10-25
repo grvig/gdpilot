@@ -151,6 +151,41 @@ To calibrate by hand instead, run `GDPilot.exe --capture <name>` to save the
 client area and its profile, then measure with `--detect` or an image editor.
 Pitch is the span divided by the count minus one: `(lastX - firstX) / (columns - 1)`.
 
+## Jumping between items
+
+With `"jumpToItems": true` under `input`, the default, a D-pad press in a
+panel goes to the nearest item that way instead of the next cell. It skips
+empty cells, and it stays in its row or column while that row or column has
+anything further on; drifting sideways counts three times as far as going
+straight. Entering a mode, or switching surfaces with `grid:next`, lands on the
+first item. A press with nothing that way leaves the cursor where it is.
+
+Each press captures just that grid's rectangle and judges every cell from the
+middle of the cell, well inside its lines:
+
+| Cell middle | Read as |
+| --- | --- |
+| Any colour on average, or brightness 14 and up | an item |
+| Grey and darker than 12.5 | empty |
+| Grey, between those two | unsure |
+
+Measured on the three captures, every empty cell was between 4 and 11.3 and
+colourless, while the faintest item, a grey gauntlet on its translucent box,
+read 15.3. `tests/fixtures/screens/occupancy.txt` holds hand-checked labels
+for all eight grids, and `OccupancyFixtureTests` reads every cell back.
+
+Two things keep a bad reading from misleading a press:
+- **Covered cells.** A tooltip or a carried item can cover cells. A cell whose
+  own grid lines cannot be seen keeps what it last read as, unless it now
+  reads as an item. Skipping a real item would be worse than one stop too many.
+- **Doubt.** If more than a tenth of the cells read as unsure, that press steps
+  one cell instead, and the overlay's first line says
+  "Grid: stepping, screen unclear".
+
+`GDPilot.exe --occupancy <GridName>`, with the panel open, prints what the
+reading sees, `#` for an item, `.` for empty and `?` for unsure, and whether
+presses would jump. Set `jumpToItems` to false to always step.
+
 ## Splitting stacks
 
 A `mouse:` binding can carry one modifier, held across the whole click:
@@ -164,6 +199,10 @@ Right click, on X in the panel modes, uses or equips the item under the
 cursor. It does not move an item into the stash.
 
 ## Known gaps
+
+- **An item larger than one cell is several stops.** A sword three cells tall
+  is passed through cell by cell. Grouping an item's cells into one target is
+  the next step.
 
 - **Only 1920×1080 at UI scale 0.5 is shipped.** Any other display needs its
   own grids, from the wizard.
