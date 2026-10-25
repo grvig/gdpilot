@@ -1660,7 +1660,7 @@ void FindInteractables()
     Say("Found the game's entity query; smart interact can see loot, townsfolk and the world's fixed things.");
 }
 
-// What a click on a thing would do: pick it up, talk, or use it; zero for nothing.
+// What a click on a thing would do: pick it up, talk, use it or travel through it; zero for nothing.
 int KindOf(const void* entity)
 {
     if (IsA(entity, itemClass) || IsA(entity, oneShotClass))
@@ -1674,7 +1674,12 @@ int KindOf(const void* entity)
     }
 
     // Rift gates and town portals are teleporters of their own, read live beside Devil's Crossing's gate.
-    if (IsA(entity, fixedItemClass) || IsA(entity, leverClass) || IsA(entity, gateClass) || IsA(entity, portalClass))
+    if (IsA(entity, gateClass) || IsA(entity, portalClass))
+    {
+        return 4;
+    }
+
+    if (IsA(entity, fixedItemClass) || IsA(entity, leverClass))
     {
         return 3;
     }
@@ -1792,7 +1797,7 @@ int ScanThings(void* camera, const int viewport[4], Thing seenThings[], int most
 float sinceThingCheck = 0;
 std::string lastThings;
 std::atomic<bool> thingsWanted{false};
-constexpr const char* KindNames[] = {"", "loot", "talk", "use"};
+constexpr const char* KindNames[] = {"", "loot", "talk", "use", "travel"};
 
 // Ten times a second is enough for a prompt over something nearby, and costs little.
 void CheckThings(void* camera, float elapsed)
