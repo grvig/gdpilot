@@ -1,0 +1,41 @@
+# Functions the in-game part calls, found by name in the game's own DLLs.
+# GDPilot.exe --check-game reads the installed game and reports any that are missing,
+# which is the first thing to run after a game update.
+# Each line: the DLL, then the exported name exactly as the DLL spells it.
+
+# Camera, player and world, first mapped by the GrimAction project (MIT).
+Game.dll ?GetCamera@GameEngine@GAME@@QEAAPEAVGameCamera@2@XZ
+Game.dll ?UpdateFromInputImpl@GameCamera@GAME@@MEAAXXZ
+Game.dll ?Update@GameCamera@GAME@@UEAAXXZ
+Game.dll ?Shake@GameCamera@GAME@@QEAAXAEBVViewport@2@HMAEBVWorldVec3@2@_N@Z
+Game.dll ?GetPlayer@GameCamera@GAME@@QEAAPEAVPlayer@2@XZ
+Game.dll ?GetInputMode@GameEngine@GAME@@QEBA?AW4InputMode@2@XZ
+Game.dll ?GetMainPlayer@GameEngine@GAME@@QEBAPEAVPlayer@2@XZ
+Game.dll ?AdjustYaw@GameCamera@GAME@@QEAAXM@Z
+Game.dll ?SetCameraYaw@GameCamera@GAME@@UEAAXM@Z
+Game.dll ?SetZoom@GameCamera@GAME@@QEAAXM@Z
+Game.dll ?SetCameraFOV@GameEngine@GAME@@QEAAXM@Z
+Game.dll ?GetControllerDirection@ControllerPlayer@GAME@@QEAAXAEAVVec3@2@@Z
+Game.dll ?SetControllerDirection@ControllerPlayer@GAME@@QEAAXAEBVVec3@2@@Z
+Game.dll ?GetGameController@GameEngine@GAME@@QEAAAEAVGameController@2@XZ
+Game.dll ?GetActionSet@GameController@GAME@@QEBA?AW4ActionSet@12@XZ
+Engine.dll ?GetCoordsUnparented@Entity@GAME@@QEBAAEBVWorldCoords@2@XZ
+Engine.dll ?GetCameraYaw@WorldCamera@GAME@@QEBAMXZ
+Engine.dll ?SetCameraYaw@WorldCamera@GAME@@UEAAXM@Z
+Engine.dll ?GetCameraPitch@WorldCamera@GAME@@QEBAMXZ
+Engine.dll ?SetCameraPitch@WorldCamera@GAME@@QEAAXM@Z
+Engine.dll ?GetCameraFOV@WorldCamera@GAME@@QEBAMXZ
+Engine.dll ?SetCameraFOV@WorldCamera@GAME@@QEAAXM@Z
+Engine.dll ?GetRegion@WorldCamera@GAME@@QEBAPEAVRegion@2@XZ
+Engine.dll ?CalculateViewPosition@WorldCamera@GAME@@MEBA?AVWorldVec3@2@AEBV32@@Z
+Engine.dll ?GetLevelPtr@Region@GAME@@QEBAPEAVLevel@2@XZ
+Engine.dll ?GetIntersection@Level@GAME@@QEBAXAEBVRay@2@AEAVIntersection@2@W4PhysicsSurface@2@PEAPEAVEntity@2@MPEBV62@_N@Z
+Engine.dll ?Get@?$Singleton@VObjectManager@GAME@@@GAME@@SAPEAVObjectManager@2@XZ
+Engine.dll ?GetInputDevice@Engine@GAME@@QEAAPEAVInputDevice@2@XZ
+Engine.dll ?Update@SteamControllerDevice@GAME@@QEAAXH@Z
+
+# Inventory and stash item layouts.
+Game.dll ?GetInventory@InventorySack@GAME@@QEBAAEBV?$map@IVRect@GAME@@@mem@@XZ
+Game.dll ?GetGridWidth@InventorySack@GAME@@QEBAIXZ
+Game.dll ?GetGridHeight@InventorySack@GAME@@QEBAIXZ
+Game.dll ?GetItemUnderPoint@InventorySack@GAME@@QEBAIVVec2@2@@Z

@@ -53,6 +53,20 @@ internal static class Program
             return CaptureMode.Run(config, args[captureAt + 1], directory);
         }
 
+        int checkAt = Array.IndexOf(args, "--check-game");
+
+        if (checkAt >= 0)
+        {
+            string? folder = null;
+
+            if (checkAt + 1 < args.Length)
+            {
+                folder = args[checkAt + 1];
+            }
+
+            return CheckGameMode.Run(config, folder);
+        }
+
         int occupancyAt = Array.IndexOf(args, "--occupancy");
 
         if (occupancyAt >= 0 && occupancyAt + 1 < args.Length)

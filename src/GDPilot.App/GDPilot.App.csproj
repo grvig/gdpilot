@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <None Include="..\..\config.example.json" Link="config.example.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\game-functions.txt" Link="game-functions.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
