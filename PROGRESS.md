@@ -4,8 +4,9 @@ Read this first in every session, then the plan section for the current phase.
 
 ## Current phase
 
-Phase 4 — occupancy detection. Phase 3 is done apart from one check that
-needs a person at the pad; see "Not yet verified".
+Phase 5 — the in-game part and the action camera, PLAN.md section 17. The
+project was widened on 2026-10-25 into a controller-first overhaul; section 17
+of the plan holds the new phases and the rules for the in-game part.
 
 ## State
 
@@ -15,8 +16,11 @@ needs a person at the pad; see "Not yet verified".
 | 1. Input plumbing and safety | Done |
 | 2. Mode state machine and overlay | Done, checked live in the game |
 | 3. Grid navigation by calibration | Done, checked live in the game end to end through `--replay` |
-| 4. Occupancy detection | In progress: reading and jumping done and checked live; multi-cell items next |
-| 5. Macros and release | Not started |
+| 4. Occupancy detection | Mostly done: screen reading and jumping checked live; exact multi-cell items wait for the in-game part's reports |
+| 5. In-game part and action camera | Next: the pipe, the report format and `--check-game` are ready |
+| 6. Lock-on, camera-relative movement, smart interact | Not started |
+| 7. Radial skills, rumble, snapping in every menu | Not started |
+| 8. Shortcuts, profiles, first run, release | Not started |
 
 ## What exists
 
@@ -76,7 +80,18 @@ Safety:
 | Jump to the nearest item in a direction | Done: checked live, the cursor skipped empty cells in the second bag |
 | Fall back to stepping, shown on the overlay | Done: past a tenth unsure, with "Grid: stepping, screen unclear" |
 | `--occupancy` diagnostic | Done |
-| Multi-cell items as one target | Not started: item boundaries are not yet readable |
+| Multi-cell items as one target | Done from the game's rectangles (`OccupancyMap.FromItems`); the screen fallback keeps every cell a stop, since edge colour merged same-coloured neighbours |
+
+## Phase 5 groundwork, 2026-10-25
+
+| Piece | Status |
+| --- | --- |
+| Report format | Done: `GameReport`, one-line JSON with a protocol number; open panels and item layouts |
+| The connection | Done: `GameLink`, a named pipe for the current user only, reconnecting, dropping every report on disconnect |
+| Reports before the screen | Done: `ReportedOccupancy` uses the game's layout when it fits the calibrated grid, otherwise the screen |
+| Function list and game check | Done: `game-functions.txt`, 33 names; `--check-game` found them all in the installed build |
+| Native toolchain | Not started: no Microsoft C++ compiler here; MinGW g++ and clang are |
+| The in-game part itself | Not started |
 
 ## Live check in the game, 2026-10-19
 
@@ -151,7 +166,7 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   over the empty (0,3), (0,5), then (2,5) over the empty (1,5), (3,5), and up
   to (4,2) when row 5 ran out. A test pins that path.
 
-278 core tests and 57 integration tests, all passing.
+303 core tests and 59 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -165,8 +180,8 @@ Not yet verified:
 
 ## Known issues
 
-- An item larger than one cell takes one press per cell to cross, as before
-  Phase 4. A three-cell sword was three stops in the live run.
+- Until the in-game part reports layouts, an item larger than one cell takes
+  one press per cell, as the screen reading cannot tell items apart reliably.
 - With the panel closed but the tool still in a panel mode, the reading sees
   the world, which reads as all items, so presses step as they did in Phase 3.
   Harmless, and only after a mode desync, which Start and Back resolve.
@@ -181,21 +196,24 @@ Nothing.
 | --- | --- | --- |
 | HT-1 Confirm the game accepts synthesized input | 0 | Passed 2026-10-12 |
 | HT-2 Capture calibration fixtures | 3 | Done: bags and vendor 2026-10-20, stash 2026-10-24, unattended |
-| HT-3 Feel tuning | 5 | Not yet raised |
+| HT-3 Feel tuning | 8 | Not yet raised |
 
 ## Next session starts here
 
-The rest of Phase 4, section 12 of the plan.
+Phase 5, PLAN.md section 17: the in-game part and the action camera.
 
-1. Find where one item ends and the next begins. Grid lines and box edges
-   alone did not mark it reliably in the captures, so measure first: compare
-   neighbouring cells' box tint and edge glow across the labelled captures,
-   then decide. A three-cell sword in the second bag's first column is a good
-   live case.
-2. Treat each item's cells as one target, so a press leaves the item rather
-   than stepping inside it, and land on the item's top-left cell.
-3. Add the grouping to the occupancy labels and the bag trace, then check it
-   live with `--replay`.
+1. Choose the toolchain. GrimAction builds with Microsoft's C++ compiler and
+   Detours; neither is installed. Either ask the owner before installing the
+   free Visual Studio Build Tools, a download of several GB, or adapt to the
+   MinGW g++ already here with MinHook in place of Detours.
+2. Bring in GrimAction's source under its MIT licence, keeping its notice, and
+   record the reuse in DECISIONS.md.
+3. Replace its pinned addresses with lookups by exported name, reading field
+   offsets from the game's getters where it can. Run `--check-game` first.
+4. Load it from `GDPilot.exe` into the running game, get the third-person
+   camera working on the installed build, and toggle it from the pad.
+5. Have it send `panels` and `layout` reports over `GameLink.PipeName`, then
+   check live that a three-cell sword is one stop.
 
 When someone is at the pad, also settle "Not yet verified": move the sticks
 during `--dry-run`, try D mode, and run `--calibrate` with the stick.
