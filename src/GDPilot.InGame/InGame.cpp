@@ -308,6 +308,14 @@ using SetZoom = void (*)(void* camera, float distance);
 std::atomic<bool> toggleRequested{false};
 std::atomic<float> yawPerSecond{0};
 std::atomic<float> zoomPerSecond{0};
+
+// Tilting, in degrees a second, positive to look up. The game tilts its camera
+// between a pitch at the nearest zoom and one at the farthest, so both are
+// shifted together by the same offset, and the zoom's own tilt carries on.
+std::atomic<float> tiltPerSecond{0};
+float tiltOffset = 0;
+float pitchNear = 12;
+float pitchFar = 40;
 std::atomic<bool> linked{false};
 HANDLE reportWanted = nullptr;
 
@@ -921,6 +929,9 @@ void TurnOn(void* camera)
     }
 
     Apply(camera, behind);
+    pitchNear = behind[4];
+    pitchFar = behind[5];
+    tiltOffset = 0;
     arm = behind[0];
     refusals = 0;
     collisionOn = Setting(L"collision", 1) != 0;
@@ -2246,6 +2257,36 @@ void KeepForward(void* camera)
     forwardZ = -back[2] / length;
 }
 
+// Shifts both pitches by the stick's tilt, never further than looking five
+// degrees above level at the nearest zoom or straight down at the farthest, and
+// eases the tilt away while recentring, as an action game's camera levels out.
+void Tilt(void* camera, float elapsed)
+{
+    float tilt = tiltPerSecond.load();
+    float wanted = tiltOffset;
+
+    if (tilt != 0)
+    {
+        wanted -= tilt * elapsed;
+    }
+    else if (recentering && tiltOffset != 0)
+    {
+        float step = 60 * elapsed;
+        wanted = std::fmax(-step, std::fmin(step, -tiltOffset)) + tiltOffset;
+    }
+
+    wanted = std::fmax(-5 - pitchNear, std::fmin(85 - pitchFar, wanted));
+
+    if (wanted == tiltOffset)
+    {
+        return;
+    }
+
+    tiltOffset = wanted;
+    Write(camera, PitchMinimum, pitchNear + tiltOffset);
+    Write(camera, PitchMaximum, pitchFar + tiltOffset);
+}
+
 void Work(void* camera, float elapsed)
 {
     KeepForward(camera);
@@ -2265,6 +2306,8 @@ void Work(void* camera, float elapsed)
         {
             reinterpret_cast<AdjustYaw>(required[2].address)(camera, yaw * elapsed);
         }
+
+        Tilt(camera, elapsed);
 
         // Zooming in lowers the target blend toward the near distance; the game eases the live zoom after it.
         float zoom = zoomPerSecond.load();
@@ -2369,6 +2412,7 @@ void Obey(const std::string& line)
     {
         yawPerSecond = NumberAfter(line, "\"yaw\":");
         zoomPerSecond = NumberAfter(line, "\"zoom\":");
+        tiltPerSecond = NumberAfter(line, "\"tilt\":");
     }
 
     if (line.find("\"type\":\"move\"") != std::string::npos)
@@ -2499,6 +2543,7 @@ DWORD WINAPI Link(LPVOID)
         // A stick held when GDPilot went must not keep turning the camera.
         yawPerSecond = 0;
         zoomPerSecond = 0;
+        tiltPerSecond = 0;
         lockedId = 0;
         moveStamp = 0;
         Say("GDPilot went away; listening for it again.");
