@@ -46,6 +46,12 @@ public sealed class OccupancyMap
     /// <summary>Past this share of unsure cells the whole reading is doubted and stepping takes over.</summary>
     private const double MostUnsure = 0.1;
 
+    /// <summary>
+    /// How much brighter than its surroundings a cell's lines must be to count as
+    /// seen. Visible lines measured 46 to 96; under a tooltip, 3 to 5.
+    /// </summary>
+    private const double LineVisibleFrom = 20;
+
     private readonly CellState[,] states;
 
     public OccupancyMap(CellState[,] states)
@@ -82,7 +88,13 @@ public sealed class OccupancyMap
     /// Only the middle of each cell is sampled, well inside its lines, so the
     /// lines themselves never count as content.
     /// </summary>
-    public static OccupancyMap Read(GridSpec grid, Func<int, int, (byte Red, byte Green, byte Blue)> pixel)
+    /// <param name="previous">
+    /// The last reading of the same grid, if any. The game draws tooltips and the
+    /// carried item over cells, hiding their lines; such a cell may still turn
+    /// occupied, but keeps its previous state otherwise. Reading an item as
+    /// empty would skip it, which is worse than one needless stop.
+    /// </param>
+    public static OccupancyMap Read(GridSpec grid, Func<int, int, (byte Red, byte Green, byte Blue)> pixel, OccupancyMap? previous = null)
     {
         CellState[,] states = new CellState[grid.Columns, grid.Rows];
         int reach = (int)(Math.Min(grid.PitchX, grid.PitchY) * 0.3);
@@ -91,12 +103,50 @@ public sealed class OccupancyMap
         {
             for (int row = 0; row < grid.Rows; row++)
             {
-                (int x, int y) = grid.Centre(new GridCell(column, row));
-                states[column, row] = Look(pixel, x, y, reach).State;
+                GridCell cell = new(column, row);
+                (int x, int y) = grid.Centre(cell);
+                CellState state = Look(pixel, x, y, reach).State;
+
+                if (previous is not null && state != CellState.Occupied && !LinesVisible(grid, pixel, x, y))
+                {
+                    state = previous[cell];
+                }
+
+                states[column, row] = state;
             }
         }
 
         return new OccupancyMap(states);
+    }
+
+    /// <summary>Whether the left and top lines of the cell centred here can be seen along most of their length.</summary>
+    private static bool LinesVisible(GridSpec grid, Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int centreX, int centreY)
+    {
+        int left = (int)Math.Round(centreX - grid.PitchX / 2);
+        int top = (int)Math.Round(centreY - grid.PitchY / 2);
+        int reach = (int)(Math.Min(grid.PitchX, grid.PitchY) * 0.3);
+        List<double> leftContrast = new();
+        List<double> topContrast = new();
+
+        for (int along = -reach; along <= reach; along++)
+        {
+            leftContrast.Add(Brightness(pixel, left, centreY + along) - (Brightness(pixel, left - 3, centreY + along) + Brightness(pixel, left + 3, centreY + along)) / 2);
+            topContrast.Add(Brightness(pixel, centreX + along, top) - (Brightness(pixel, centreX + along, top - 3) + Brightness(pixel, centreX + along, top + 3)) / 2);
+        }
+
+        return Median(leftContrast) >= LineVisibleFrom && Median(topContrast) >= LineVisibleFrom;
+    }
+
+    private static double Brightness(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int x, int y)
+    {
+        (byte red, byte green, byte blue) = pixel(x, y);
+        return (red + green + blue) / 3.0;
+    }
+
+    private static double Median(List<double> values)
+    {
+        values.Sort();
+        return values[values.Count / 2];
     }
 
     public static CellLook Look(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int centreX, int centreY, int reach)

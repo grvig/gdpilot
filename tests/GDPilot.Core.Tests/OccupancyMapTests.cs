@@ -73,6 +73,54 @@ public sealed class OccupancyMapTests
         Assert.False(map.IsConfident);
     }
 
+    [Fact]
+    public void ACellCoveredByATooltipKeepsTheItemItHad()
+    {
+        Dictionary<GridCell, (byte, byte, byte)> items = new() { [new GridCell(2, 1)] = (40, 90, 30) };
+        OccupancyMap before = OccupancyMap.Read(Bag, Panel(Bag, items, 6));
+        Func<int, int, (byte, byte, byte)> tooltip = Covered(Panel(Bag, items, 6), 90, 90, 200, 200, (8, 8, 8));
+
+        OccupancyMap after = OccupancyMap.Read(Bag, tooltip, before);
+
+        Assert.Equal(CellState.Occupied, after[new GridCell(2, 1)]);
+    }
+
+    [Fact]
+    public void AnItemTakenFromACellWhoseLinesShowIsSeenToBeGone()
+    {
+        Dictionary<GridCell, (byte, byte, byte)> items = new() { [new GridCell(2, 1)] = (40, 90, 30) };
+        OccupancyMap before = OccupancyMap.Read(Bag, Panel(Bag, items, 6));
+
+        OccupancyMap after = OccupancyMap.Read(Bag, Panel(Bag, new Dictionary<GridCell, (byte, byte, byte)>(), 6), before);
+
+        Assert.Equal(CellState.Empty, after[new GridCell(2, 1)]);
+    }
+
+    [Fact]
+    public void ACoveredCellMayStillTurnOccupied()
+    {
+        OccupancyMap before = OccupancyMap.Read(Bag, Panel(Bag, new Dictionary<GridCell, (byte, byte, byte)>(), 6));
+        Func<int, int, (byte, byte, byte)> carried = Covered(Panel(Bag, new Dictionary<GridCell, (byte, byte, byte)>(), 6), 90, 90, 200, 200, (60, 50, 20));
+
+        OccupancyMap after = OccupancyMap.Read(Bag, carried, before);
+
+        Assert.Equal(CellState.Occupied, after[new GridCell(0, 0)]);
+    }
+
+    /// <summary>The same panel with a solid box drawn over part of it, as a tooltip or a carried item would be.</summary>
+    private static Func<int, int, (byte, byte, byte)> Covered(Func<int, int, (byte, byte, byte)> panel, int left, int top, int right, int bottom, (byte, byte, byte) colour)
+    {
+        return (x, y) =>
+        {
+            if (x >= left && x <= right && y >= top && y <= bottom)
+            {
+                return colour;
+            }
+
+            return panel(x, y);
+        };
+    }
+
     /// <summary>A panel with bright lines every pitch, dark cells of the given level, and solid items.</summary>
     private static Func<int, int, (byte, byte, byte)> Panel(GridSpec grid, Dictionary<GridCell, (byte, byte, byte)> items, byte empty)
     {
