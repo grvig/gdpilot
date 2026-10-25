@@ -45,4 +45,14 @@ public sealed class SmartInteractTests
         Assert.Null(OverlayState.PromptFor(null, combat));
         Assert.Null(OverlayState.PromptFor(new NearbyThing(1, ThingKind.Talk, 0.2, 0.5, 3), BindingTable.Parse(new Dictionary<string, string>(), 0.5)));
     }
+
+    [Fact]
+    public void ARiftGateOffersTravel()
+    {
+        InteractablesReport near = Assert.IsType<InteractablesReport>(GameReport.Parse("""{"protocol":1,"type":"interactables","list":[{"id":35187,"kind":"travel","x":0.70,"y":0.72,"distance":4.4}]}"""));
+
+        Assert.Equal(ThingKind.Travel, near.Things[0].Kind);
+        Assert.Equal("Travel", SmartInteract.Verb(ThingKind.Travel));
+        Assert.Equal(near, GameReport.Parse(near.Write()));
+    }
 }

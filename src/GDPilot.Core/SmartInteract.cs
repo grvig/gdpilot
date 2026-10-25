@@ -58,6 +58,8 @@ public static class SmartInteract
                 return "Pick up";
             case ThingKind.Talk:
                 return "Talk";
+            case ThingKind.Travel:
+                return "Travel";
             default:
                 return "Use";
         }

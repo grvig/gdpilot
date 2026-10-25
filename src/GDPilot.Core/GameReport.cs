@@ -203,6 +203,9 @@ public abstract record GameReport
                 case "use":
                     kind = ThingKind.Use;
                     break;
+                case "travel":
+                    kind = ThingKind.Travel;
+                    break;
                 default:
                     continue;
             }
@@ -345,12 +348,13 @@ public sealed record AbilitiesReport(bool AnalogMovement) : GameReport;
 /// </summary>
 public sealed record LockPointReport(uint Id, double X, double Y) : GameReport;
 
-/// <summary>What a click on a nearby thing does: pick it up, talk to it, or use it.</summary>
+/// <summary>What a click on a nearby thing does: pick it up, talk to it, use it, or travel through it, as at a rift gate.</summary>
 public enum ThingKind
 {
     Loot,
     Talk,
     Use,
+    Travel,
 }
 
 /// <summary>Something close by that a click would pick up, talk to or use, drawn on the screen as fractions of the window.</summary>
