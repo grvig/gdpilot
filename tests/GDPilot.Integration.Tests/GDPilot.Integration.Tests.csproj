@@ -35,6 +35,7 @@
   <ItemGroup>
     <None Include="..\fixtures\traces\*.json" LinkBase="traces" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\screens\*.png" LinkBase="screens" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\screens\occupancy.txt" LinkBase="screens" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\config.example.json" Link="config.example.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
