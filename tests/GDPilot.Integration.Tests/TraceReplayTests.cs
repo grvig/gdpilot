@@ -141,6 +141,83 @@ public sealed class TraceReplayTests
             sent);
     }
 
+    /// <summary>
+    /// The second bag as it was read off the screen on 2026-10-25, when this trace
+    /// was played live. The cursor took exactly this path in the game, jumping
+    /// the empty cells at (0, 3) and (1, 5).
+    /// </summary>
+    [Fact]
+    public void TheBagTraceJumpsOverEmptyCellsAsItDidInTheGame()
+    {
+        GDPilotConfig config = GDPilotConfig.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "config.example.json")));
+        GridReadiness readiness = GridReadiness.Check(config, new LiveDisplay(1920, 1080, 0.5));
+        FixedOccupancy screen = new(
+            "#####...",
+            "#####...",
+            "#####...",
+            ".##.....",
+            "###.....",
+            "#.##....",
+            "####....",
+            "####....");
+        GamepadTrace trace = Load("bag-jumps.json");
+        TimeSpan now = TimeSpan.Zero;
+        ReplayGamepadSource source = new(trace, () => now);
+        ModeController modes = new(config.PanelKeys(), mode => config.ButtonsFor(mode.ToString()), new GridNavigator(readiness, screen));
+        List<InputIntent> sent = new();
+
+        while (now <= TimeSpan.FromMilliseconds(trace.Entries[^1].At))
+        {
+            sent.AddRange(modes.Tick(source.Read(), Tick));
+            now += Tick;
+        }
+
+        Assert.Equal(
+            new InputIntent[]
+            {
+                new PointerMoveTo(1044, 645),
+                new PointerMoveTo(1044, 677),
+                new PointerMoveTo(1044, 709),
+                new PointerMoveTo(1044, 773),
+                new PointerMoveTo(1044, 805),
+                new PointerMoveTo(1108, 805),
+                new PointerMoveTo(1140, 805),
+                new PointerMoveTo(1172, 709),
+            },
+            sent.OfType<PointerMoveTo>());
+    }
+
+    /// <summary>Every grid reads as the same drawn map, # for an item and . for empty.</summary>
+    private sealed class FixedOccupancy : IOccupancySource
+    {
+        private readonly string[] rows;
+
+        public FixedOccupancy(params string[] rows)
+        {
+            this.rows = rows;
+        }
+
+        public OccupancyMap? Read(GridSpec grid, OccupancyMap? previous)
+        {
+            CellState[,] states = new CellState[grid.Columns, grid.Rows];
+
+            for (int column = 0; column < grid.Columns; column++)
+            {
+                for (int row = 0; row < grid.Rows; row++)
+                {
+                    states[column, row] = CellState.Empty;
+
+                    if (row < rows.Length && column < rows[row].Length && rows[row][column] == '#')
+                    {
+                        states[column, row] = CellState.Occupied;
+                    }
+                }
+            }
+
+            return new OccupancyMap(states);
+        }
+    }
+
     private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600));
 
     private static GamepadTrace Load(string fixture)

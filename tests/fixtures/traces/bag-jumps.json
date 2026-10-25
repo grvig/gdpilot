@@ -1,0 +1,26 @@
+{
+  "entries": [
+    { "at": 0 },
+    { "at": 500, "buttons": "DPadUp" },
+    { "at": 600 },
+    { "at": 1500, "buttons": "LeftBumper" },
+    { "at": 1600 },
+    { "at": 2300, "buttons": "DPadDown" },
+    { "at": 2400 },
+    { "at": 3100, "buttons": "DPadDown" },
+    { "at": 3200 },
+    { "at": 3900, "buttons": "DPadDown" },
+    { "at": 4000 },
+    { "at": 4700, "buttons": "DPadDown" },
+    { "at": 4800 },
+    { "at": 5500, "buttons": "DPadRight" },
+    { "at": 5600 },
+    { "at": 6300, "buttons": "DPadRight" },
+    { "at": 6400 },
+    { "at": 7100, "buttons": "DPadRight" },
+    { "at": 7200 },
+    { "at": 7900, "buttons": "Start" },
+    { "at": 8000 },
+    { "at": 8500 }
+  ]
+}
