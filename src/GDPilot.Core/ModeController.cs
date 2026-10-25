@@ -30,6 +30,9 @@ public sealed class ModeController
 
     private readonly GridNavigator? grids;
 
+    /// <summary>True while grid presses are stepping because the screen could not be read; shown on the overlay.</summary>
+    public bool GridFellBack => grids is not null && grids.FellBack;
+
     public ModeController(IReadOnlyDictionary<Mode, KeyCode> panelKeys, Func<Mode, ButtonLayers> layersFor, GridNavigator? grids = null)
     {
         this.panelKeys = panelKeys;

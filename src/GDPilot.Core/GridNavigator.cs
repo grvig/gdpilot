@@ -36,6 +36,9 @@ public sealed class GridNavigator
     /// <summary>Whether the last press jumped between items, rather than stepping a cell.</summary>
     public bool Jumping { get; private set; }
 
+    /// <summary>Whether jumping is on but the last press in this mode had to step, because the screen could not be trusted.</summary>
+    public bool FellBack => occupancy is not null && placed && !Jumping;
+
     /// <summary>Why the last grid press did nothing, or null when it worked.</summary>
     public string? Notice { get; private set; }
 

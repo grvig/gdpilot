@@ -6,9 +6,15 @@ namespace GDPilot.Core;
 /// </summary>
 public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<string> Legend)
 {
-    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers)
+    /// <param name="gridFellBack">Whether grid presses are stepping because the screen could not be read, said first so it is noticed.</param>
+    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false)
     {
         List<string> legend = new();
+
+        if (gridFellBack)
+        {
+            legend.Add("Grid: stepping, screen unclear");
+        }
 
         foreach ((GamepadButtons button, ButtonBinding binding, bool chorded) in layers.Entries)
         {

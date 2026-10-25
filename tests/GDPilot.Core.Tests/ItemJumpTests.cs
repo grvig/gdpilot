@@ -118,6 +118,35 @@ public sealed class ItemJumpTests
         Assert.Same(first, source.LastPrevious);
     }
 
+    [Fact]
+    public void FallingBackIsShownFirstOnTheOverlay()
+    {
+        FakeSource source = new(Map(
+            "??????",
+            "??????",
+            "......",
+            "......"));
+        GridNavigator navigator = new(Ready, source);
+        ButtonLayers layers = BindingTable.Parse(new Dictionary<string, string> { ["DPadRight"] = "grid:right" }, 0.5);
+        ModeController modes = new(new Dictionary<Mode, KeyCode>(), _ => layers, navigator);
+        Assert.False(modes.GridFellBack);
+
+        navigator.Act(Mode.Inventory, "right");
+
+        Assert.True(modes.GridFellBack);
+        Assert.Equal("Grid: stepping, screen unclear", OverlayState.Build(Mode.Inventory, SuspendReason.None, layers, modes.GridFellBack).Legend[0]);
+    }
+
+    [Fact]
+    public void SteppingByChoiceIsNotFallingBack()
+    {
+        GridNavigator navigator = new(Ready);
+
+        navigator.Act(Mode.Inventory, "right");
+
+        Assert.False(navigator.FellBack);
+    }
+
     /// <summary>A map drawn as rows of # for an item, . for empty and ? for unsure.</summary>
     private static OccupancyMap Map(params string[] rows)
     {
