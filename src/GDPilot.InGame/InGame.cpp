@@ -1725,7 +1725,10 @@ int ScanThings(void* camera, const int viewport[4], Thing seenThings[], int most
         InWorld(centre, origin);
         int count = 0;
 
-        for (void** entity = nearby.first; entity != nearby.last && count < most; entity++)
+        // Every thing in reach is looked at and the nearest kept, since the game's list
+        // is in no order: after a big fight the item at the character's feet might
+        // otherwise be left out behind a dozen further off.
+        for (void** entity = nearby.first; entity != nearby.last; entity++)
         {
             int kind = KindOf(*entity);
 
@@ -1777,13 +1780,37 @@ int ScanThings(void* camera, const int viewport[4], Thing seenThings[], int most
                 continue;
             }
 
-            Thing& thing = seenThings[count];
+            float distance = std::sqrt(relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2]);
+            int slot = count;
+
+            if (count == most)
+            {
+                slot = 0;
+
+                for (int index = 1; index < most; index++)
+                {
+                    if (seenThings[index].distance > seenThings[slot].distance)
+                    {
+                        slot = index;
+                    }
+                }
+
+                if (seenThings[slot].distance <= distance)
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                count++;
+            }
+
+            Thing& thing = seenThings[slot];
             thing.id = objectId(*entity);
             thing.kind = kind;
             thing.x = x;
             thing.y = y;
-            thing.distance = std::sqrt(relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2]);
-            count++;
+            thing.distance = distance;
         }
 
         return count;
