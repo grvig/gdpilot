@@ -28,7 +28,7 @@ public sealed class GameReportTests
     [Fact]
     public void AKindOfReportThisVersionDoesNotKnowIsSkipped()
     {
-        Assert.Null(GameReport.Parse("""{"protocol":1,"type":"camera","yaw":1.5}"""));
+        Assert.Null(GameReport.Parse("""{"protocol":1,"type":"weather","rain":0.5}"""));
     }
 
     [Fact]

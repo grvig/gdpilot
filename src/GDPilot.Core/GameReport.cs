@@ -42,6 +42,8 @@ public abstract record GameReport
                 return new PanelsReport(Strings(root["open"]));
             case "layout":
                 return Layout(root);
+            case "camera":
+                return new CameraReport(root["third"]?.GetValue<bool>() ?? false);
             default:
                 return null;
         }
@@ -63,6 +65,10 @@ public abstract record GameReport
                 root["columns"] = layout.Columns;
                 root["rows"] = layout.Rows;
                 root["items"] = new JsonArray(layout.Items.Select(Item).ToArray());
+                break;
+            case CameraReport camera:
+                root["type"] = "camera";
+                root["third"] = camera.ThirdPerson;
                 break;
         }
 
