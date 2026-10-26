@@ -10,6 +10,7 @@
     },
     "walkThreshold": 0.25,
     "chordTrigger": 0.5,
+    "lookSpeed": 2.5,
     "jumpToItems": true,
     "calibration": {
       "leftCenterX": 0.0,
@@ -39,7 +40,8 @@
       "DPadDown": "panel:WorldMap",
       "Start": "back",
       "LT+DPadUp": "panel:Vendor",
-      "LT+DPadDown": "panel:Stash"
+      "LT+DPadDown": "panel:Stash",
+      "RightStick": "camera:toggle"
     },
     "Inventory": {
       "DPadUp": "grid:up",

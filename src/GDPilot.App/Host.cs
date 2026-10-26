@@ -27,7 +27,8 @@ internal static class Host
             gameInFront = () => true;
         }
 
-        GuardedSink guarded = new(output);
+        CommandRouter router = new(output);
+        GuardedSink guarded = new(router);
         Suspension suspension = new(guarded);
 
         // A synthetic key left down outlives this process, so every way out releases first.
@@ -74,6 +75,11 @@ internal static class Host
         // The in-game part, when it runs, reports exact item layouts; until then the screen is read.
         ReportedOccupancy occupancy = new(screen);
         using GameLink link = new(occupancy, Console.WriteLine);
+
+        if (!dryRun)
+        {
+            router.Link = link;
+        }
         IOccupancySource? jumping = null;
 
         if (config.Input.JumpToItems)
@@ -117,11 +123,14 @@ internal static class Host
         try
         {
             TimeSpan last = clock.Elapsed;
+            bool wasSuspended = false;
             replayClock.Start();
 
             while (!stop.IsCancellationRequested && (duration is null || clock.Elapsed < duration))
             {
                 TimeSpan now = clock.Elapsed;
+                mapper.Looking = link.ThirdPerson;
+                StopTurningWhenSuspended(suspension, link, ref wasSuspended);
                 loop.Tick(now - last);
                 last = now;
                 ticks++;
@@ -154,6 +163,22 @@ internal static class Host
         double seconds = (clock.Elapsed - started).TotalSeconds;
         Console.WriteLine($"Stopped. Everything held has been released. {ticks} ticks at {ticks / seconds:F0} Hz against {config.Input.PollHz} configured.");
         return 0;
+    }
+
+    /// <summary>
+    /// A suspension stops all input, including the commands that would stop the
+    /// camera turning, so the camera is told to stop directly as one begins.
+    /// </summary>
+    private static void StopTurningWhenSuspended(Suspension suspension, GameLink link, ref bool wasSuspended)
+    {
+        bool suspended = suspension.Reasons != SuspendReason.None;
+
+        if (suspended && !wasSuspended)
+        {
+            link.Send(new LookCommand(0, 0));
+        }
+
+        wasSuspended = suspended;
     }
 
     private static SdlGamepadSource? OpenPad(GamepadTrace? replay)

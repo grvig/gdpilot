@@ -29,6 +29,8 @@ internal static class BindingAction
                 return new GridBinding(GridAction(parts[1], trigger));
             case "tab":
                 return new TabBinding(TabStep(parts[1], trigger));
+            case "camera" when string.Equals(parts[1], "toggle", StringComparison.OrdinalIgnoreCase):
+                return new CameraToggleBinding();
             default:
                 throw new FormatException($"\"{trigger}\": \"{parts[0]}\" bindings are not supported.");
         }

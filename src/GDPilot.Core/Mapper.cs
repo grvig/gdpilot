@@ -6,7 +6,8 @@ public sealed record MappingSettings(
     double RightDeadzone,
     double WalkThreshold,
     DirectionKeys Movement,
-    CursorSettings Cursor);
+    CursorSettings Cursor,
+    double LookRadiansPerSecond = 2.5);
 
 /// <summary>
 /// One tick of the whole controller mapping: shape both sticks, decide what
@@ -37,6 +38,15 @@ public sealed class Mapper
     public StickPosition RightCentre { get; set; } = StickPosition.Centre;
 
     /// <summary>
+    /// True while the game shows the third-person camera. The right stick then
+    /// turns the camera instead of moving the cursor, and because the game's
+    /// keyboard movement is relative to the camera, turning it turns "forward".
+    /// </summary>
+    public bool Looking { get; set; }
+
+    private double sentYaw;
+
+    /// <summary>
     /// Forgets held state after a suspension has released everything, so a
     /// stick still pushed on resume presses its keys again.
     /// </summary>
@@ -44,6 +54,21 @@ public sealed class Mapper
     {
         differ.Forget();
         cursor.Reset();
+
+        // The host stops the camera turning when a suspension begins.
+        sentYaw = 0;
+    }
+
+    /// <summary>Sends a turn rate only when it has changed enough to matter, so the pipe carries changes, not a stream.</summary>
+    private void Look(double yaw, List<InputIntent> intents)
+    {
+        if (Math.Abs(yaw - sentYaw) < 0.02 && (yaw == 0) == (sentYaw == 0))
+        {
+            return;
+        }
+
+        sentYaw = yaw;
+        intents.Add(new GameCommandIntent(new LookCommand(yaw, 0)));
     }
 
     public List<InputIntent> Tick(GamepadSnapshot snapshot, TimeSpan elapsed)
@@ -55,6 +80,15 @@ public sealed class Mapper
         keys.UnionWith(StickDirections.KeysFor(left, settings.WalkThreshold, settings.Movement));
 
         List<InputIntent> intents = differ.Update(keys, pointerButtons);
+
+        if (Looking)
+        {
+            Look(right.X * settings.LookRadiansPerSecond, intents);
+            return intents;
+        }
+
+        // Leaving third person with the stick still over must not leave the camera turning.
+        Look(0, intents);
         PointerMove? move = cursor.Step(right, elapsed);
 
         if (move is not null)

@@ -60,7 +60,7 @@ public sealed class GDPilotConfig
     public MappingSettings Mapping()
     {
         CursorSettings cursor = new(Input.Cursor.BaseSpeed, Input.Cursor.Exponent, Input.Cursor.MaxSpeed);
-        return new MappingSettings(Input.Deadzone.Left, Input.Deadzone.Right, Input.WalkThreshold, DirectionKeys.Wasd, cursor);
+        return new MappingSettings(Input.Deadzone.Left, Input.Deadzone.Right, Input.WalkThreshold, DirectionKeys.Wasd, cursor, Input.LookSpeed);
     }
 
     /// <summary>

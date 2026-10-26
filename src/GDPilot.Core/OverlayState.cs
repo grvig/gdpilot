@@ -86,6 +86,8 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
                 return "Previous tab";
             case BackBinding:
                 return "Back";
+            case CameraToggleBinding:
+                return "Switch camera";
             default:
                 return binding.ToString();
         }

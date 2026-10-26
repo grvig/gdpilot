@@ -72,6 +72,11 @@ public sealed class ModeController
                     intents.AddRange(grids.Tab(stack.Current, tab.Step));
                 }
 
+                if (binding is CameraToggleBinding)
+                {
+                    intents.Add(new GameCommandIntent(new ToggleCameraCommand()));
+                }
+
                 Act(binding);
             }
         }

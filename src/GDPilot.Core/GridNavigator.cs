@@ -6,6 +6,9 @@ public sealed record GridBinding(string Action) : ButtonBinding;
 /// <summary>"tab:next" or "tab:previous": clicks the neighbouring stash tab. Step is +1 or -1.</summary>
 public sealed record TabBinding(int Step) : ButtonBinding;
 
+/// <summary>"camera:toggle": switches the in-game part between the game's camera and third person.</summary>
+public sealed record CameraToggleBinding : ButtonBinding;
+
 /// <summary>
 /// Moves the cursor over the grids calibrated for the current mode. A mode can
 /// have several surfaces, such as the main bag and the second bag, named

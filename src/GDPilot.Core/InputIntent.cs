@@ -26,6 +26,9 @@ public sealed record PointerDown(PointerButton Button) : InputIntent;
 
 public sealed record PointerUp(PointerButton Button) : InputIntent;
 
+/// <summary>A command for the in-game part rather than input for Windows; the host routes it down the pipe.</summary>
+public sealed record GameCommandIntent(GameCommand Command) : InputIntent;
+
 /// <summary>Where intents go. The real one injects into Windows, the recording one into a list.</summary>
 public interface IInputSink
 {

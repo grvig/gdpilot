@@ -14,6 +14,9 @@ public sealed class InputConfig
 
     public CursorConfig Cursor { get; init; } = new();
 
+    /// <summary>How fast the right stick turns the third-person camera at full tilt, in radians per second.</summary>
+    public double LookSpeed { get; init; } = 2.5;
+
     /// <summary>
     /// Whether grid presses read the screen and jump between items. Off, they
     /// step one cell at a time, which never depends on what the screen shows.
