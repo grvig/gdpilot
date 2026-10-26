@@ -44,7 +44,15 @@ public sealed class Mapper
     /// </summary>
     public bool Looking { get; set; }
 
+    /// <summary>
+    /// Where the cursor waits while looking, in screen pixels: a little ahead of
+    /// the character, so skills and attacks go where the camera faces. Null
+    /// leaves the cursor where it was.
+    /// </summary>
+    public (int X, int Y)? AimPoint { get; set; }
+
     private double sentYaw;
+    private bool aimed;
 
     /// <summary>
     /// Forgets held state after a suspension has released everything, so a
@@ -83,11 +91,18 @@ public sealed class Mapper
 
         if (Looking)
         {
+            if (!aimed && AimPoint is (int x, int y))
+            {
+                intents.Add(new PointerMoveTo(x, y));
+            }
+
+            aimed = true;
             Look(right.X * settings.LookRadiansPerSecond, intents);
             return intents;
         }
 
         // Leaving third person with the stick still over must not leave the camera turning.
+        aimed = false;
         Look(0, intents);
         PointerMove? move = cursor.Step(right, elapsed);
 

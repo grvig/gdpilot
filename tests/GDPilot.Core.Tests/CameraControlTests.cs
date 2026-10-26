@@ -69,4 +69,19 @@ public sealed class CameraControlTests
         Assert.Contains(new GameCommandIntent(new ToggleCameraCommand()), sent);
         Assert.Contains("RightStick: Switch camera", OverlayState.Build(Mode.Combat, SuspendReason.None, combat).Legend);
     }
+
+    [Fact]
+    public void EnteringThirdPersonParksTheCursorAtTheAimPointOnce()
+    {
+        Mapper mapper = new(Settings, NoButtons) { Looking = true, AimPoint = (960, 410) };
+
+        Assert.Equal(new InputIntent[] { new PointerMoveTo(960, 410) }, mapper.Tick(GamepadSnapshot.Rest, Tick));
+        Assert.Empty(mapper.Tick(GamepadSnapshot.Rest, Tick));
+
+        mapper.Looking = false;
+        mapper.Tick(GamepadSnapshot.Rest, Tick);
+        mapper.Looking = true;
+
+        Assert.Equal(new InputIntent[] { new PointerMoveTo(960, 410) }, mapper.Tick(GamepadSnapshot.Rest, Tick));
+    }
 }

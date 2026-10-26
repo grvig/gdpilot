@@ -18,6 +18,12 @@ public sealed class InputConfig
     public double LookSpeed { get; init; } = 2.5;
 
     /// <summary>
+    /// How far down the game window the cursor waits in third person, from 0 at
+    /// the top to 1 at the bottom. Just above the character puts attacks ahead of it.
+    /// </summary>
+    public double AimHeight { get; init; } = 0.38;
+
+    /// <summary>
     /// Whether grid presses read the screen and jump between items. Off, they
     /// step one cell at a time, which never depends on what the screen shows.
     /// </summary>

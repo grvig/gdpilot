@@ -129,6 +129,12 @@ internal static class Host
             while (!stop.IsCancellationRequested && (duration is null || clock.Elapsed < duration))
             {
                 TimeSpan now = clock.Elapsed;
+                // Measured as third person begins, not every tick: finding the window is not free.
+                if (link.ThirdPerson && !mapper.Looking)
+                {
+                    mapper.AimPoint = AimPoint(config);
+                }
+
                 mapper.Looking = link.ThirdPerson;
                 StopTurningWhenSuspended(suspension, link, ref wasSuspended);
                 loop.Tick(now - last);
@@ -163,6 +169,17 @@ internal static class Host
         double seconds = (clock.Elapsed - started).TotalSeconds;
         Console.WriteLine($"Stopped. Everything held has been released. {ticks} ticks at {ticks / seconds:F0} Hz against {config.Input.PollHz} configured.");
         return 0;
+    }
+
+    /// <summary>The middle of the game window, at the configured height, or null when the game is not running.</summary>
+    private static (int X, int Y)? AimPoint(GDPilotConfig config)
+    {
+        if (GameWindow.ClientBounds(config.GameProcess) is not ScreenRect game)
+        {
+            return null;
+        }
+
+        return (game.X + game.Width / 2, game.Y + (int)(game.Height * config.Input.AimHeight));
     }
 
     /// <summary>
