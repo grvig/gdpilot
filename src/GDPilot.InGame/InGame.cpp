@@ -1386,7 +1386,8 @@ int ScanTargets(void* camera, const int viewport[4], Seen seen[], int most)
         float back[3] = {offset.x, offset.y, offset.z};
         int count = 0;
 
-        for (const unsigned int* id = found.first; id != found.last && count < most; id++)
+        // As with nearby things, every enemy is looked at and the nearest kept.
+        for (const unsigned int* id = found.first; id != found.last; id++)
         {
             const void* target = findObject(manager, *id);
 
@@ -1438,12 +1439,38 @@ int ScanTargets(void* camera, const int viewport[4], Seen seen[], int most)
                 Say("Lock-on: camera offset %.2f %.2f %.2f; a target %.2f %.2f %.2f from the player, drawn at %.1f, %.1f of %d by %d.", back[0], back[1], back[2], relative[0], relative[1], relative[2], screen[0], screen[1], viewport[2], viewport[3]);
             }
 
-            Seen& entry = seen[count];
+            float distance = std::sqrt(relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2]);
+            int slot = count;
+
+            if (count == most)
+            {
+                slot = 0;
+
+                for (int index = 1; index < most; index++)
+                {
+                    if (seen[index].distance > seen[slot].distance)
+                    {
+                        slot = index;
+                    }
+                }
+
+                if (seen[slot].distance <= distance)
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                count++;
+            }
+
+            Seen& entry = seen[slot];
             entry.id = *id;
             entry.x = screen[0] / static_cast<float>(viewport[2]);
             entry.y = screen[1] / static_cast<float>(viewport[3]);
-            entry.distance = std::sqrt(relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2]);
+            entry.distance = distance;
             entry.health = static_cast<int>(std::lround(std::fmin(1.0, life / limit) * 100));
+
             // A point the projection cannot place would write "nan" into the report, which is not JSON.
             if (!std::isfinite(entry.x) || !std::isfinite(entry.y))
             {
@@ -1452,7 +1479,6 @@ int ScanTargets(void* camera, const int viewport[4], Seen seen[], int most)
             }
 
             entry.onScreen = ahead > 0 && entry.x >= 0 && entry.x <= 1 && entry.y >= 0 && entry.y <= 1 && InSight(centre, relative, player);
-            count++;
         }
 
         return count;
