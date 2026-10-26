@@ -99,12 +99,17 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 | 2 | Panel tracking, per-panel bindings, overlay | **Done** |
 | 3 | Grid navigation by calibration | **Done.** Bags, vendor and stash, checked in the game. |
 | 4 | Reading item positions | **Mostly done.** The D-pad jumps between items, read off the screen; exact sizes arrive with the in-game part. |
-| 5 | The in-game part and the action camera | **Next.** The connection and the game check are ready. |
+| 5 | The in-game part and the action camera | **In progress.** The third-person camera works from the pad; panel and item reports next. |
 | 6 | Lock-on, camera-relative movement, smart interact | Not started |
 | 7 | Radial skills, rumble, snapping in every menu | Not started |
 | 8 | Shortcuts, profiles, first run, tray, release | Not started |
 
 **Working today:**
+
+- **The third-person camera.** Click the right stick and the camera drops
+  behind your character; the right stick turns it, and walking follows. Click
+  again for the classic view, restored exactly. See
+  [docs/camera.md](docs/camera.md).
 
 - The left stick walks and the right stick drives a curved cursor; every button
   is configurable, with a second layer on the left trigger.

@@ -17,7 +17,7 @@ of the plan holds the new phases and the rules for the in-game part.
 | 2. Mode state machine and overlay | Done, checked live in the game |
 | 3. Grid navigation by calibration | Done, checked live in the game end to end through `--replay` |
 | 4. Occupancy detection | Mostly done: screen reading and jumping checked live; exact multi-cell items wait for the in-game part's reports |
-| 5. In-game part and action camera | Next: the pipe, the report format and `--check-game` are ready |
+| 5. In-game part and action camera | In progress: the third-person camera works live from the pad; reports of panels and items next |
 | 6. Lock-on, camera-relative movement, smart interact | Not started |
 | 7. Radial skills, rumble, snapping in every menu | Not started |
 | 8. Shortcuts, profiles, first run, release | Not started |
@@ -90,8 +90,21 @@ Safety:
 | The connection | Done: `GameLink`, a named pipe for the current user only, reconnecting, dropping every report on disconnect |
 | Reports before the screen | Done: `ReportedOccupancy` uses the game's layout when it fits the calibrated grid, otherwise the screen |
 | Function list and game check | Done: `game-functions.txt`, 33 names; `--check-game` found them all in the installed build |
-| Native toolchain | Not started: no Microsoft C++ compiler here; MinGW g++ and clang are |
-| The in-game part itself | Not started |
+| Native toolchain | Done: Visual Studio 2022 Build Tools, installed with the owner's approval on 2026-10-25 |
+
+## Phase 5, 2026-10-26
+
+| Piece | Status |
+| --- | --- |
+| In-game part build | Done: `src/GDPilot.InGame/build.cmd`, Detours fetched at a pinned commit and fingerprint |
+| Loading it | Done: `--load-in-game` checks the game, then loads a content-named copy so rebuilds never collide |
+| Start-up checks | Done: three camera functions found by name, their first bytes matched; off on any difference |
+| Third-person camera | Done: F8 or the right-stick click; the game's camera restored exactly on the way back; `camera.ini` tunes it live |
+| Turning with the right stick | Done: look rates down the pipe, applied with the game's `AdjustYaw`; movement follows the camera |
+| Aim point | Done: the cursor waits ahead of the character in third person |
+| Two-way pipe | Done: buffered, overlapped on the game's side; the camera stops on any suspension |
+| Panel and item reports from the game | Not started |
+| Camera collision, stick tilt, follow | Not started |
 
 ## Live check in the game, 2026-10-19
 
@@ -166,7 +179,16 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   over the empty (0,3), (0,5), then (2,5) over the empty (1,5), (3,5), and up
   to (4,2) when row 5 ran out. A test pins that path.
 
-303 core tests and 59 integration tests, all passing.
+- **2026-10-26, live, unattended:** the in-game part loaded into the running
+  game, found its functions, and attached to the camera update without a
+  hitch. F8 dropped the camera behind the character and restored the game's
+  own camera exactly. Through `--replay` of
+  `tests/fixtures/traces/camera-turn.json`, GDPilot switched to third person
+  from the right-stick click, turned the camera right to face Kerrick and back
+  with the stick, and switched back, all through the pipe. The cursor moved to
+  the aim point as third person began.
+
+312 core tests and 62 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -200,20 +222,23 @@ Nothing.
 
 ## Next session starts here
 
-Phase 5, PLAN.md section 17: the in-game part and the action camera.
+The rest of Phase 5, PLAN.md section 17.
 
-1. Choose the toolchain. GrimAction builds with Microsoft's C++ compiler and
-   Detours; neither is installed. Either ask the owner before installing the
-   free Visual Studio Build Tools, a download of several GB, or adapt to the
-   MinGW g++ already here with MinHook in place of Detours.
-2. Bring in GrimAction's source under its MIT licence, keeping its notice, and
-   record the reuse in DECISIONS.md.
-3. Replace its pinned addresses with lookups by exported name, reading field
-   offsets from the game's getters where it can. Run `--check-game` first.
-4. Load it from `GDPilot.exe` into the running game, get the third-person
-   camera working on the installed build, and toggle it from the pad.
-5. Have it send `panels` and `layout` reports over `GameLink.PipeName`, then
-   check live that a three-cell sword is one stop.
+1. **Panel reports.** Find which panels are open from inside the game.
+   GrimAction reads flag bytes in the game's UI object for the inventory,
+   stash, vendor, skills, map and menu; map those on the installed build, send
+   `panels` reports, and let GDPilot follow them instead of tracking presses.
+   That ends mode desync.
+2. **Item layouts.** Read each bag's and the stash's items through
+   `InventorySack::GetInventory` and send `layout` reports, then check live
+   that the three-cell sword in the second bag is one stop.
+3. **Camera feel.** Collision, so the camera never sits inside a wall; the
+   stick's up and down for tilt; and an option to follow the character.
+
+Workflow: `src\GDPilot.InGame\build.cmd`, `dotnet build`, restart the game,
+enter the world, `GDPilot.exe --load-in-game`, then replay a trace. A new
+in-game build always needs a game restart. The game driver used for unattended
+checks lives in `%LOCALAPPDATA%\GDPilot\driver`, outside the repository.
 
 When someone is at the pad, also settle "Not yet verified": move the sticks
 during `--dry-run`, try D mode, and run `--calibrate` with the stick.
