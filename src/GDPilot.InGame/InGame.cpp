@@ -7,6 +7,8 @@
 #define NOMINMAX
 #include <windows.h>
 
+#include <share.h>
+
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -46,7 +48,8 @@ void OpenJournal()
     std::wstring path = std::wstring(folder) + L"\\GDPilot";
     CreateDirectoryW(path.c_str(), nullptr);
     path += L"\\in-game.log";
-    _wfopen_s(&journal, path.c_str(), L"a");
+    // Shared, so the log can be read while the game is still running.
+    journal = _wfsopen(path.c_str(), L"a", _SH_DENYNO);
 }
 
 // A game function found by name, with the bytes it must start with. The bytes

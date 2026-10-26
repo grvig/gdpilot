@@ -24,6 +24,8 @@
   <ItemGroup>
     <None Include="..\..\config.example.json" Link="config.example.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\game-functions.txt" Link="game-functions.txt" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Built separately by src\GDPilot.InGame\build.cmd; copied along when present. -->
+    <None Include="..\GDPilot.InGame\bin\GDPilot.InGame.dll" Link="GDPilot.InGame.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\GDPilot.InGame\bin\GDPilot.InGame.dll')" />
   </ItemGroup>
 
 </Project>

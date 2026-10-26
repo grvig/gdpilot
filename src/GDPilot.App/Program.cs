@@ -53,6 +53,11 @@ internal static class Program
             return CaptureMode.Run(config, args[captureAt + 1], directory);
         }
 
+        if (args.Contains("--load-in-game"))
+        {
+            return LoadInGameMode.Run(config);
+        }
+
         int checkAt = Array.IndexOf(args, "--check-game");
 
         if (checkAt >= 0)
