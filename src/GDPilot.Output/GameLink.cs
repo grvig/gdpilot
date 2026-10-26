@@ -24,6 +24,7 @@ public sealed class GameLink : IDisposable
     private readonly object sending = new();
     private PanelsReport? panels;
     private TargetsReport near = new(Array.Empty<SeenTarget>());
+    private IReadOnlyList<NearbyThing> things = Array.Empty<NearbyThing>();
     private StreamWriter? writer;
     private volatile bool thirdPerson;
     private volatile int health = -1;
@@ -51,6 +52,9 @@ public sealed class GameLink : IDisposable
 
     /// <summary>The last targets report whole, with where the character and the ground round it fall on the screen.</summary>
     public TargetsReport Near => Volatile.Read(ref near);
+
+    /// <summary>What lies close by to pick up, talk to or use, as last reported; nothing once the game has gone.</summary>
+    public IReadOnlyList<NearbyThing> Things => Volatile.Read(ref things);
 
     /// <summary>Whether the in-game part can steer the character from the stick; false once it has gone.</summary>
     public bool AnalogMovement => analogMovement;
@@ -136,6 +140,7 @@ public sealed class GameLink : IDisposable
                 health = -1;
                 Volatile.Write(ref panels, null);
                 Volatile.Write(ref near, new TargetsReport(Array.Empty<SeenTarget>()));
+                Volatile.Write(ref things, Array.Empty<NearbyThing>());
                 layouts.Forget();
             }
         }
@@ -186,6 +191,9 @@ public sealed class GameLink : IDisposable
                 break;
             case HealthReport life:
                 health = life.Percent;
+                break;
+            case InteractablesReport close:
+                Volatile.Write(ref things, close.Things);
                 break;
             case AbilitiesReport abilities:
                 analogMovement = abilities.AnalogMovement;

@@ -102,10 +102,13 @@ public sealed class GameLinkTests
             Assert.True(SpinWait.SpinUntil(() => link.Targets.Count == 1, 2000));
             Assert.Equal(7u, link.Targets[0].Id);
             Assert.Equal(new ScreenSpot(0.5, 0.6), link.Near.Feet);
+            writer.WriteLine(new InteractablesReport(new[] { new NearbyThing(9, ThingKind.Loot, 0.5, 0.6, 2) }).Write());
+            Assert.True(SpinWait.SpinUntil(() => link.Things.Count == 1, 2000));
         }
 
         Assert.True(SpinWait.SpinUntil(() => link.Targets.Count == 0, 2000));
         Assert.Null(link.Near.Feet);
+        Assert.Empty(link.Things);
     }
 
     [Fact]
