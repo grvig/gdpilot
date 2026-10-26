@@ -75,6 +75,22 @@ public sealed class GameReportTests
     }
 
     [Fact]
+    public void ThingsNearbyKeepWhatAClickWouldDo()
+    {
+        InteractablesReport sent = new(new[] { new NearbyThing(38371, ThingKind.Talk, 0.16, 0.47, 6.2), new NearbyThing(5, ThingKind.Loot, 0.5, 0.6, 2) });
+
+        Assert.Equal(sent, GameReport.Parse(sent.Write()));
+    }
+
+    [Fact]
+    public void AThingOfAKindThisVersionDoesNotKnowIsPassedOver()
+    {
+        InteractablesReport received = Assert.IsType<InteractablesReport>(GameReport.Parse("""{"protocol":1,"type":"interactables","list":[{"id":3,"kind":"pray","x":0.5,"y":0.5},{"id":4,"kind":"use","x":0.4,"y":0.6,"distance":3}]}"""));
+
+        Assert.Equal(new[] { new NearbyThing(4, ThingKind.Use, 0.4, 0.6, 3) }, received.Things);
+    }
+
+    [Fact]
     public void AKindOfReportThisVersionDoesNotKnowIsSkipped()
     {
         Assert.Null(GameReport.Parse("""{"protocol":1,"type":"weather","rain":0.5}"""));

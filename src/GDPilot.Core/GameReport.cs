@@ -48,6 +48,8 @@ public abstract record GameReport
                 return new HealthReport(Math.Clamp(root["percent"]?.GetValue<int>() ?? 100, 0, 100));
             case "targets":
                 return Targets(root);
+            case "interactables":
+                return Interactables(root);
             case "abilities":
                 return new AbilitiesReport(root["analog"]?.GetValue<bool>() ?? false);
             default:
@@ -79,6 +81,10 @@ public abstract record GameReport
             case HealthReport health:
                 root["type"] = "health";
                 root["percent"] = health.Percent;
+                break;
+            case InteractablesReport near:
+                root["type"] = "interactables";
+                root["list"] = new JsonArray(near.Things.Select(Thing).ToArray());
                 break;
             case AbilitiesReport abilities:
                 root["type"] = "abilities";
@@ -162,6 +168,54 @@ public abstract record GameReport
         }
 
         return new TargetsReport(targets) { Feet = Spot(root["feet"]), Ring = ring };
+    }
+
+    private static InteractablesReport Interactables(JsonObject root)
+    {
+        List<NearbyThing> things = new();
+
+        // As with targets, one thing described badly is passed over rather than costing the rest.
+        foreach (JsonNode? node in root["list"]?.AsArray() ?? new JsonArray())
+        {
+            if (node is not JsonObject thing || !Has(thing, "id", out uint id) || id == 0 || !Has(thing, "x", out double x) || !Has(thing, "y", out double y) || !Has(thing, "kind", out string? named))
+            {
+                continue;
+            }
+
+            ThingKind kind;
+
+            switch (named)
+            {
+                case "loot":
+                    kind = ThingKind.Loot;
+                    break;
+                case "talk":
+                    kind = ThingKind.Talk;
+                    break;
+                case "use":
+                    kind = ThingKind.Use;
+                    break;
+                default:
+                    continue;
+            }
+
+            Has(thing, "distance", out double distance);
+            things.Add(new NearbyThing(id, kind, x, y, distance));
+        }
+
+        return new InteractablesReport(things);
+    }
+
+    private static JsonNode Thing(NearbyThing thing)
+    {
+        return new JsonObject
+        {
+            ["id"] = thing.Id,
+            ["kind"] = thing.Kind.ToString().ToLowerInvariant(),
+            ["x"] = thing.X,
+            ["y"] = thing.Y,
+            ["distance"] = thing.Distance,
+        };
     }
 
     private static bool Has<T>(JsonObject item, string name, out T value)
@@ -275,6 +329,32 @@ public sealed record TargetsReport(IReadOnlyList<SeenTarget> Targets) : GameRepo
 
 /// <summary>What the in-game part found it can do, said once as it connects: whether it can steer the character from the stick.</summary>
 public sealed record AbilitiesReport(bool AnalogMovement) : GameReport;
+
+/// <summary>What a click on a nearby thing does: pick it up, talk to it, or use it.</summary>
+public enum ThingKind
+{
+    Loot,
+    Talk,
+    Use,
+}
+
+/// <summary>Something close by that a click would pick up, talk to or use, drawn on the screen as fractions of the window.</summary>
+public sealed record NearbyThing(uint Id, ThingKind Kind, double X, double Y, double Distance);
+
+/// <summary>Everything within reach of the character to pick up, talk to or use, in view, sent whenever it changes.</summary>
+public sealed record InteractablesReport(IReadOnlyList<NearbyThing> Things) : GameReport
+{
+    // Records compare lists by reference, so equality is spelt out for the reports read back in tests.
+    public bool Equals(InteractablesReport? other)
+    {
+        return other is not null && Things.SequenceEqual(other.Things);
+    }
+
+    public override int GetHashCode()
+    {
+        return Things.Count;
+    }
+}
 
 /// <summary>A point on the game's screen, as fractions of its window from the top left.</summary>
 public sealed record ScreenSpot(double X, double Y);
