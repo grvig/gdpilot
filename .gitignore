@@ -31,6 +31,9 @@ coverage/
 packages/
 .nuget/
 
+# Third-party source fetched by the in-game build, pinned and checked there.
+src/GDPilot.InGame/external/
+
 # Local runtime configuration. The example is tracked, the live one is not.
 config.json
 
