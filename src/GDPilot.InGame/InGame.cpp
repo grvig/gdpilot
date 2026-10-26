@@ -14,6 +14,7 @@
 #include <detours.h>
 #include <share.h>
 
+#include <atomic>
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
@@ -212,6 +213,22 @@ void Behind(float values[])
 
 using SetZoom = void (*)(void* camera, float distance);
 
+// What the pipe thread hands the game's thread, and back.
+std::atomic<bool> toggleRequested{false};
+std::atomic<float> yawPerSecond{0};
+std::atomic<bool> linked{false};
+HANDLE reportWanted = nullptr;
+
+using AdjustYaw = void (*)(void* camera, float radians);
+
+void ReportCamera()
+{
+    if (reportWanted != nullptr)
+    {
+        SetEvent(reportWanted);
+    }
+}
+
 bool Plausible(const float values[])
 {
     for (std::size_t index = 0; index < std::size(Fields); index++)
@@ -275,12 +292,14 @@ void TurnOn(void* camera)
     Say("Third person: distance %.1f to %.1f from %.1f, pitch %.1f to %.1f, view %.1f degrees.", behind[2], behind[3], behind[0], behind[4], behind[5], behind[10] * 180 / 3.14159265f);
     thirdPerson = true;
     Say("Third person on.");
+    ReportCamera();
 }
 
 void TurnOff(void* camera)
 {
     Apply(camera, native);
     thirdPerson = false;
+    ReportCamera();
     Say("Third person off: the game's own camera is back exactly as it was.");
 }
 
@@ -294,14 +313,50 @@ bool GameInFront()
 using CameraUpdate = void (*)(void* camera);
 CameraUpdate originalUpdate = nullptr;
 
+LARGE_INTEGER lastFrame{};
+LARGE_INTEGER ticksPerSecond{};
+
+float SecondsSinceLastFrame()
+{
+    LARGE_INTEGER now{};
+    QueryPerformanceCounter(&now);
+    float seconds = 0;
+
+    if (lastFrame.QuadPart != 0)
+    {
+        seconds = static_cast<float>(now.QuadPart - lastFrame.QuadPart) / static_cast<float>(ticksPerSecond.QuadPart);
+    }
+
+    lastFrame = now;
+
+    // A long gap is a loading screen or a pause, not a turn the stick asked for.
+    if (seconds > 0.1f)
+    {
+        return 0;
+    }
+
+    return seconds;
+}
+
 // Runs on the game's own thread, once per camera update, after the game's code.
 void UpdatedCamera(void* camera)
 {
     originalUpdate(camera);
+    float elapsed = SecondsSinceLastFrame();
+
+    if (thirdPerson)
+    {
+        float yaw = yawPerSecond.load();
+
+        if (yaw != 0 && elapsed > 0)
+        {
+            reinterpret_cast<AdjustYaw>(required[2].address)(camera, yaw * elapsed);
+        }
+    }
 
     bool pressed = GameInFront() && (GetAsyncKeyState(VK_F8) & 0x8000) != 0;
 
-    if (pressed && !togglePressed)
+    if ((pressed && !togglePressed) || toggleRequested.exchange(false))
     {
         if (thirdPerson)
         {
@@ -334,14 +389,162 @@ bool Attach()
     return true;
 }
 
+// The pipe GDPilot listens on, opened for overlapped I/O so a pending read
+// never holds up a write, and nothing here ever waits on the game's thread.
+constexpr wchar_t PipePath[] = L"\\\\.\\pipe\\GDPilot.Game";
+
+bool WriteLine(HANDLE pipe, HANDLE done, const std::string& line)
+{
+    OVERLAPPED overlapped{};
+    overlapped.hEvent = done;
+    DWORD written = 0;
+
+    if (!WriteFile(pipe, line.data(), static_cast<DWORD>(line.size()), nullptr, &overlapped) && GetLastError() != ERROR_IO_PENDING)
+    {
+        return false;
+    }
+
+    return GetOverlappedResult(pipe, &overlapped, &written, TRUE) != 0;
+}
+
+std::string CameraLine()
+{
+    if (thirdPerson)
+    {
+        return "{\"protocol\":1,\"type\":\"camera\",\"third\":true}\n";
+    }
+
+    return "{\"protocol\":1,\"type\":\"camera\",\"third\":false}\n";
+}
+
+float NumberAfter(const std::string& line, const char* key)
+{
+    std::size_t at = line.find(key);
+
+    if (at == std::string::npos)
+    {
+        return 0;
+    }
+
+    return std::strtof(line.c_str() + at + std::strlen(key), nullptr);
+}
+
+void Obey(const std::string& line)
+{
+    if (line.find("\"protocol\":1") == std::string::npos)
+    {
+        Say("Ignored a command from another protocol: %s", line.c_str());
+        return;
+    }
+
+    if (line.find("\"type\":\"toggle-camera\"") != std::string::npos)
+    {
+        toggleRequested = true;
+        return;
+    }
+
+    if (line.find("\"type\":\"look\"") != std::string::npos)
+    {
+        yawPerSecond = NumberAfter(line, "\"yaw\":");
+    }
+}
+
+void Converse(HANDLE pipe)
+{
+    HANDLE readDone = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    HANDLE writeDone = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    char buffer[512];
+    std::string pending;
+    bool healthy = WriteLine(pipe, writeDone, CameraLine());
+
+    while (healthy)
+    {
+        OVERLAPPED overlapped{};
+        overlapped.hEvent = readDone;
+        ResetEvent(readDone);
+
+        if (!ReadFile(pipe, buffer, sizeof(buffer), nullptr, &overlapped) && GetLastError() != ERROR_IO_PENDING)
+        {
+            break;
+        }
+
+        bool reading = true;
+
+        while (reading && healthy)
+        {
+            HANDLE waits[] = {readDone, reportWanted};
+            DWORD woke = WaitForMultipleObjects(2, waits, FALSE, INFINITE);
+
+            if (woke == WAIT_OBJECT_0 + 1)
+            {
+                healthy = WriteLine(pipe, writeDone, CameraLine());
+                continue;
+            }
+
+            DWORD received = 0;
+
+            if (!GetOverlappedResult(pipe, &overlapped, &received, FALSE) || received == 0)
+            {
+                healthy = false;
+                break;
+            }
+
+            pending.append(buffer, received);
+            reading = false;
+        }
+
+        for (std::size_t end = pending.find('\n'); end != std::string::npos; end = pending.find('\n'))
+        {
+            Obey(pending.substr(0, end));
+            pending.erase(0, end + 1);
+        }
+    }
+
+    CancelIoEx(pipe, nullptr);
+    CloseHandle(readDone);
+    CloseHandle(writeDone);
+}
+
+DWORD WINAPI Link(LPVOID)
+{
+    reportWanted = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+
+    for (;;)
+    {
+        HANDLE pipe = CreateFileW(PipePath, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
+
+        if (pipe == INVALID_HANDLE_VALUE)
+        {
+            Sleep(2000);
+            continue;
+        }
+
+        linked = true;
+        Say("Connected to GDPilot.");
+        Converse(pipe);
+        CloseHandle(pipe);
+        linked = false;
+
+        // A stick held when GDPilot went must not keep turning the camera.
+        yawPerSecond = 0;
+        Say("GDPilot went away; listening for it again.");
+    }
+}
+
 DWORD WINAPI Start(LPVOID)
 {
     OpenJournal();
     Say("GDPilot in-game part loaded.");
+    QueryPerformanceFrequency(&ticksPerSecond);
 
-    if (FindEverything())
+    if (FindEverything() && Attach())
     {
-        Attach();
+        HANDLE thread = CreateThread(nullptr, 0, Link, nullptr, 0, nullptr);
+
+        if (thread != nullptr)
+        {
+            CloseHandle(thread);
+        }
     }
 
     return 0;
