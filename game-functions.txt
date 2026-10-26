@@ -67,3 +67,14 @@ Engine.dll ?GetHeight@Actor@GAME@@QEBAMXZ
 # Analog movement: with SetControllerDirection above, the call the game walks
 # the character through, toward a point a step ahead, while a key is down.
 Game.dll ?HandleActionFromJoystick@ControllerPlayer@GAME@@QEAA_NAEBVWorldVec3@2@_N@Z
+
+# Smart interact: what lies nearby, where each thing stands, and which classes
+# a click picks up, talks to or uses.
+Engine.dll ?GetEntitiesInSphere@World@GAME@@QEBAXAEAV?$vector@PEAVEntity@GAME@@@mem@@PEAVRegion@2@AEBVSphere@2@_NW4EntityListType@2@@Z
+Engine.dll ?gEngine@GAME@@3PEAVEngine@1@EA
+Game.dll ?classInfo@Item@GAME@@1VRTTI_ClassInfo@2@B
+Game.dll ?classInfo@OneShot@GAME@@1VRTTI_ClassInfo@2@B
+Game.dll ?classInfo@FixedItem@GAME@@1VRTTI_ClassInfo@2@B
+Game.dll ?classInfo@FixedLever@GAME@@1VRTTI_ClassInfo@2@B
+Game.dll ?classInfo@StaticTeleporter@GAME@@1VRTTI_ClassInfo@2@B
+Game.dll ?classInfo@DynamicTeleporter@GAME@@1VRTTI_ClassInfo@2@B

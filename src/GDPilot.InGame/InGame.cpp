@@ -1595,6 +1595,252 @@ std::string RingText(const Ring& around)
     return text + "]";
 }
 
+// Smart interact's eyes: what lies close round the character that a click
+// would pick up, talk to or use. The game's own query for entities in a
+// sphere, on the world the game's own target query reaches through the engine
+// at 0x50, checked by the bytes of that very read; each entity is sorted by its
+// class: loot on the ground, the townsfolk, and the fixed things of the world,
+// such as chests, shrines, doors, levers, rift gates and portals. A click on
+// one does the rest: the game walks over and picks up, talks or uses it, as a
+// click on Kerrick opened his shop live on 2026-10-31. An entity's place is
+// its world coordinates, at 0xd8 in it as the game's own getter returns them:
+// the region, then the position, then the rotation.
+using EntitiesInSphere = void (*)(const void* world, void* found, void* region, const float* sphere, bool flag, int kind);
+using CoordsOf = const unsigned char* (*)(const void* entity);
+
+EntitiesInSphere entitiesInSphere = nullptr;
+CoordsOf coordsOf = nullptr;
+void** engineGlobal = nullptr;
+const unsigned char* itemClass = nullptr;
+const unsigned char* oneShotClass = nullptr;
+const unsigned char* fixedItemClass = nullptr;
+const unsigned char* leverClass = nullptr;
+const unsigned char* gateClass = nullptr;
+const unsigned char* portalClass = nullptr;
+
+struct EntityList
+{
+    void** first;
+    void** last;
+    void** end;
+};
+
+EntityList nearby{};
+
+constexpr std::size_t EngineWorld = 0x50;
+constexpr std::size_t WorldReached = 0x2ebee4;
+constexpr float InteractRadius = 10;
+constexpr int MostThings = 12;
+// The kind of entity list the game's own target query asks for, which holds everything placed nearby.
+constexpr int NearbyKind = 2;
+
+void FindInteractables()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    HMODULE engine = GetModuleHandleW(L"Engine.dll");
+    void* query = reinterpret_cast<void*>(GetProcAddress(engine, "?GetEntitiesInSphere@World@GAME@@QEBAXAEAV?$vector@PEAVEntity@GAME@@@mem@@PEAVRegion@2@AEBVSphere@2@_NW4EntityListType@2@@Z"));
+    void* coords = reinterpret_cast<void*>(GetProcAddress(engine, "?GetCoordsUnparented@Entity@GAME@@QEBAAEBVWorldCoords@2@XZ"));
+    engineGlobal = reinterpret_cast<void**>(GetProcAddress(engine, "?gEngine@GAME@@3PEAVEngine@1@EA"));
+    itemClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@Item@GAME@@1VRTTI_ClassInfo@2@B"));
+    oneShotClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@OneShot@GAME@@1VRTTI_ClassInfo@2@B"));
+    fixedItemClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@FixedItem@GAME@@1VRTTI_ClassInfo@2@B"));
+    leverClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@FixedLever@GAME@@1VRTTI_ClassInfo@2@B"));
+    gateClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@StaticTeleporter@GAME@@1VRTTI_ClassInfo@2@B"));
+    portalClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@DynamicTeleporter@GAME@@1VRTTI_ClassInfo@2@B"));
+    const void* reached = reinterpret_cast<const unsigned char*>(game) + WorldReached;
+
+    if (query == nullptr || coords == nullptr || engineGlobal == nullptr || itemClass == nullptr || oneShotClass == nullptr || fixedItemClass == nullptr || leverClass == nullptr || gateClass == nullptr || portalClass == nullptr || !StartsWith(query, "4d85c00f847a0100004c8bdc4d894b20") || !StartsWith(coords, "488d81d8000000c3") || !StartsWith(reached, "488b4950") || targetsInRadius == nullptr)
+    {
+        entitiesInSphere = nullptr;
+        Say("Smart interact off: the game's entity query or its world has changed.");
+        return;
+    }
+
+    entitiesInSphere = reinterpret_cast<EntitiesInSphere>(query);
+    coordsOf = reinterpret_cast<CoordsOf>(coords);
+    Say("Found the game's entity query; smart interact can see loot, townsfolk and the world's fixed things.");
+}
+
+// What a click on a thing would do: pick it up, talk, or use it; zero for nothing.
+int KindOf(const void* entity)
+{
+    if (IsA(entity, itemClass) || IsA(entity, oneShotClass))
+    {
+        return 1;
+    }
+
+    if (IsA(entity, npcClass))
+    {
+        return 2;
+    }
+
+    // Rift gates and town portals are teleporters of their own, read live beside Devil's Crossing's gate.
+    if (IsA(entity, fixedItemClass) || IsA(entity, leverClass) || IsA(entity, gateClass) || IsA(entity, portalClass))
+    {
+        return 3;
+    }
+
+    return 0;
+}
+
+struct Thing
+{
+    unsigned int id;
+    int kind;
+    float x;
+    float y;
+    float distance;
+};
+
+Thing things[MostThings]{};
+
+int ScanThings(void* camera, const int viewport[4], Thing seenThings[], int most)
+{
+    __try
+    {
+        const void* player = mainPlayer(*engineSlot);
+        const unsigned char* engine = static_cast<const unsigned char*>(*engineGlobal);
+
+        if (player == nullptr || engine == nullptr)
+        {
+            return -1;
+        }
+
+        const void* world = *reinterpret_cast<const void* const*>(engine + EngineWorld);
+        WorldPoint centre{};
+        pathPosition(player, &centre);
+        float sphere[4] = {centre.x, centre.y, centre.z, InteractRadius};
+
+        nearby.last = nearby.first;
+        entitiesInSphere(world, &nearby, centre.region, sphere, true, NearbyKind);
+        WorldPoint zero{cameraRegion(camera), 0, 0, 0};
+        WorldPoint offset{};
+        viewOffset(camera, &offset, &zero);
+        float back[3] = {offset.x, offset.y, offset.z};
+        float origin[3]{};
+        InWorld(centre, origin);
+        int count = 0;
+
+        for (void** entity = nearby.first; entity != nearby.last && count < most; entity++)
+        {
+            int kind = KindOf(*entity);
+
+            if (kind == 0)
+            {
+                continue;
+            }
+
+            const unsigned char* place = coordsOf(*entity);
+            WorldPoint where{*reinterpret_cast<void* const*>(place), 0, 0, 0};
+            std::memcpy(&where.x, place + 8, sizeof(float) * 3);
+            float at[3]{};
+            InWorld(where, at);
+            float relative[3] = {at[0] - origin[0], at[1] - origin[1], at[2] - origin[2]};
+            float ahead = 0;
+
+            for (int axis = 0; axis < 3; axis++)
+            {
+                ahead -= (relative[axis] - back[axis]) * back[axis];
+            }
+
+            // Loot lies on the ground; a townsman is clicked at the chest; a fixed thing a little up.
+            float lift = 0.8f;
+
+            if (kind == 1)
+            {
+                lift = 0.15f;
+            }
+            else if (kind == 2)
+            {
+                lift = actorHeight(*entity) * 0.6f;
+            }
+
+            (&where.x)[Up] += lift;
+            float screen[2]{};
+            projectPoint(camera, screen, &where, viewport);
+            float x = screen[0] / static_cast<float>(viewport[2]);
+            float y = screen[1] / static_cast<float>(viewport[3]);
+
+            if (!(ahead > 0) || !std::isfinite(x) || !std::isfinite(y) || x < 0 || x > 1 || y < 0 || y > 1)
+            {
+                continue;
+            }
+
+            Thing& thing = seenThings[count];
+            thing.id = objectId(*entity);
+            thing.kind = kind;
+            thing.x = x;
+            thing.y = y;
+            thing.distance = std::sqrt(relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2]);
+            count++;
+        }
+
+        return count;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return -1;
+    }
+}
+
+float sinceThingCheck = 0;
+std::string lastThings;
+std::atomic<bool> thingsWanted{false};
+constexpr const char* KindNames[] = {"", "loot", "talk", "use"};
+
+// Ten times a second is enough for a prompt over something nearby, and costs little.
+void CheckThings(void* camera, float elapsed)
+{
+    sinceThingCheck += elapsed;
+
+    if (entitiesInSphere == nullptr || !linked || sinceThingCheck < 0.1f)
+    {
+        return;
+    }
+
+    sinceThingCheck = 0;
+    int viewport[4]{};
+
+    if (!Viewport(viewport))
+    {
+        return;
+    }
+
+    int count = ScanThings(camera, viewport, things, MostThings);
+
+    if (count < 0)
+    {
+        return;
+    }
+
+    std::string line = "{\"protocol\":1,\"type\":\"interactables\",\"list\":[";
+
+    for (int index = 0; index < count; index++)
+    {
+        const Thing& thing = things[index];
+
+        if (index > 0)
+        {
+            line += ",";
+        }
+
+        line += "{\"id\":" + std::to_string(thing.id) + ",\"kind\":\"" + KindNames[thing.kind] + "\",\"x\":" + Fixed(thing.x, 4) + ",\"y\":" + Fixed(thing.y, 4) + ",\"distance\":" + Fixed(thing.distance, 1) + "}";
+    }
+
+    line += "]}\n";
+
+    if (thingsWanted.exchange(false))
+    {
+        lastThings.clear();
+    }
+
+    if (line != lastThings)
+    {
+        lastThings = line;
+        Post(line);
+    }
+}
+
 // Thirty times a second, enough for the cursor to stay on a running enemy, and
 // sent only when something moved.
 void CheckTargets(void* camera, float elapsed)
@@ -2294,6 +2540,7 @@ void Work(void* camera, float elapsed)
     CheckLayouts(elapsed);
     CheckHealth(elapsed);
     CheckTargets(camera, elapsed);
+    CheckThings(camera, elapsed);
 
     if (thirdPerson)
     {
@@ -2459,6 +2706,7 @@ void Converse(HANDLE pipe)
     panelsWanted = true;
     layoutsWanted = true;
     targetsWanted = true;
+    thingsWanted = true;
     sentHealth = -1;
 
     while (healthy)
@@ -2571,6 +2819,7 @@ DWORD WINAPI Start(LPVOID)
             FindHealth();
             FindTargets();
             FindMovement();
+            FindInteractables();
         }
 
         HANDLE thread = CreateThread(nullptr, 0, Link, nullptr, 0, nullptr);
