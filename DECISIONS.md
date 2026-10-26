@@ -490,3 +490,54 @@ rather than to the item beside it.
 were present on 2026-10-25.
 
 Gyro aiming was considered and shelved by the owner.
+
+## 2026-10-26 — The in-game part and the third-person camera
+
+**Reuse from GrimAction (MIT, github.com/Ophemist/GrimAction, commit b8c2f4c).**
+No source file was copied. What was taken is knowledge, credited in
+`InGame.cpp`, `docs/camera.md` and the README:
+- the camera object's field offsets: distance and pitch limits and defaults at
+  0x10c, 0x110 and 0x570 to 0x57c, the live and target zoom blends at 0x580 and
+  0x584, the zoom endpoints at 0x590 and 0x594, and the field of view at 0x14;
+- the write order: set every field, call the game's `SetZoom`, set them again;
+- the starting profile values, later tuned;
+- attaching to `GameCamera::UpdateFromInputImpl` with Microsoft Detours, and
+  loading by `CreateRemoteThread` on `LoadLibraryW`.
+GrimAction is about 26,000 lines with telemetry, ownership overlays and a
+launcher; the in-game part is a few hundred, since GDPilot keeps the pad,
+the safety layer and the logic outside the game.
+
+**Lookup by name, checked by bytes.** Functions are found with
+`GetProcAddress` on their exported names. Each one's first bytes are compared
+with the bytes it was mapped from, and those bytes contain the offsets of the
+fields written, so a match is the evidence the layout is unchanged. On the
+installed build the camera functions match although their addresses moved.
+
+**Two zooms.** The first attempt set only the live zoom, and the game eased it
+straight back to its target, which under the new limits put the camera inside
+the character. Both blends are now set, through `SetZoom`.
+
+**GrimAction's starting distance of 42 is a wide high view on this build**,
+where the game's own camera sits at 20. The shipped defaults start at 10, from
+4 to 30, with pitch from 12 to 40 degrees, read from `camera.ini` at every
+switch so the view can be tuned in a running game.
+
+**The pad never reaches the game.** GDPilot turns the right stick into look
+rates and sends them down the pipe only when they change; the in-game part
+applies them through the game's own `AdjustYaw` on the game's thread. Grim
+Dawn's keyboard movement is relative to the camera, so turning the camera
+turns "forward" with it, which is the camera-relative movement Phase 6 asked
+for, at no extra cost.
+
+**The pipe is buffered.** A Windows pipe without a buffer makes every write
+wait for a read, which a test caught as a hang; in play it would have frozen
+the control loop whenever the game was busy. The in-game side uses overlapped
+I/O for the same reason: the game's thread only ever sets an event.
+
+**A suspension stops the camera.** The kill switch stops every intent,
+including the command that stops a turn, so the host sends a stop directly as
+a suspension begins.
+
+**F8 and a pad binding both switch.** F8 is read only while the game is in
+front, and needs no GDPilot; `camera:toggle` is the pad's way, through the
+pipe. The example binds it to the right-stick click, which was free.
