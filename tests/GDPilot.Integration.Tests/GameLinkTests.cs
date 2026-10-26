@@ -22,7 +22,7 @@ public sealed class GameLinkTests
 
         using (GameLink link = new(layouts, said.Enqueue, name))
         {
-            using (NamedPipeClientStream game = new(".", name, PipeDirection.Out))
+            using (NamedPipeClientStream game = new(".", name, PipeDirection.InOut))
             {
                 game.Connect(2000);
                 using StreamWriter writer = new(game) { AutoFlush = true };
@@ -50,7 +50,7 @@ public sealed class GameLinkTests
         ConcurrentQueue<string> said = new();
 
         using GameLink link = new(layouts, said.Enqueue, name);
-        using NamedPipeClientStream game = new(".", name, PipeDirection.Out);
+        using NamedPipeClientStream game = new(".", name, PipeDirection.InOut);
         game.Connect(2000);
         using StreamWriter writer = new(game) { AutoFlush = true };
         writer.WriteLine("""{"protocol":9,"type":"panels","open":[]}""");
@@ -60,5 +60,27 @@ public sealed class GameLinkTests
         Assert.True(SpinWait.SpinUntil(() => link.Panels is not null, 2000));
 
         Assert.Single(said, line => line.Contains("protocol 9"));
+    }
+
+    [Fact]
+    public void CommandsReachTheGameAndItsCameraReportComesBack()
+    {
+        string name = "GDPilot.Test." + Guid.NewGuid().ToString("N");
+        ConcurrentQueue<string> said = new();
+
+        using GameLink link = new(new ReportedOccupancy(null), said.Enqueue, name);
+        Assert.False(link.Send(new ToggleCameraCommand()));
+
+        using NamedPipeClientStream game = new(".", name, PipeDirection.InOut);
+        game.Connect(2000);
+        Assert.True(SpinWait.SpinUntil(() => link.Connected, 2000));
+        using StreamReader reader = new(game, leaveOpen: true);
+        using StreamWriter writer = new(game, leaveOpen: true) { AutoFlush = true };
+
+        Assert.True(link.Send(new LookCommand(1.5, 0)));
+        Assert.Equal(new LookCommand(1.5, 0), GameCommands.Parse(reader.ReadLine()!));
+
+        writer.WriteLine(new CameraReport(true).Write());
+        Assert.True(SpinWait.SpinUntil(() => link.ThirdPerson, 2000));
     }
 }

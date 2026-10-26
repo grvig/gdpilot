@@ -4,21 +4,27 @@ using GDPilot.Core;
 namespace GDPilot.Output;
 
 /// <summary>
-/// The local connection the in-game part reports through: a named pipe only
-/// the current Windows user can open. It runs on its own thread, accepts one
-/// connection at a time, and starts listening again whenever one ends, so the
-/// game can be restarted without restarting GDPilot.
+/// The local connection to the in-game part: a named pipe only the current
+/// Windows user can open. Reports arrive on its own thread; commands go out
+/// from whichever thread sends them. It accepts one connection at a time and
+/// listens again whenever one ends, so the game can be restarted without
+/// restarting GDPilot.
 /// </summary>
 public sealed class GameLink : IDisposable
 {
     public const string PipeName = "GDPilot.Game";
+
+    private const int Buffer = 64 * 1024;
 
     private readonly string pipeName;
     private readonly ReportedOccupancy layouts;
     private readonly Action<string> say;
     private readonly CancellationTokenSource stop = new();
     private readonly Thread listener;
+    private readonly object sending = new();
     private PanelsReport? panels;
+    private StreamWriter? writer;
+    private volatile bool thirdPerson;
 
     public GameLink(ReportedOccupancy layouts, Action<string> say, string pipeName = PipeName)
     {
@@ -34,6 +40,32 @@ public sealed class GameLink : IDisposable
     /// <summary>The panels the game last said were open, or null when it has not said or has gone.</summary>
     public PanelsReport? Panels => Volatile.Read(ref panels);
 
+    /// <summary>Whether the game last said it was showing the third-person camera; false once it has gone.</summary>
+    public bool ThirdPerson => thirdPerson;
+
+    /// <summary>Sends a command, or returns false when no in-game part is connected to receive it.</summary>
+    public bool Send(GameCommand command)
+    {
+        lock (sending)
+        {
+            if (writer is null)
+            {
+                return false;
+            }
+
+            try
+            {
+                writer.WriteLine(command.Write());
+                writer.Flush();
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+        }
+    }
+
     public void Dispose()
     {
         stop.Cancel();
@@ -47,10 +79,18 @@ public sealed class GameLink : IDisposable
         {
             try
             {
-                using NamedPipeServerStream pipe = new(pipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+                // A pipe without a buffer makes every write wait for the other side to
+                // read it, which would stall the control loop whenever the game is busy.
+                using NamedPipeServerStream pipe = new(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly, Buffer, Buffer);
                 pipe.WaitForConnectionAsync(stop.Token).GetAwaiter().GetResult();
+                lock (sending)
+                {
+                    writer = new StreamWriter(pipe, leaveOpen: true);
+                }
+
                 Connected = true;
                 say("In-game part connected: items and panels now come from the game.");
+
                 Read(pipe);
             }
             catch (OperationCanceledException)
@@ -70,6 +110,13 @@ public sealed class GameLink : IDisposable
                 }
 
                 Connected = false;
+
+                lock (sending)
+                {
+                    writer = null;
+                }
+
+                thirdPerson = false;
                 Volatile.Write(ref panels, null);
                 layouts.Forget();
             }
@@ -78,7 +125,7 @@ public sealed class GameLink : IDisposable
 
     private void Read(NamedPipeServerStream pipe)
     {
-        using StreamReader reader = new(pipe);
+        using StreamReader reader = new(pipe, leaveOpen: true);
         bool warned = false;
 
         while (!stop.IsCancellationRequested)
@@ -115,6 +162,9 @@ public sealed class GameLink : IDisposable
                 break;
             case PanelsReport open:
                 Volatile.Write(ref panels, open);
+                break;
+            case CameraReport camera:
+                thirdPerson = camera.ThirdPerson;
                 break;
         }
     }
