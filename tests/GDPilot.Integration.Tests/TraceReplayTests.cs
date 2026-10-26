@@ -362,6 +362,69 @@ public sealed class TraceReplayTests
         Assert.Contains(new KeyDown(KeyCode.W), sent);
     }
 
+    [Fact]
+    public void TheInteractTraceClicksTheDroppedItemWhereTheGameDrewIt()
+    {
+        GamepadTrace trace = Load("interact-pick-up.json");
+        TimeSpan now = TimeSpan.Zero;
+        ReplayGamepadSource source = new(trace, () => now);
+        Mapper mapper = new(Settings, BindingTable.Parse(new Dictionary<string, string> { ["A"] = "interact:Space" }, 0.5))
+        {
+            // As reported live for the gloves dropped beside the character on 2026-10-31.
+            Things = new[] { new NearbyThing(63994, ThingKind.Loot, 0.4723, 0.5544, 0.4) },
+            GameBounds = new ScreenRect(0, 0, 1920, 1080),
+        };
+        List<InputIntent> sent = new();
+
+        while (!source.IsFinished)
+        {
+            sent.AddRange(mapper.Tick(source.Read(), Tick));
+            now += Tick;
+        }
+
+        int moved = sent.IndexOf(new PointerMoveTo(907, 599));
+        Assert.True(moved >= 0 && sent.IndexOf(new PointerDown(PointerButton.Left)) > moved);
+        Assert.Contains(new PointerUp(PointerButton.Left), sent);
+        Assert.DoesNotContain(new KeyDown(KeyCode.Space), sent);
+    }
+
+    [Fact]
+    public void TheAimAndLockTracePointsAtTheGroundThenLocks()
+    {
+        GamepadTrace trace = Load("aim-and-lock.json");
+        TimeSpan now = TimeSpan.Zero;
+        ReplayGamepadSource source = new(trace, () => now);
+        ButtonLayers combat = BindingTable.Parse(new Dictionary<string, string> { ["RightStick"] = "lock:toggle", ["LT+RightStick"] = "camera:toggle", ["RightBumper"] = "mouse:left", ["A"] = "interact:Space" }, 0.5);
+        TargetsReport near = new(new[] { new SeenTarget(5, 0.35, 0.45, 6, 100, true) })
+        {
+            Feet = new ScreenSpot(0.5, 0.55),
+            Ring = new ScreenSpot?[] { new ScreenSpot(0.5, 0.35), null, new ScreenSpot(0.75, 0.55), null, new ScreenSpot(0.5, 0.75), null, new ScreenSpot(0.25, 0.55), null },
+        };
+        Mapper mapper = new(Settings with { TiltDegreesPerSecond = 60 }, combat)
+        {
+            Lock = new LockOn(new LockSettings()),
+            TwinStick = true,
+            Near = near,
+            Seen = near.Targets,
+            GameBounds = new ScreenRect(0, 0, 1920, 1080),
+            AimPoint = (960, 410),
+        };
+        List<InputIntent> sent = new();
+
+        while (!source.IsFinished)
+        {
+            sent.AddRange(mapper.Tick(source.Read(), Tick));
+            now += Tick;
+        }
+
+        // The right stick fully over aimed at the ground right of the character, at a reach of 1.2, in the game's own camera.
+        Assert.Contains(new PointerMoveTo(1536, 594), sent);
+        Assert.Contains(new GameCommandIntent(new LockCommand(5)), sent);
+
+        // Locked, the stick's last pushes flick rather than aim, and with no other enemy the lock holds.
+        Assert.Equal(new GameCommandIntent(new LockCommand(5)), sent.Last(intent => intent is GameCommandIntent { Command: LockCommand }));
+    }
+
     private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600));
 
     private static GamepadTrace Load(string fixture)
