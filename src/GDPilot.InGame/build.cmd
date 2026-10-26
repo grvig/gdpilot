@@ -12,4 +12,4 @@ cl /nologo /std:c++20 /EHsc /O2 /W4 /WX /MT /LD /DUNICODE /D_UNICODE ^
    /I "%DETOURS%\include" /Fo"%HERE%obj\\" ^
    "%HERE%InGame.cpp" ^
    /Fe"%HERE%bin\GDPilot.InGame.dll" ^
-   /link /NOLOGO "%DETOURS%\lib.X64\detours.lib" || exit /b 1
+   /link /NOLOGO "%DETOURS%\lib.X64\detours.lib" user32.lib || exit /b 1
