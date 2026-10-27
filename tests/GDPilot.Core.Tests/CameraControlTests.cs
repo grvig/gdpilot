@@ -6,7 +6,7 @@ public sealed class CameraControlTests
 {
     private static readonly TimeSpan Tick = TimeSpan.FromMilliseconds(4);
 
-    private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600), 2.5);
+    private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600), 2.5, 0.6);
 
     private static readonly ButtonLayers NoButtons = BindingTable.Parse(new Dictionary<string, string>(), 0.5);
 
@@ -23,6 +23,15 @@ public sealed class CameraControlTests
         List<InputIntent> sent = mapper.Tick(Right(1), Tick);
 
         Assert.Equal(new InputIntent[] { new GameCommandIntent(new LookCommand(2.5, 0)) }, sent);
+    }
+
+    [Fact]
+    public void PushingTheRightStickUpZoomsInAndDownZoomsOut()
+    {
+        Mapper mapper = new(Settings, NoButtons) { Looking = true };
+
+        Assert.Equal(new InputIntent[] { new GameCommandIntent(new LookCommand(0, 0.6)) }, mapper.Tick(GamepadSnapshot.Rest with { RightStick = new StickPosition(0, 1) }, Tick));
+        Assert.Equal(new InputIntent[] { new GameCommandIntent(new LookCommand(0, -0.6)) }, mapper.Tick(GamepadSnapshot.Rest with { RightStick = new StickPosition(0, -1) }, Tick));
     }
 
     [Fact]

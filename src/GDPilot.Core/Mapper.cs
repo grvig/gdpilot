@@ -7,7 +7,8 @@ public sealed record MappingSettings(
     double WalkThreshold,
     DirectionKeys Movement,
     CursorSettings Cursor,
-    double LookRadiansPerSecond = 2.5);
+    double LookRadiansPerSecond = 2.5,
+    double ZoomBlendPerSecond = 0.6);
 
 /// <summary>
 /// One tick of the whole controller mapping: shape both sticks, decide what
@@ -52,6 +53,7 @@ public sealed class Mapper
     public (int X, int Y)? AimPoint { get; set; }
 
     private double sentYaw;
+    private double sentZoom;
     private bool aimed;
 
     /// <summary>
@@ -65,18 +67,26 @@ public sealed class Mapper
 
         // The host stops the camera turning when a suspension begins.
         sentYaw = 0;
+        sentZoom = 0;
     }
 
-    /// <summary>Sends a turn rate only when it has changed enough to matter, so the pipe carries changes, not a stream.</summary>
-    private void Look(double yaw, List<InputIntent> intents)
+    /// <summary>Sends turn and zoom rates only when one has changed enough to matter, so the pipe carries changes, not a stream.</summary>
+    private void Look(double yaw, double zoom, List<InputIntent> intents)
     {
-        if (Math.Abs(yaw - sentYaw) < 0.02 && (yaw == 0) == (sentYaw == 0))
+        if (Same(yaw, sentYaw) && Same(zoom, sentZoom))
         {
             return;
         }
 
         sentYaw = yaw;
-        intents.Add(new GameCommandIntent(new LookCommand(yaw, 0)));
+        sentZoom = zoom;
+        intents.Add(new GameCommandIntent(new LookCommand(yaw, zoom)));
+    }
+
+    /// <summary>Close enough not to resend, though a change to or from stopped always counts.</summary>
+    private static bool Same(double rate, double sent)
+    {
+        return Math.Abs(rate - sent) < 0.02 && (rate == 0) == (sent == 0);
     }
 
     public List<InputIntent> Tick(GamepadSnapshot snapshot, TimeSpan elapsed)
@@ -97,13 +107,13 @@ public sealed class Mapper
             }
 
             aimed = true;
-            Look(right.X * settings.LookRadiansPerSecond, intents);
+            Look(right.X * settings.LookRadiansPerSecond, right.Y * settings.ZoomBlendPerSecond, intents);
             return intents;
         }
 
         // Leaving third person with the stick still over must not leave the camera turning.
         aimed = false;
-        Look(0, intents);
+        Look(0, 0, intents);
         PointerMove? move = cursor.Step(right, elapsed);
 
         if (move is not null)

@@ -28,16 +28,18 @@ public sealed record ToggleCameraCommand : GameCommand
 }
 
 /// <summary>
-/// How fast to turn the third-person camera, in radians per second, until the
-/// next look command. Zero stops it. Sent when the rate changes, not every tick.
+/// How fast to turn the third-person camera, in radians per second, and to zoom
+/// it, in the game's zoom blend per second (positive is closer), until the next
+/// look command. The game tilts the camera with its zoom, so zooming in also
+/// levels the view. Zero stops either. Sent when a rate changes, not every tick.
 /// </summary>
-public sealed record LookCommand(double YawPerSecond, double PitchPerSecond) : GameCommand
+public sealed record LookCommand(double YawPerSecond, double ZoomPerSecond) : GameCommand
 {
     public override string Write()
     {
         JsonObject root = Start("look");
         root["yaw"] = Math.Round(YawPerSecond, 4);
-        root["pitch"] = Math.Round(PitchPerSecond, 4);
+        root["zoom"] = Math.Round(ZoomPerSecond, 4);
         return root.ToJsonString();
     }
 }
@@ -57,7 +59,7 @@ public static class GameCommands
             case "toggle-camera":
                 return new ToggleCameraCommand();
             case "look":
-                return new LookCommand(root["yaw"]?.GetValue<double>() ?? 0, root["pitch"]?.GetValue<double>() ?? 0);
+                return new LookCommand(root["yaw"]?.GetValue<double>() ?? 0, root["zoom"]?.GetValue<double>() ?? 0);
             default:
                 return null;
         }

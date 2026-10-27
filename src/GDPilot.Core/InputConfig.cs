@@ -17,6 +17,9 @@ public sealed class InputConfig
     /// <summary>How fast the right stick turns the third-person camera at full tilt, in radians per second.</summary>
     public double LookSpeed { get; init; } = 2.5;
 
+    /// <summary>How fast the right stick's up and down zooms the third-person camera, in zoom range per second.</summary>
+    public double ZoomSpeed { get; init; } = 0.6;
+
     /// <summary>
     /// How far down the game window the cursor waits in third person, from 0 at
     /// the top to 1 at the bottom. Just above the character puts attacks ahead of it.

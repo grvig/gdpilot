@@ -9,7 +9,7 @@ public sealed class GameCommandTests
     {
         string line = new LookCommand(1.25, -0.5).Write();
 
-        Assert.Equal("""{"protocol":1,"type":"look","yaw":1.25,"pitch":-0.5}""", line);
+        Assert.Equal("""{"protocol":1,"type":"look","yaw":1.25,"zoom":-0.5}""", line);
         Assert.Equal(new LookCommand(1.25, -0.5), GameCommands.Parse(line));
     }
 

@@ -11,6 +11,7 @@
     "walkThreshold": 0.25,
     "chordTrigger": 0.5,
     "lookSpeed": 2.5,
+    "zoomSpeed": 0.6,
     "aimHeight": 0.38,
     "jumpToItems": true,
     "calibration": {
