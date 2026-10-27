@@ -216,6 +216,7 @@ using SetZoom = void (*)(void* camera, float distance);
 // What the pipe thread hands the game's thread, and back.
 std::atomic<bool> toggleRequested{false};
 std::atomic<float> yawPerSecond{0};
+std::atomic<float> zoomPerSecond{0};
 std::atomic<bool> linked{false};
 HANDLE reportWanted = nullptr;
 
@@ -352,6 +353,15 @@ void UpdatedCamera(void* camera)
         {
             reinterpret_cast<AdjustYaw>(required[2].address)(camera, yaw * elapsed);
         }
+
+        // Zooming in lowers the target blend toward the near distance; the game eases the live zoom after it.
+        float zoom = zoomPerSecond.load();
+
+        if (zoom != 0 && elapsed > 0)
+        {
+            float target = Read(camera, ZoomTarget) - zoom * elapsed;
+            Write(camera, ZoomTarget, std::fmin(1.0f, std::fmax(0.0f, target)));
+        }
     }
 
     bool pressed = GameInFront() && (GetAsyncKeyState(VK_F8) & 0x8000) != 0;
@@ -446,6 +456,7 @@ void Obey(const std::string& line)
     if (line.find("\"type\":\"look\"") != std::string::npos)
     {
         yawPerSecond = NumberAfter(line, "\"yaw\":");
+        zoomPerSecond = NumberAfter(line, "\"zoom\":");
     }
 }
 
@@ -527,6 +538,7 @@ DWORD WINAPI Link(LPVOID)
 
         // A stick held when GDPilot went must not keep turning the camera.
         yawPerSecond = 0;
+        zoomPerSecond = 0;
         Say("GDPilot went away; listening for it again.");
     }
 }
