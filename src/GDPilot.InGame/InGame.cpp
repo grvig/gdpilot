@@ -313,6 +313,311 @@ bool ReadPanelBytes(unsigned char bytes[], std::size_t count)
     }
 }
 
+// The way to the player's bags: the main player, its controller by id through
+// the game's object manager, then the controller's inventory. The id offset,
+// the unexported lookup and its first bytes are GrimAction's, mapped on this
+// same build; the lookup is only called if those bytes still match.
+using GetMainPlayer = void* (*)(void* engine);
+using GetManager = void* (*)();
+using FindObject = void* (*)(void* manager, unsigned int id);
+using GetInventoryCtrl = void* (*)(void* controller);
+using GetSack = const void* (*)(const void* inventory, int sack);
+
+GetMainPlayer mainPlayer = nullptr;
+GetManager objectManager = nullptr;
+FindObject findObject = nullptr;
+GetInventoryCtrl inventoryCtrl = nullptr;
+GetSack sackItems = nullptr;
+const void* controllerPlayerTable = nullptr;
+
+using GetSackObject = void* (*)(const void* inventory, int sack);
+using GetGridSide = unsigned int (*)(const void* sack);
+using GetCellSize = void (*)(void* engine, float& width, float& height);
+
+GetSackObject sackObject = nullptr;
+GetGridSide gridWidth = nullptr;
+GetGridSide gridHeight = nullptr;
+GetCellSize cellSize = nullptr;
+
+constexpr std::size_t PlayerControllerId = 0x16c0;
+constexpr std::size_t FindObjectAddress = 0x19d40;
+constexpr char FindObjectPrefix[] = "48895c2408488974241889542410574883ec208bda488bf1";
+
+bool FindInventoryRoute()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    HMODULE engine = GetModuleHandleW(L"Engine.dll");
+    mainPlayer = reinterpret_cast<GetMainPlayer>(GetProcAddress(game, "?GetMainPlayer@GameEngine@GAME@@QEBAPEAVPlayer@2@XZ"));
+    objectManager = reinterpret_cast<GetManager>(GetProcAddress(engine, "?Get@?$Singleton@VObjectManager@GAME@@@GAME@@SAPEAVObjectManager@2@XZ"));
+    inventoryCtrl = reinterpret_cast<GetInventoryCtrl>(GetProcAddress(game, "?GetInventoryCtrl@ControllerPlayer@GAME@@QEAAAEAVPlayerInventoryCtrl@2@XZ"));
+    sackItems = reinterpret_cast<GetSack>(GetProcAddress(game, "?GetInventoryInSack@PlayerInventoryCtrl@GAME@@QEBAAEBV?$map@IVRect@GAME@@@mem@@H@Z"));
+    sackObject = reinterpret_cast<GetSackObject>(GetProcAddress(game, "?GetSack@PlayerInventoryCtrl@GAME@@QEAAPEAVInventorySack@2@H@Z"));
+    gridWidth = reinterpret_cast<GetGridSide>(GetProcAddress(game, "?GetGridWidth@InventorySack@GAME@@QEBAIXZ"));
+    gridHeight = reinterpret_cast<GetGridSide>(GetProcAddress(game, "?GetGridHeight@InventorySack@GAME@@QEBAIXZ"));
+    cellSize = reinterpret_cast<GetCellSize>(GetProcAddress(game, "?GetInventoryCellSize@GameEngine@GAME@@QEAAXAEAM0@Z"));
+    controllerPlayerTable = reinterpret_cast<const void*>(GetProcAddress(game, "??_7ControllerPlayer@GAME@@6B@"));
+    void* find = reinterpret_cast<unsigned char*>(game) + FindObjectAddress;
+
+    if (mainPlayer == nullptr || objectManager == nullptr || inventoryCtrl == nullptr || sackItems == nullptr || controllerPlayerTable == nullptr || sackObject == nullptr || gridWidth == nullptr || gridHeight == nullptr || cellSize == nullptr)
+    {
+        sackObject = nullptr;
+        Say("Item reports off: an inventory function is no longer exported.");
+        return false;
+    }
+
+    if (!StartsWith(find, FindObjectPrefix))
+    {
+        sackObject = nullptr;
+        Say("Item reports off: the object lookup has changed since it was mapped.");
+        return false;
+    }
+
+    findObject = reinterpret_cast<FindObject>(find);
+    Say("Found the way to the player's bags.");
+    return true;
+}
+
+// The player's inventory controller, or null. Guarded throughout, and the
+// controller is only used if its type is the player controller's.
+const void* PlayerInventory()
+{
+    __try
+    {
+        void* engine = *engineSlot;
+
+        if (engine == nullptr)
+        {
+            return nullptr;
+        }
+
+        unsigned char* player = static_cast<unsigned char*>(mainPlayer(engine));
+
+        if (player == nullptr)
+        {
+            return nullptr;
+        }
+
+        unsigned int id = *reinterpret_cast<unsigned int*>(player + PlayerControllerId);
+        void* manager = objectManager();
+
+        if (manager == nullptr)
+        {
+            return nullptr;
+        }
+
+        void* controller = findObject(manager, id);
+
+        if (controller == nullptr || *reinterpret_cast<const void**>(controller) != controllerPlayerTable)
+        {
+            return nullptr;
+        }
+
+        return inventoryCtrl(controller);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return nullptr;
+    }
+}
+
+// One item as the game records it: its id, then its rectangle in the bag, in
+// the same units as an inventory cell's size.
+struct RawItem
+{
+    unsigned int id;
+    float x;
+    float y;
+    float width;
+    float height;
+};
+
+// A bag's items live in a standard ordered tree. The map holds the head node,
+// whose left link is the first item. Every node has left, parent and right
+// links, a flag at 0x19 marking the head, the item id at 0x1c and its
+// rectangle at 0x20. Read live on 2026-10-28, where the second bag held exactly
+// the nine items, with the sizes, that its capture shows.
+constexpr std::size_t NodeLeft = 0x0;
+constexpr std::size_t NodeParent = 0x8;
+constexpr std::size_t NodeRight = 0x10;
+constexpr std::size_t NodeIsHead = 0x19;
+constexpr std::size_t NodeId = 0x1c;
+constexpr std::size_t NodeRect = 0x20;
+constexpr int MostItems = 200;
+
+const unsigned char* Link(const unsigned char* node, std::size_t offset)
+{
+    return *reinterpret_cast<const unsigned char* const*>(node + offset);
+}
+
+// The next node in order: the leftmost below the right link, or else the first
+// ancestor reached from its left.
+const unsigned char* Next(const unsigned char* node)
+{
+    const unsigned char* right = Link(node, NodeRight);
+
+    if (right[NodeIsHead] == 0)
+    {
+        node = right;
+
+        while (Link(node, NodeLeft)[NodeIsHead] == 0)
+        {
+            node = Link(node, NodeLeft);
+        }
+
+        return node;
+    }
+
+    const unsigned char* parent = Link(node, NodeParent);
+
+    while (parent[NodeIsHead] == 0 && node == Link(parent, NodeRight))
+    {
+        node = parent;
+        parent = Link(parent, NodeParent);
+    }
+
+    return parent;
+}
+
+struct SackReading
+{
+    unsigned int columns;
+    unsigned int rows;
+    float cellWidth;
+    float cellHeight;
+    int count;
+    RawItem items[MostItems];
+};
+
+// Reads one bag whole, or returns false. Guarded throughout, and nothing here
+// owns memory, so a fault leaves nothing behind.
+bool ReadSack(const void* inventory, int sack, SackReading& reading)
+{
+    __try
+    {
+        void* bag = sackObject(inventory, sack);
+        const void* map = sackItems(inventory, sack);
+
+        if (bag == nullptr || map == nullptr)
+        {
+            return false;
+        }
+
+        reading.columns = gridWidth(bag);
+        reading.rows = gridHeight(bag);
+        cellSize(*engineSlot, reading.cellWidth, reading.cellHeight);
+        const unsigned char* head = *static_cast<const unsigned char* const*>(map);
+        const unsigned char* node = Link(head, NodeLeft);
+        reading.count = 0;
+
+        while (node[NodeIsHead] == 0 && reading.count < MostItems)
+        {
+            RawItem& item = reading.items[reading.count];
+            item.id = *reinterpret_cast<const unsigned int*>(node + NodeId);
+            std::memcpy(&item.x, node + NodeRect, sizeof(float) * 4);
+            reading.count++;
+            node = Next(node);
+        }
+
+        return reading.cellWidth > 0 && reading.cellHeight > 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+int Cells(float units, float cell)
+{
+    return static_cast<int>(std::lround(units / cell));
+}
+
+// The grids each bag is calibrated as: the inventory shows the same two bags
+// alone, beside a trader and beside the stash, in three different places.
+struct SackNames
+{
+    int sack;
+    const char* names[3];
+};
+
+constexpr SackNames Bags[] = {
+    {0, {"Inventory", "Vendor.Bag1", "Stash.Bag1"}},
+    {1, {"Inventory.Bag2", "Vendor.Bag2", "Stash.Bag2"}},
+};
+
+std::string sentLayouts[std::size(Bags)];
+float sinceLayoutCheck = 0;
+std::atomic<bool> layoutsWanted{false};
+SackReading bagReading{};
+
+std::string LayoutLine(const char* grid, const SackReading& bag)
+{
+    std::string line = std::string("{\"protocol\":1,\"type\":\"layout\",\"grid\":\"") + grid + "\",\"columns\":" + std::to_string(bag.columns) + ",\"rows\":" + std::to_string(bag.rows) + ",\"items\":[";
+
+    for (int index = 0; index < bag.count; index++)
+    {
+        const RawItem& item = bag.items[index];
+
+        if (index > 0)
+        {
+            line += ",";
+        }
+
+        line += "{\"id\":" + std::to_string(item.id) + ",\"column\":" + std::to_string(Cells(item.x, bag.cellWidth)) + ",\"row\":" + std::to_string(Cells(item.y, bag.cellHeight)) + ",\"width\":" + std::to_string(Cells(item.width, bag.cellWidth)) + ",\"height\":" + std::to_string(Cells(item.height, bag.cellHeight)) + "}";
+    }
+
+    return line + "]}\n";
+}
+
+// Four times a second while the inventory is open, each bag is read and sent
+// again only if anything in it moved.
+void CheckLayouts(float elapsed)
+{
+    sinceLayoutCheck += elapsed;
+
+    if (sackObject == nullptr || sinceLayoutCheck < 0.25f || lastPanels.find("Inventory") == std::string::npos)
+    {
+        return;
+    }
+
+    sinceLayoutCheck = 0;
+    const void* inventory = PlayerInventory();
+
+    if (inventory == nullptr)
+    {
+        return;
+    }
+
+    if (layoutsWanted.exchange(false))
+    {
+        for (std::string& sent : sentLayouts)
+        {
+            sent.clear();
+        }
+    }
+
+    for (std::size_t bag = 0; bag < std::size(Bags); bag++)
+    {
+        if (!ReadSack(inventory, Bags[bag].sack, bagReading))
+        {
+            continue;
+        }
+
+        std::string lines;
+
+        for (const char* name : Bags[bag].names)
+        {
+            lines += LayoutLine(name, bagReading);
+        }
+
+        if (lines != sentLayouts[bag])
+        {
+            sentLayouts[bag] = lines;
+            Say("Bag %d: %d items in %u by %u cells.", Bags[bag].sack, bagReading.count, bagReading.columns, bagReading.rows);
+            Post(lines);
+        }
+    }
+}
+
 std::string PanelsLine(const std::string& open)
 {
     return "{\"protocol\":1,\"type\":\"panels\",\"open\":" + open + "}\n";
@@ -492,6 +797,7 @@ void UpdatedCamera(void* camera)
     originalUpdate(camera);
     float elapsed = SecondsSinceLastFrame();
     CheckPanels(elapsed);
+    CheckLayouts(elapsed);
 
     if (thirdPerson)
     {
@@ -616,6 +922,7 @@ void Converse(HANDLE pipe)
     std::string pending;
     bool healthy = WriteLine(pipe, writeDone, CameraLine());
     panelsWanted = true;
+    layoutsWanted = true;
 
     while (healthy)
     {
@@ -716,6 +1023,10 @@ DWORD WINAPI Start(LPVOID)
         if (engineSlot == nullptr)
         {
             Say("Panel reports off: the game no longer exports gGameEngine.");
+        }
+        else
+        {
+            FindInventoryRoute();
         }
 
         HANDLE thread = CreateThread(nullptr, 0, Link, nullptr, 0, nullptr);
