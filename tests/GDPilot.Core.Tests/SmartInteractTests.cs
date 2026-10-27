@@ -35,4 +35,14 @@ public sealed class SmartInteractTests
         Assert.Contains("A: Interact, else Space", OverlayState.Build(Mode.Combat, SuspendReason.None, combat).Legend);
         Assert.Equal("Pick up", SmartInteract.Verb(ThingKind.Loot));
     }
+
+    [Fact]
+    public void ThePromptNamesTheButtonAndWhatItWouldDo()
+    {
+        ButtonLayers combat = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "interact:Space" }, 0.5);
+
+        Assert.Equal("A  Talk", OverlayState.PromptFor(new NearbyThing(1, ThingKind.Talk, 0.2, 0.5, 3), combat));
+        Assert.Null(OverlayState.PromptFor(null, combat));
+        Assert.Null(OverlayState.PromptFor(new NearbyThing(1, ThingKind.Talk, 0.2, 0.5, 3), BindingTable.Parse(new Dictionary<string, string>(), 0.5)));
+    }
 }

@@ -12,6 +12,28 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     /// <summary>The marker over the locked enemy, or null with nothing locked or the enemy out of view.</summary>
     public LockMarker? Marker { get; init; }
 
+    /// <summary>What the interact button would do, such as "A  Pick up", or null with nothing in reach.</summary>
+    public string? Prompt { get; init; }
+
+    /// <summary>The prompt for a thing on offer, named by the button that would act on it; null with nothing offered or no such button.</summary>
+    public static string? PromptFor(NearbyThing? offered, ButtonLayers layers)
+    {
+        if (offered is null)
+        {
+            return null;
+        }
+
+        foreach ((GamepadButtons button, ButtonBinding binding, bool chorded) in layers.Entries)
+        {
+            if (binding is InteractBinding && !chorded)
+            {
+                return $"{button}  {SmartInteract.Verb(offered.Kind)}";
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// The state with nothing drawn over the game's middle while input is
     /// suspended: alt-tabbed away, the wheel and the marker would otherwise float
@@ -24,7 +46,7 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
             return this;
         }
 
-        return this with { Wheel = null, Marker = null };
+        return this with { Wheel = null, Marker = null, Prompt = null };
     }
 
     /// <param name="gridFellBack">Whether grid presses are stepping because the screen could not be read, said first so it is noticed.</param>

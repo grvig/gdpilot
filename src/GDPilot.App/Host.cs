@@ -147,6 +147,7 @@ internal static class Host
                 TargetsReport near = link.Near;
                 mapper.Seen = near.Targets;
                 mapper.Near = near;
+                mapper.Things = link.Things;
                 // A panel over the world, or the character lying dead, lets go of any lock.
                 mapper.InWorld = loop.Mode == Mode.Combat && link.Health != 0;
 
@@ -215,6 +216,7 @@ internal static class Host
                     {
                         Wheel = view,
                         Marker = LockMarker.For(locked, mapper.LockPoint),
+                        Prompt = OverlayState.PromptFor(mapper.Offered, layers[loop.Mode]),
                     };
                     overlay.Update(state.Floating(), gameBounds, config.Overlay.Corner);
                     wheelShown = wheelOpen;

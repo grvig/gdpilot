@@ -19,6 +19,7 @@ public sealed class OverlayHost : IDisposable
     private OverlayWindow? window;
     private WheelWindow? wheel;
     private MarkerWindow? marker;
+    private PromptWindow? prompt;
 
     // Where each window was last put, so one that has not moved costs nothing.
     // Being topmost is re-asserted once a second, since a borderless game can rise
@@ -58,6 +59,7 @@ public sealed class OverlayHost : IDisposable
         Handle = window.Handle;
         wheel = new WheelWindow();
         marker = new MarkerWindow();
+        prompt = new PromptWindow();
         ready.Set();
         Dispatcher.Run();
     }
@@ -88,6 +90,33 @@ public sealed class OverlayHost : IDisposable
         Place(Handle, x, y);
         ShowWheel(state.Wheel, area);
         ShowMarker(state.Marker);
+        ShowPrompt(state.Prompt, area);
+    }
+
+    /// <summary>The prompt sits low in the middle of the game while something is in reach, and is hidden otherwise.</summary>
+    private void ShowPrompt(string? text, ScreenRect area)
+    {
+        if (text is null)
+        {
+            if (prompt!.IsVisible)
+            {
+                prompt.Hide();
+                placed.Remove(prompt.Handle);
+            }
+
+            return;
+        }
+
+        prompt!.Display(text);
+
+        if (!prompt.IsVisible)
+        {
+            prompt.Show();
+        }
+
+        prompt.UpdateLayout();
+        GetWindowRect(prompt.Handle, out Bounds own);
+        Place(prompt.Handle, area.X + (area.Width - (own.Right - own.Left)) / 2, area.Y + (int)(area.Height * 0.78));
     }
 
     /// <summary>The marker is centred on the locked enemy, and hidden with nothing to mark.</summary>
