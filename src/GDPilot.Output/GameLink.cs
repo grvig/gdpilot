@@ -83,6 +83,7 @@ public sealed class GameLink : IDisposable
                 // read it, which would stall the control loop whenever the game is busy.
                 using NamedPipeServerStream pipe = new(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly, Buffer, Buffer);
                 pipe.WaitForConnectionAsync(stop.Token).GetAwaiter().GetResult();
+
                 lock (sending)
                 {
                     writer = new StreamWriter(pipe, leaveOpen: true);
@@ -90,7 +91,6 @@ public sealed class GameLink : IDisposable
 
                 Connected = true;
                 say("In-game part connected: items and panels now come from the game.");
-
                 Read(pipe);
             }
             catch (OperationCanceledException)
