@@ -15,6 +15,8 @@
 #include <share.h>
 
 #include <atomic>
+#include <mutex>
+#include <vector>
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
@@ -222,11 +224,156 @@ HANDLE reportWanted = nullptr;
 
 using AdjustYaw = void (*)(void* camera, float radians);
 
-void ReportCamera()
+// Lines waiting for the pipe thread to send. The game's thread only appends and
+// signals, so it never waits on the pipe.
+std::mutex outboxGuard;
+std::vector<std::string> outbox;
+
+void Post(const std::string& line)
 {
+    {
+        std::lock_guard<std::mutex> hold(outboxGuard);
+        outbox.push_back(line);
+    }
+
     if (reportWanted != nullptr)
     {
         SetEvent(reportWanted);
+    }
+}
+
+std::string CameraLine();
+
+void ReportCamera()
+{
+    Post(CameraLine());
+}
+
+// Which panels are open, as flag bytes in the game's UI object. The offsets are
+// GrimAction's, mapped on this same game build: the UI object hangs off the game
+// engine at 0x19b0, and each panel has one byte that reads exactly 1 while open.
+// The inventory byte is also raised by the stash and vendor windows, and the
+// skills window holds devotion too, so those are reported as what they show.
+void** engineSlot = nullptr;
+std::string lastPanels = "[]";
+float sincePanelCheck = 0;
+
+// Set by the pipe thread on connecting; the game's thread, which owns lastPanels, answers it.
+std::atomic<bool> panelsWanted{false};
+
+struct PanelFlag
+{
+    std::size_t offset;
+    const char* mode;
+};
+
+constexpr PanelFlag Panels[] = {
+    {0x95d2, "Inventory"},
+    {0x991a, "Dialog"},
+    {0x9f9a, "Skills"},
+    {0xa2da, "WorldMap"},
+};
+
+constexpr std::size_t UiOffset = 0x19b0;
+constexpr std::size_t MenuFlag = 0x17a9;
+constexpr std::size_t MenuConfirmFlag = 0x9c5a;
+
+// Guarded, because a UI object that is being rebuilt during a load can briefly
+// point nowhere; a fault then means "unknown", never a crash.
+bool ReadPanelBytes(unsigned char bytes[], std::size_t count)
+{
+    __try
+    {
+        const unsigned char* engine = static_cast<const unsigned char*>(*engineSlot);
+
+        if (engine == nullptr)
+        {
+            return false;
+        }
+
+        const unsigned char* ui = *reinterpret_cast<const unsigned char* const*>(engine + UiOffset);
+
+        if (ui == nullptr)
+        {
+            return false;
+        }
+
+        for (std::size_t index = 0; index < std::size(Panels); index++)
+        {
+            bytes[index] = ui[Panels[index].offset];
+        }
+
+        bytes[count - 2] = ui[MenuFlag];
+        bytes[count - 1] = ui[MenuConfirmFlag];
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+std::string PanelsLine(const std::string& open)
+{
+    return "{\"protocol\":1,\"type\":\"panels\",\"open\":" + open + "}\n";
+}
+
+// About ten times a second is plenty to follow a panel opening and costs nothing.
+void CheckPanels(float elapsed)
+{
+    sincePanelCheck += elapsed;
+
+    if (engineSlot == nullptr || sincePanelCheck < 0.1f)
+    {
+        return;
+    }
+
+    sincePanelCheck = 0;
+    unsigned char bytes[std::size(Panels) + 2]{};
+
+    if (!ReadPanelBytes(bytes, std::size(bytes)))
+    {
+        return;
+    }
+
+    std::string open = "[";
+
+    for (std::size_t index = 0; index < std::size(Panels); index++)
+    {
+        if (bytes[index] == 1)
+        {
+            if (open.size() > 1)
+            {
+                open += ",";
+            }
+
+            open += std::string("\"") + Panels[index].mode + "\"";
+        }
+    }
+
+    // Escape's menu raises two bytes together; either alone is something else.
+    if (bytes[std::size(Panels)] == 1 && bytes[std::size(Panels) + 1] == 1)
+    {
+        if (open.size() > 1)
+        {
+            open += ",";
+        }
+
+        open += "\"Menu\"";
+    }
+
+    open += "]";
+
+    if (panelsWanted.exchange(false))
+    {
+        Post(PanelsLine(open));
+    }
+
+    if (open != lastPanels)
+    {
+        lastPanels = open;
+        Say("Panels open: %s", open.c_str());
+        Post(PanelsLine(open));
     }
 }
 
@@ -344,6 +491,7 @@ void UpdatedCamera(void* camera)
 {
     originalUpdate(camera);
     float elapsed = SecondsSinceLastFrame();
+    CheckPanels(elapsed);
 
     if (thirdPerson)
     {
@@ -467,6 +615,7 @@ void Converse(HANDLE pipe)
     char buffer[512];
     std::string pending;
     bool healthy = WriteLine(pipe, writeDone, CameraLine());
+    panelsWanted = true;
 
     while (healthy)
     {
@@ -488,7 +637,18 @@ void Converse(HANDLE pipe)
 
             if (woke == WAIT_OBJECT_0 + 1)
             {
-                healthy = WriteLine(pipe, writeDone, CameraLine());
+                std::vector<std::string> lines;
+
+                {
+                    std::lock_guard<std::mutex> hold(outboxGuard);
+                    lines.swap(outbox);
+                }
+
+                for (const std::string& line : lines)
+                {
+                    healthy = healthy && WriteLine(pipe, writeDone, line);
+                }
+
                 continue;
             }
 
@@ -551,6 +711,13 @@ DWORD WINAPI Start(LPVOID)
 
     if (FindEverything() && Attach())
     {
+        engineSlot = reinterpret_cast<void**>(GetProcAddress(GetModuleHandleW(L"Game.dll"), "?gGameEngine@GAME@@3PEAVGameEngine@1@EA"));
+
+        if (engineSlot == nullptr)
+        {
+            Say("Panel reports off: the game no longer exports gGameEngine.");
+        }
+
         HANDLE thread = CreateThread(nullptr, 0, Link, nullptr, 0, nullptr);
 
         if (thread != nullptr)
