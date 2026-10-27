@@ -20,11 +20,19 @@ internal sealed class CommandRouter : IInputSink
 
     public GameLink? Link { get; set; }
 
+    private bool explained;
+
     public void Send(InputIntent intent)
     {
         if (intent is GameCommandIntent command && Link is not null)
         {
-            Link.Send(command.Command);
+            // A camera press with nothing to receive it would otherwise do nothing, silently.
+            if (!Link.Send(command.Command) && command.Command is ToggleCameraCommand && !explained)
+            {
+                Console.WriteLine("The camera button needs the in-game part: start the game, then run GDPilot.exe --load-in-game.");
+                explained = true;
+            }
+
             return;
         }
 
