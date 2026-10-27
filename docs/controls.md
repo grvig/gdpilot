@@ -124,11 +124,12 @@ turns this off.
 
 ## Interacting
 
-A talks to the townsfolk, uses rift gates, shrines, chests and doors, and
-picks up loot, whichever is nearest within six units, without aiming at it. A
-prompt low on the screen says what A would do. With nothing in reach, A is
-Space as before. Picking up loot is not reliable yet: the point clicked can
-miss the item.
+A picks up loot, talks to the townsfolk, travels through rift gates and
+portals, and uses shrines, chests, doors and levers, whichever is nearest
+within six units, without aiming at it; loot wins when two are about as near.
+A prompt low on the screen, such as "A  Pick up" or "A  Travel", says what A
+would do. With nothing in reach, A is Space as before. An attack held on the
+bumper carries on through the click.
 
 ## Walking
 
