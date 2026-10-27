@@ -130,6 +130,8 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
                 return "Skill wheel";
             case LockBinding:
                 return "Lock on";
+            case InteractBinding interact:
+                return $"Interact, else {Describe(new KeyBinding(interact.Fallback))}";
             case DodgeBinding dodge:
                 return $"Dodge ({Describe(new KeyBinding(dodge.Key))})";
             default:

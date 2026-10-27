@@ -37,6 +37,8 @@ internal static class BindingAction
                 return new LockBinding();
             case "dodge":
                 return new DodgeBinding(Key(parts[1], trigger));
+            case "interact":
+                return new InteractBinding(Key(parts[1], trigger));
             default:
                 throw new FormatException($"\"{trigger}\": \"{parts[0]}\" bindings are not supported.");
         }
