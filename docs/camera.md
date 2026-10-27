@@ -167,6 +167,23 @@ stalled GDPilot can never steer the character anywhere; GDPilot repeats a held
 direction several times a second. Across a region border, for the frame or two
 it takes, the game's own point stands.
 
+## Tilting
+
+In third person the right stick's up and down tilts the view, at `tiltSpeed`
+degrees a second under `input`; with the left trigger held it zooms instead.
+The game works out its own pitch afresh every frame, at 0x10 in the camera, so
+the tilt is laid over it each frame and there is nothing to restore when third
+person turns off. It is held between six and eighty degrees, and a recentre
+levels it back out.
+
+## What lies close by
+
+Ten times a second, the in-game part asks the game's entity query for what
+lies within ten units of the character and reports, in view, the nearest
+twelve to pick up, talk to, use or travel through, sorted by class. Loot is
+placed at the middle of its bounds, since a dropped item lies about a unit
+from its own position; townsfolk at the chest; fixed things a little up.
+
 ## The ground round the character
 
 With the targets, the in-game part reports where the character's feet fall on
