@@ -174,6 +174,18 @@ void Write(void* camera, std::size_t offset, float value)
 // The game's own values, captured as third person turns on and put back as it turns off.
 float native[std::size(Fields)]{};
 bool thirdPerson = false;
+
+// Camera collision's settings, from camera.ini, and its state: how far out the
+// camera may be this frame, and how often the game has refused a level query.
+bool collisionOn = false;
+float collisionSkin = 0.35f;
+float collisionExtend = 18;
+float arm = 0;
+int refusals = 0;
+bool pulledIn = false;
+bool collideObjects = false;
+unsigned int collisionSurface = 1;
+float collisionStart = 1.5f;
 bool togglePressed = false;
 
 float Setting(const wchar_t* key, float fallback)
@@ -742,6 +754,14 @@ void TurnOn(void* camera)
     }
 
     Apply(camera, behind);
+    arm = behind[0];
+    refusals = 0;
+    collisionOn = Setting(L"collision", 1) != 0;
+    collisionSkin = Setting(L"collision_skin", 0.35f);
+    collisionExtend = Setting(L"collision_extend", 18);
+    collideObjects = Setting(L"collision_objects", 1) != 0;
+    collisionSurface = static_cast<unsigned int>(Setting(L"collision_surface", 1));
+    collisionStart = Setting(L"collision_start", 1.5f);
     Say("Third person: distance %.1f to %.1f from %.1f, pitch %.1f to %.1f, view %.1f degrees.", behind[2], behind[3], behind[0], behind[4], behind[5], behind[10] * 180 / 3.14159265f);
     thirdPerson = true;
     Say("Third person on.");
@@ -765,6 +785,208 @@ bool GameInFront()
 
 using CameraUpdate = void (*)(void* camera);
 CameraUpdate originalUpdate = nullptr;
+
+// Camera collision, through the game's own level query: a ray from the
+// character out to the camera, ignoring the character. The functions are
+// Engine.dll's exports, checked against the bytes GrimAction mapped them from
+// on this build; the camera's world position sits at 0x94, and a ray is an
+// origin then a direction, three floats each.
+struct WorldPoint
+{
+    void* region;
+    float x;
+    float y;
+    float z;
+};
+
+struct LevelRay
+{
+    float origin[3];
+    float direction[3];
+};
+
+using GetRegion = void* (*)(const void* camera);
+using ViewOffset = WorldPoint* (*)(const void* camera, WorldPoint* result, const WorldPoint* focus);
+using LevelOf = void* (*)(const void* region);
+using Intersect = void (*)(void* level, const LevelRay* ray, void* intersection, unsigned int surface, void** hit, float most, const void* ignore, bool entities);
+
+GetRegion cameraRegion = nullptr;
+ViewOffset viewOffset = nullptr;
+LevelOf regionLevel = nullptr;
+Intersect intersect = nullptr;
+
+constexpr std::size_t CameraPosition = 0x94;
+constexpr int MostRefusals = 30;
+
+
+struct CollisionEntry
+{
+    const char* name;
+    const char* prefix;
+    void** slot;
+};
+
+void FindCollision()
+{
+    HMODULE engine = GetModuleHandleW(L"Engine.dll");
+    CollisionEntry entries[] = {
+        {"?GetRegion@WorldCamera@GAME@@QEBAPEAVRegion@2@XZ", "4883ec48488b01488d542420", reinterpret_cast<void**>(&cameraRegion)},
+        {"?CalculateViewPosition@WorldCamera@GAME@@MEBA?AVWorldVec3@2@AEBV32@@Z", "48895c24084889742410574883ec60", reinterpret_cast<void**>(&viewOffset)},
+        {"?GetLevelPtr@Region@GAME@@QEBAPEAVLevel@2@XZ", "488b4168c3", reinterpret_cast<void**>(&regionLevel)},
+        {"?GetIntersection@Level@GAME@@QEBAXAEBVRay@2@AEAVIntersection@2@W4PhysicsSurface@2@PEAPEAVEntity@2@MPEBV62@_N@Z", "488bc4488958084889681048897018", reinterpret_cast<void**>(&intersect)},
+    };
+
+    for (CollisionEntry& entry : entries)
+    {
+        void* address = reinterpret_cast<void*>(GetProcAddress(engine, entry.name));
+
+        if (address == nullptr || !StartsWith(address, entry.prefix))
+        {
+            Say("Collision off: %s is missing or has changed.", entry.name);
+            intersect = nullptr;
+            return;
+        }
+
+        *entry.slot = address;
+    }
+
+    Say("Found the level query; the camera will stay out of walls.");
+}
+
+// How far the camera can be from the character before the level is in the way,
+// infinity when nothing is, or false when the game refused the query.
+bool ClearDistance(void* camera, const void* player, float most, float& distance)
+{
+    __try
+    {
+        void* region = cameraRegion(camera);
+
+        if (region == nullptr)
+        {
+            return false;
+        }
+
+        WorldPoint zero{region, 0, 0, 0};
+        WorldPoint offset{};
+        viewOffset(camera, &offset, &zero);
+        const float* position = reinterpret_cast<const float*>(static_cast<const unsigned char*>(camera) + CameraPosition);
+        float length = std::sqrt(offset.x * offset.x + offset.y * offset.y + offset.z * offset.z);
+
+        if (!std::isfinite(length) || length < 0.0001f)
+        {
+            return false;
+        }
+
+        // The camera sits at the character plus the offset, so the character is the
+        // camera minus it. The ray starts a little way out, past the character's own
+        // body, which the query would otherwise meet first.
+        float along[3] = {offset.x / length, offset.y / length, offset.z / length};
+        LevelRay ray{{position[0] - offset.x + along[0] * collisionStart, position[1] - offset.y + along[1] * collisionStart, position[2] - offset.z + along[2] * collisionStart}, {along[0], along[1], along[2]}};
+        void* level = regionLevel(region);
+
+        if (level == nullptr)
+        {
+            return false;
+        }
+
+        alignas(16) unsigned char intersection[128]{};
+        void* hit = nullptr;
+        intersect(level, &ray, intersection, collisionSurface, &hit, most, player, collideObjects);
+        std::memcpy(&distance, intersection, sizeof(distance));
+        distance += collisionStart;
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+const void* MainPlayer()
+{
+    __try
+    {
+        if (mainPlayer == nullptr || *engineSlot == nullptr)
+        {
+            return nullptr;
+        }
+
+        return mainPlayer(*engineSlot);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return nullptr;
+    }
+}
+
+// Pulls the camera in front of anything between it and the character at once,
+// and lets it back out gradually, so it never sits inside a wall and never
+// snaps outward. The player's own zoom stays the target throughout.
+void Collide(void* camera, float elapsed)
+{
+    if (!collisionOn || intersect == nullptr || refusals >= MostRefusals)
+    {
+        return;
+    }
+
+    float nearest = Read(camera, ZoomNear);
+    float farthest = Read(camera, ZoomFar);
+    float chosen = Read(camera, ZoomTarget);
+    float desired = nearest + (farthest - nearest) * chosen;
+    float hit = 0;
+
+    if (!ClearDistance(camera, MainPlayer(), desired + collisionSkin, hit))
+    {
+        refusals++;
+
+        if (refusals == MostRefusals)
+        {
+            Say("Collision off for this session: the game refused the level query %d times.", MostRefusals);
+        }
+
+        return;
+    }
+
+    float allowed = desired;
+
+    if (std::isfinite(hit) && hit < desired + collisionSkin)
+    {
+        allowed = std::fmax(nearest, hit - collisionSkin);
+    }
+
+    if (allowed < arm)
+    {
+        arm = allowed;
+    }
+    else
+    {
+        arm = std::fmin(allowed, arm + collisionExtend * elapsed);
+    }
+
+    bool inside = arm < desired - 0.01f;
+
+    // Logged only as it changes, so the log shows each obstacle once.
+    if (inside != pulledIn)
+    {
+        pulledIn = inside;
+
+        if (inside)
+        {
+            Say("Collision: pulled in to %.1f of %.1f, something at %.1f.", arm, desired, hit);
+        }
+        else
+        {
+            Say("Collision: clear again at %.1f.", desired);
+        }
+    }
+
+    if (inside)
+    {
+        // SetZoom moves the live and target zoom together; the target is then given back to the player.
+        reinterpret_cast<SetZoom>(required[1].address)(camera, arm);
+        Write(camera, ZoomTarget, chosen);
+    }
+}
 
 LARGE_INTEGER lastFrame{};
 LARGE_INTEGER ticksPerSecond{};
@@ -801,6 +1023,7 @@ void UpdatedCamera(void* camera)
 
     if (thirdPerson)
     {
+        Collide(camera, elapsed);
         float yaw = yawPerSecond.load();
 
         if (yaw != 0 && elapsed > 0)
@@ -1027,6 +1250,7 @@ DWORD WINAPI Start(LPVOID)
         else
         {
             FindInventoryRoute();
+            FindCollision();
         }
 
         HANDLE thread = CreateThread(nullptr, 0, Link, nullptr, 0, nullptr);
