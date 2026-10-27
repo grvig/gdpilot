@@ -58,6 +58,7 @@ distance_start=10
 pitch_min=12
 pitch_max=40
 field_of_view=50
+collision=1
 ```
 
 | Key | Meaning |
@@ -66,6 +67,9 @@ field_of_view=50
 | `distance_start` | Where the zoom starts when third person turns on |
 | `pitch_min`, `pitch_max` | The camera's tilt, in degrees, at the nearest and farthest zoom |
 | `field_of_view` | In degrees |
+| `collision` | 1 keeps the camera in front of anything between it and the character, 0 lets it pass through |
+| `collision_extend` | How fast the camera eases back out once clear, in world units per second; 18 by default |
+| `collision_skin` | How far short of an obstacle the camera stops; 0.35 by default |
 
 The game tilts the camera between the two pitches as the zoom moves between
 the two distances, so a close camera also looks along the ground rather than
@@ -82,7 +86,7 @@ and pitch 38 to 52.
 - **Camera only.** It writes the camera's distance, tilt, zoom and field of
   view, and turns it through the game's own `AdjustYaw`. Beyond the camera it
   only reads: which panels are open, so GDPilot's mode always matches the
-  game's.
+  game's, and where each item sits in your bags, so a large item is one stop.
 - **On the game's thread.** It attaches to the game's camera update and does
   its work just after the game's own, every frame, so nothing races the game.
 - **Never waits.** The pipe to GDPilot is buffered on both sides and read
@@ -94,9 +98,18 @@ The camera's field map, and the order of writing the fields around the game's
 own `SetZoom`, come from [GrimAction](https://github.com/Ophemist/GrimAction)
 by Ophemist, under its MIT licence.
 
+## Collision
+
+Each frame, the in-game part asks the game's own level query whether anything
+lies between the character and the camera. If something does, the camera moves
+in front of it at once; when the way is clear again it eases back out to your
+chosen zoom. The ray starts a short way out from the character, so it never
+meets the character itself. If the game refuses the query thirty times, as it
+might during an unusual load, collision switches off for the session and says
+so in the log.
+
 ## Not yet
 
-- **Camera collision.** The camera can sit inside a wall or behind a post.
 - **Following the character.** The camera keeps its heading until turned.
 - **Loading without a command.** For release, a loader in the game folder will
   start the in-game part with the game.
