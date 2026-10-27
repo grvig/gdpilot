@@ -136,6 +136,12 @@ internal static class Host
                 }
 
                 mapper.Looking = link.ThirdPerson;
+
+                // With the in-game part connected, the game says which panels are open; without it, presses are tracked.
+                if (link.Panels is PanelsReport panels)
+                {
+                    modes.Follow(panels.Open);
+                }
                 StopTurningWhenSuspended(suspension, link, ref wasSuspended);
                 loop.Tick(now - last);
                 last = now;
