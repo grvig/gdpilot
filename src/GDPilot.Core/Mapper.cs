@@ -64,6 +64,17 @@ public sealed class Mapper
     public RadialMenu? Wheel { get; set; }
     private bool wasLocked;
 
+    /// <summary>What lies close by to pick up, talk to or use, as the game last reported it.</summary>
+    public IReadOnlyList<NearbyThing> Things { get; set; } = Array.Empty<NearbyThing>();
+
+    /// <summary>The thing an interact press would click this tick, for the overlay's prompt; null with nothing in reach.</summary>
+    public NearbyThing? Offered { get; private set; }
+
+    private bool interactHeld;
+    private bool clicking;
+    private TimeSpan clickHeldFor;
+    private KeyCode? fallbackHeld;
+
     /// <summary>The game's last targets report, for where the character's feet and the ground round it fall on the screen.</summary>
     public TargetsReport? Near { get; set; }
 
@@ -144,9 +155,12 @@ public sealed class Mapper
         Wheel?.Close();
         casting = null;
 
-        // A dodge cut off by the suspension has had its key let go with everything else.
+        // A dodge or a click cut off by the suspension has had its key or button let go with everything else.
         dodging = null;
         dodgeHeld = false;
+        clicking = false;
+        interactHeld = false;
+        fallbackHeld = null;
 
         // The next tick tells the game the lock has gone.
         Lock?.Release();
@@ -268,6 +282,75 @@ public sealed class Mapper
             sinceMove = TimeSpan.Zero;
             intents.Add(new GameCommandIntent(new MoveCommand(Math.Round(wanted.X, 3), Math.Round(wanted.Y, 3))));
         }
+    }
+
+    /// <summary>
+    /// On an interact press with something offered, puts the cursor on it and
+    /// clicks, then gives the cursor back; with nothing offered, holds the
+    /// binding's own key for as long as the button is held. Returns whether a
+    /// click holds the cursor this tick.
+    /// </summary>
+    private bool TickInteract(GamepadSnapshot snapshot, TimeSpan elapsed, List<InputIntent> intents)
+    {
+        Offered = null;
+
+        if (InWorld)
+        {
+            Offered = SmartInteract.Offer(Things);
+        }
+
+        KeyCode? fallback = null;
+
+        foreach ((GamepadButtons button, ButtonBinding _, bool _) in Buttons.Entries)
+        {
+            if (snapshot.IsPressed(button) && Buttons.BindingFor(button, snapshot.LeftTrigger) is InteractBinding interact)
+            {
+                fallback = interact.Fallback;
+            }
+        }
+
+        bool pressed = fallback is not null;
+
+        if (pressed && !interactHeld && !clicking)
+        {
+            if (Offered is NearbyThing thing && GameBounds is ScreenRect bounds)
+            {
+                intents.Add(new PointerMoveTo((int)Math.Round(bounds.X + thing.X * bounds.Width), (int)Math.Round(bounds.Y + thing.Y * bounds.Height)));
+                intents.Add(new PointerDown(PointerButton.Left));
+                clicking = true;
+                clickHeldFor = TimeSpan.Zero;
+            }
+            else
+            {
+                intents.Add(new KeyDown(fallback!.Value));
+                fallbackHeld = fallback;
+            }
+        }
+
+        if (!pressed && fallbackHeld is KeyCode held)
+        {
+            intents.Add(new KeyUp(held));
+            fallbackHeld = null;
+        }
+
+        interactHeld = pressed;
+
+        if (!clicking)
+        {
+            return false;
+        }
+
+        clickHeldFor += elapsed;
+
+        if (clickHeldFor < ModeController.TapLength)
+        {
+            return true;
+        }
+
+        intents.Add(new PointerUp(PointerButton.Left));
+        clicking = false;
+        cursorAt = null;
+        return true;
     }
 
     /// <summary>
@@ -527,8 +610,8 @@ public sealed class Mapper
         Steer(left, elapsed, intents);
         TickLock(snapshot, right, elapsed, wheelOpen, intents);
 
-        // While a dodge's key is down the cursor stays on its spot, or the skill would go elsewhere.
-        if (TickDodge(snapshot, left, elapsed, intents))
+        // While a click or a dodge's key is down the cursor stays on its spot, or it would land elsewhere.
+        if (TickInteract(snapshot, elapsed, intents) || TickDodge(snapshot, left, elapsed, intents))
         {
             return intents;
         }
