@@ -32,13 +32,15 @@ it.
 | Control | What it does |
 | --- | --- |
 | Right stick click | Switch between the game's camera and third person |
-| Right stick, in third person | Turn the camera; left stick "forward" turns with it |
+| Right stick left and right, in third person | Turn the camera; left stick "forward" turns with it |
+| Right stick up and down, in third person | Zoom in and out; the camera levels out as it comes closer |
 | F8 | The same switch from the keyboard |
 
 In third person the cursor waits a little ahead of the character, so attacks
 and skills go where the camera faces. `aimHeight` under `input` sets how far
-down the window that is, and `lookSpeed` how fast the stick turns the camera,
-in radians per second at full tilt.
+down the window that is, `lookSpeed` how fast the stick turns the camera, in
+radians per second at full tilt, and `zoomSpeed` how fast it zooms, in parts of
+the zoom range per second.
 
 Switching back restores the game's own camera exactly as it was, down to the
 zoom.
@@ -78,7 +80,9 @@ and pitch 38 to 52.
   it writes, so a match is what makes the writes safe. Any difference and it
   stays off, saying why in `%LOCALAPPDATA%\GDPilot\in-game.log`.
 - **Camera only.** It writes the camera's distance, tilt, zoom and field of
-  view, and turns it through the game's own `AdjustYaw`. Nothing else.
+  view, and turns it through the game's own `AdjustYaw`. Beyond the camera it
+  only reads: which panels are open, so GDPilot's mode always matches the
+  game's.
 - **On the game's thread.** It attaches to the game's camera update and does
   its work just after the game's own, every frame, so nothing races the game.
 - **Never waits.** The pipe to GDPilot is buffered on both sides and read
@@ -93,7 +97,6 @@ by Ophemist, under its MIT licence.
 ## Not yet
 
 - **Camera collision.** The camera can sit inside a wall or behind a post.
-- **Tilt from the stick.** The stick's up and down does nothing yet.
 - **Following the character.** The camera keeps its heading until turned.
 - **Loading without a command.** For release, a loader in the game folder will
   start the in-game part with the game.
