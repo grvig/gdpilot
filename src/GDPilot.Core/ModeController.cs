@@ -18,6 +18,13 @@ public sealed class ModeController
 
     private const GamepadButtons PanicChord = GamepadButtons.Start | GamepadButtons.Back;
 
+    /// <summary>
+    /// How long after a tap the game's own reports are ignored. They are read
+    /// about ten times a second, so one sent just after a tap still describes
+    /// the game from before it.
+    /// </summary>
+    public static readonly TimeSpan ReportSettle = TimeSpan.FromMilliseconds(300);
+
     private readonly ModeStack stack = new();
     private readonly IReadOnlyDictionary<Mode, KeyCode> panelKeys;
     private readonly Func<Mode, ButtonLayers> layersFor;
@@ -27,6 +34,7 @@ public sealed class ModeController
     private TimeSpan panicHeldFor;
     private bool panicFired;
     private GamepadButtons previous;
+    private TimeSpan sinceTap = TimeSpan.MaxValue;
 
     private readonly GridNavigator? grids;
 
@@ -51,6 +59,11 @@ public sealed class ModeController
     {
         List<InputIntent> intents = new();
         ReleaseFinishedTap(elapsed, intents);
+
+        if (sinceTap != TimeSpan.MaxValue)
+        {
+            sinceTap += elapsed;
+        }
 
         GamepadButtons pressed = snapshot.Buttons & ~previous;
         previous = snapshot.Buttons;
@@ -87,10 +100,80 @@ public sealed class ModeController
         {
             tapping = taps.Dequeue();
             tapHeldFor = TimeSpan.Zero;
+            sinceTap = TimeSpan.Zero;
             intents.Add(new KeyDown(tapping.Value));
         }
 
         return intents;
+    }
+
+    /// <summary>
+    /// Brings the tracked mode in line with the panels the game itself says are
+    /// open, which ends any disagreement: a panel closed with the mouse, or
+    /// opened by clicking something in the world, is followed. Ignored while a
+    /// tap is on its way, since the report may predate it.
+    /// </summary>
+    public void Follow(IReadOnlyList<string> open)
+    {
+        if (tapping is not null || taps.Count > 0 || sinceTap < ReportSettle)
+        {
+            return;
+        }
+
+        List<Mode> modes = new();
+
+        foreach (string name in open)
+        {
+            if (Enum.TryParse(name, out Mode mode) && mode is not (Mode.Combat or Mode.Suspended))
+            {
+                modes.Add(mode);
+            }
+        }
+
+        if (Agrees(modes))
+        {
+            return;
+        }
+
+        stack.ClearToCombat();
+
+        if (modes.Count == 0)
+        {
+            return;
+        }
+
+        // The menu and a conversation sit over everything else, so they are what the buttons should drive.
+        Mode shown = modes[0];
+
+        foreach (Mode mode in modes)
+        {
+            if (mode is Mode.Menu or Mode.Dialog)
+            {
+                shown = mode;
+            }
+        }
+
+        stack.Toggle(shown);
+    }
+
+    /// <summary>
+    /// Whether the tracked mode matches the game's panels. The game raises its
+    /// inventory flag for the stash, a trader and the character sheet as well,
+    /// so any of those agrees with an open inventory.
+    /// </summary>
+    private bool Agrees(List<Mode> open)
+    {
+        if (open.Count == 0)
+        {
+            return stack.Current == Mode.Combat;
+        }
+
+        if (open.Contains(stack.Current))
+        {
+            return true;
+        }
+
+        return open.Contains(Mode.Inventory) && stack.Current is Mode.Stash or Mode.Vendor or Mode.Character;
     }
 
     /// <summary>
