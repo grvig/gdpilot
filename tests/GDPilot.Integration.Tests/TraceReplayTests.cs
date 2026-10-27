@@ -187,6 +187,47 @@ public sealed class TraceReplayTests
             sent.OfType<PointerMoveTo>());
     }
 
+    /// <summary>
+    /// The same trace with the second bag as the game itself reported it on
+    /// 2026-10-28, kept in traces/bag-exact.json: the rectangles exactly as read,
+    /// the item ids renumbered 1 to 9 for readability. Played
+    /// live that day, the cursor took exactly this path: the three-cell sword is
+    /// one stop, and every other item is reached at its top-left cell.
+    /// </summary>
+    [Fact]
+    public void WithTheGamesOwnLayoutATallSwordIsOneStop()
+    {
+        GDPilotConfig config = GDPilotConfig.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "config.example.json")));
+        GridReadiness readiness = GridReadiness.Check(config, new LiveDisplay(1920, 1080, 0.5));
+        ReportedOccupancy reported = new(null);
+        reported.Accept((LayoutReport)GameReport.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "traces", "bag-exact.json")))!);
+        GamepadTrace trace = Load("bag-jumps.json");
+        TimeSpan now = TimeSpan.Zero;
+        ReplayGamepadSource source = new(trace, () => now);
+        ModeController modes = new(config.PanelKeys(), mode => config.ButtonsFor(mode.ToString()), new GridNavigator(readiness, reported));
+        List<InputIntent> sent = new();
+
+        while (now <= TimeSpan.FromMilliseconds(trace.Entries[^1].At))
+        {
+            sent.AddRange(modes.Tick(source.Read(), Tick));
+            now += Tick;
+        }
+
+        Assert.Equal(
+            new InputIntent[]
+            {
+                new PointerMoveTo(1044, 645),
+                new PointerMoveTo(1044, 773),
+                new PointerMoveTo(1044, 805),
+                new PointerMoveTo(1044, 837),
+                new PointerMoveTo(1044, 837),
+                new PointerMoveTo(1108, 805),
+                new PointerMoveTo(1140, 677),
+                new PointerMoveTo(1140, 677),
+            },
+            sent.OfType<PointerMoveTo>());
+    }
+
     /// <summary>Every grid reads as the same drawn map, # for an item and . for empty.</summary>
     private sealed class FixedOccupancy : IOccupancySource
     {
