@@ -139,6 +139,16 @@ dotnet run --project src/GDPilot.App -- --dry-run
 the game closed. Without it, GDPilot drives the game whenever the game is in
 front.
 
+Other commands:
+
+| Command | What it does |
+| --- | --- |
+| `--load-in-game` | Loads the in-game part into the running game, for the third-person camera; see [docs/camera.md](docs/camera.md) |
+| `--check-game` | Checks an installed game version still has everything the in-game part needs |
+| `--calibrate <Grid>` | Measures a menu grid for a new resolution or UI scale |
+| `--occupancy <Grid>` | Prints which cells of an open grid hold items |
+| `--replay <trace>` | Plays a recorded pad performance instead of reading the pad |
+
 Settings live in `config.json` beside the executable or in the working
 directory. Copy [config.example.json](config.example.json) as a starting point.
 
