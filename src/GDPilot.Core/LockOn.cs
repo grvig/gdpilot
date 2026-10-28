@@ -25,6 +25,10 @@ public sealed record LockSettings(double Range = 25, double BreakRange = 32);
 /// the screen; the stick must come back toward the middle before another flick
 /// counts, so one flick is always one switch. Everything here works on the
 /// game's reports alone, so it is tested without a game.
+///
+/// When the held enemy dies, the lock moves straight on to the enemy nearest
+/// where it fell, so a fight flows from one to the next. It breaks when the
+/// enemy gets beyond reach or stays out of view.
 /// </summary>
 public sealed class LockOn
 {
@@ -38,8 +42,18 @@ public sealed class LockOn
     /// <summary>How far either side of a flick's direction an enemy may lie and still be the one it means.</summary>
     private static readonly double SwitchCone = Math.PI / 3;
 
+    /// <summary>
+    /// How long a held enemy may be missing from the reports before it counts as
+    /// gone, so one late report never drops a lock, and how long it may stay out
+    /// of view before the lock lets go.
+    /// </summary>
+    private static readonly TimeSpan LostGrace = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan OutOfViewLimit = TimeSpan.FromSeconds(3);
+
     private readonly LockSettings settings;
     private bool armed = true;
+    private TimeSpan missingFor;
+    private TimeSpan outOfViewFor;
 
     public LockOn(LockSettings settings)
     {
@@ -65,6 +79,8 @@ public sealed class LockOn
         }
 
         Target = Best(seen, aimX, aimY);
+        missingFor = TimeSpan.Zero;
+        outOfViewFor = TimeSpan.Zero;
 
         if (Target is null)
         {
@@ -90,15 +106,87 @@ public sealed class LockOn
             return LockChange.None;
         }
 
-        foreach (SeenTarget target in seen)
+        LockChange change = Follow(seen, elapsed);
+
+        if (Target is null || change != LockChange.None)
         {
-            if (target.Id == Target.Id)
-            {
-                Target = target;
-            }
+            return change;
         }
 
         return Flick(seen, right);
+    }
+
+    private LockChange Follow(IReadOnlyList<SeenTarget> seen, TimeSpan elapsed)
+    {
+        SeenTarget held = Target!;
+        SeenTarget? now = seen.FirstOrDefault(target => target.Id == held.Id);
+
+        if (now is null)
+        {
+            missingFor += elapsed;
+
+            if (missingFor < LostGrace)
+            {
+                return LockChange.None;
+            }
+
+            // Gone from the game's list: dead, or no longer something a skill could hit.
+            Target = Nearest(seen, held);
+            missingFor = TimeSpan.Zero;
+            outOfViewFor = TimeSpan.Zero;
+
+            if (Target is null)
+            {
+                return LockChange.Lost;
+            }
+
+            return LockChange.Switched;
+        }
+
+        missingFor = TimeSpan.Zero;
+        Target = now;
+
+        if (now.OnScreen)
+        {
+            outOfViewFor = TimeSpan.Zero;
+        }
+        else
+        {
+            outOfViewFor += elapsed;
+        }
+
+        if (now.Distance > settings.BreakRange || outOfViewFor >= OutOfViewLimit)
+        {
+            Target = null;
+            return LockChange.Lost;
+        }
+
+        return LockChange.None;
+    }
+
+    /// <summary>The enemy in view and in reach nearest where another one was last seen on the screen.</summary>
+    private SeenTarget? Nearest(IReadOnlyList<SeenTarget> seen, SeenTarget gone)
+    {
+        SeenTarget? best = null;
+        double bestApart = double.MaxValue;
+
+        foreach (SeenTarget target in seen)
+        {
+            if (!target.OnScreen || target.Distance > settings.Range)
+            {
+                continue;
+            }
+
+            double apart = Apart(target.X, target.Y, gone.X, gone.Y);
+
+            if (apart < bestApart)
+            {
+                best = target;
+                bestApart = apart;
+            }
+        }
+
+        return best;
     }
 
     private LockChange Flick(IReadOnlyList<SeenTarget> seen, StickPosition right)

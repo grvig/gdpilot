@@ -142,4 +142,59 @@ public sealed class LockOnTests
 
         Assert.Equal(1u, lockOn.Target!.Id);
     }
+
+    [Fact]
+    public void WhenTheEnemyFallsTheLockMovesToTheOneNearestWhereItWas()
+    {
+        SeenTarget[] seen = { Enemy(1, 0.5, 0.4), Enemy(2, 0.55, 0.45), Enemy(3, 0.9, 0.4) };
+        LockOn lockOn = LockedOnto(seen, 1);
+        SeenTarget[] after = { Enemy(2, 0.55, 0.45), Enemy(3, 0.9, 0.4) };
+
+        Assert.Equal(LockChange.None, lockOn.Update(after, Still, TimeSpan.FromMilliseconds(100)));
+        Assert.Equal(LockChange.Switched, lockOn.Update(after, Still, TimeSpan.FromMilliseconds(200)));
+        Assert.Equal(2u, lockOn.Target!.Id);
+    }
+
+    [Fact]
+    public void OneLateReportDoesNotDropTheLock()
+    {
+        SeenTarget[] seen = { Enemy(1, 0.5, 0.4), Enemy(2, 0.55, 0.45) };
+        LockOn lockOn = LockedOnto(seen, 1);
+
+        lockOn.Update(new[] { Enemy(2, 0.55, 0.45) }, Still, TimeSpan.FromMilliseconds(100));
+        lockOn.Update(seen, Still, Frame);
+        lockOn.Update(new[] { Enemy(2, 0.55, 0.45) }, Still, TimeSpan.FromMilliseconds(200));
+
+        Assert.Equal(1u, lockOn.Target!.Id);
+    }
+
+    [Fact]
+    public void WithNothingLeftTheLockIsLost()
+    {
+        LockOn lockOn = LockedOnto(new[] { Enemy(1, 0.5, 0.4) }, 1);
+
+        lockOn.Update(Array.Empty<SeenTarget>(), Still, TimeSpan.FromMilliseconds(100));
+
+        Assert.Equal(LockChange.Lost, lockOn.Update(Array.Empty<SeenTarget>(), Still, TimeSpan.FromMilliseconds(200)));
+        Assert.Null(lockOn.Target);
+    }
+
+    [Fact]
+    public void AnEnemyThatRunsBeyondReachBreaksTheLock()
+    {
+        LockOn lockOn = LockedOnto(new[] { Enemy(1, 0.5, 0.4) }, 1);
+
+        Assert.Equal(LockChange.None, lockOn.Update(new[] { Enemy(1, 0.5, 0.3, distance: 30) }, Still, Frame));
+        Assert.Equal(LockChange.Lost, lockOn.Update(new[] { Enemy(1, 0.5, 0.2, distance: 33) }, Still, Frame));
+    }
+
+    [Fact]
+    public void AnEnemyLongOutOfViewBreaksTheLock()
+    {
+        LockOn lockOn = LockedOnto(new[] { Enemy(1, 0.5, 0.4) }, 1);
+        SeenTarget[] hidden = { Enemy(1, 1.2, 0.4, onScreen: false) };
+
+        Assert.Equal(LockChange.None, lockOn.Update(hidden, Still, TimeSpan.FromSeconds(2)));
+        Assert.Equal(LockChange.Lost, lockOn.Update(hidden, Still, TimeSpan.FromSeconds(1)));
+    }
 }
