@@ -8,7 +8,8 @@ public sealed record MappingSettings(
     DirectionKeys Movement,
     CursorSettings Cursor,
     double LookRadiansPerSecond = 2.5,
-    double ZoomBlendPerSecond = 0.6);
+    double ZoomBlendPerSecond = 0.6,
+    double FollowRadiansPerSecond = 0);
 
 /// <summary>
 /// One tick of the whole controller mapping: shape both sticks, decide what
@@ -70,6 +71,29 @@ public sealed class Mapper
         sentZoom = 0;
     }
 
+    /// <summary>
+    /// With the right stick left alone, the camera turns gently toward where the
+    /// left stick walks, the way an action game's camera settles behind its hero.
+    /// Walking straight ahead or backing off turns nothing, and the turn is
+    /// strongest walking sideways.
+    /// </summary>
+    private double Follow(StickPosition left)
+    {
+        if (settings.FollowRadiansPerSecond <= 0 || left.Magnitude < settings.WalkThreshold)
+        {
+            return 0;
+        }
+
+        double angle = Math.Atan2(left.X, left.Y);
+
+        if (Math.Abs(angle) < 0.3 || Math.Abs(angle) > 2.4)
+        {
+            return 0;
+        }
+
+        return Math.Sin(angle) * settings.FollowRadiansPerSecond;
+    }
+
     /// <summary>Sends turn and zoom rates only when one has changed enough to matter, so the pipe carries changes, not a stream.</summary>
     private void Look(double yaw, double zoom, List<InputIntent> intents)
     {
@@ -107,7 +131,14 @@ public sealed class Mapper
             }
 
             aimed = true;
-            Look(right.X * settings.LookRadiansPerSecond, right.Y * settings.ZoomBlendPerSecond, intents);
+            double yaw = right.X * settings.LookRadiansPerSecond;
+
+            if (right.Magnitude == 0)
+            {
+                yaw = Follow(left);
+            }
+
+            Look(yaw, right.Y * settings.ZoomBlendPerSecond, intents);
             return intents;
         }
 

@@ -21,6 +21,12 @@ public sealed class InputConfig
     public double ZoomSpeed { get; init; } = 0.6;
 
     /// <summary>
+    /// How fast the third-person camera turns toward a sideways walk, in radians
+    /// per second, while the right stick is left alone. Zero turns it off.
+    /// </summary>
+    public double FollowSpeed { get; init; } = 0;
+
+    /// <summary>
     /// How far down the game window the cursor waits in third person, from 0 at
     /// the top to 1 at the bottom. Just above the character puts attacks ahead of it.
     /// </summary>

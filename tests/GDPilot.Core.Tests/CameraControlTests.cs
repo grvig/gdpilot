@@ -35,6 +35,48 @@ public sealed class CameraControlTests
     }
 
     [Fact]
+    public void WalkingSidewaysTurnsTheCameraTowardTheWalkWhenFollowingIsOn()
+    {
+        Mapper mapper = new(Settings with { FollowRadiansPerSecond = 1.2 }, NoButtons) { Looking = true };
+
+        List<InputIntent> sent = mapper.Tick(GamepadSnapshot.Rest with { LeftStick = new StickPosition(1, 0) }, Tick);
+
+        Assert.Contains(new GameCommandIntent(new LookCommand(1.2, 0)), sent);
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(0, -1)]
+    public void WalkingStraightOnOrBackingOffTurnsNothing(double x, double y)
+    {
+        Mapper mapper = new(Settings with { FollowRadiansPerSecond = 1.2 }, NoButtons) { Looking = true };
+
+        List<InputIntent> sent = mapper.Tick(GamepadSnapshot.Rest with { LeftStick = new StickPosition(x, y) }, Tick);
+
+        Assert.DoesNotContain(sent, intent => intent is GameCommandIntent);
+    }
+
+    [Fact]
+    public void TheRightStickOverridesFollowing()
+    {
+        Mapper mapper = new(Settings with { FollowRadiansPerSecond = 1.2 }, NoButtons) { Looking = true };
+
+        List<InputIntent> sent = mapper.Tick(GamepadSnapshot.Rest with { LeftStick = new StickPosition(1, 0), RightStick = new StickPosition(-1, 0) }, Tick);
+
+        Assert.Contains(new GameCommandIntent(new LookCommand(-2.5, 0)), sent);
+    }
+
+    [Fact]
+    public void FollowingIsOffUnlessSet()
+    {
+        Mapper mapper = new(Settings, NoButtons) { Looking = true };
+
+        List<InputIntent> sent = mapper.Tick(GamepadSnapshot.Rest with { LeftStick = new StickPosition(1, 0) }, Tick);
+
+        Assert.DoesNotContain(sent, intent => intent is GameCommandIntent);
+    }
+
+    [Fact]
     public void AHeldStickSendsItsRateOnceNotEveryTick()
     {
         Mapper mapper = new(Settings, NoButtons) { Looking = true };
