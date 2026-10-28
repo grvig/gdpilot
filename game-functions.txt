@@ -52,3 +52,13 @@ Game.dll ?gGameEngine@GAME@@3PEAVGameEngine@1@EA
 Game.dll ?GetCurrentLife@Character@GAME@@QEBA?BNXZ
 Game.dll ?GetCharacterBio@Character@GAME@@QEBAAEBVCharacterBio@2@XZ
 Game.dll ?GetLifeLimit@CharacterBio@GAME@@QEBA?BMXZ
+
+# Lock-on: the game's own target query, where each target stands, and drawing a
+# point of the world onto the screen.
+Game.dll ?GetTargetsInRadius@GameEngine@GAME@@QEBAXAEBVCharacter@2@AEBVWorldVec3@2@MAEAV?$vector@I@mem@@I_N3@Z
+Game.dll ?GetPathPosition@Character@GAME@@QEBA?AVWorldVec3@2@XZ
+Game.dll ?classInfo@Character@GAME@@1VRTTI_ClassInfo@2@B
+Game.dll ?classInfo@Npc@GAME@@1VRTTI_ClassInfo@2@B
+Engine.dll ?Project@WorldCamera@GAME@@QEBA?AVVec2@2@AEBVWorldVec3@2@AEBVViewport@2@@Z
+Engine.dll ?GetObjectId@Object@GAME@@QEBAIXZ
+Engine.dll ??0Viewport@GAME@@QEAA@HHHH@Z

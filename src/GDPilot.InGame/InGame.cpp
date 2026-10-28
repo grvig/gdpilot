@@ -1113,6 +1113,87 @@ void Collide(void* camera, float elapsed)
     }
 }
 
+// Lock-on's eyes: the enemies near the player, found with the game's own
+// target query, so nothing the game would refuse a skill is ever offered. Its
+// filter takes characters only, never townsfolk, and only those alive, seen
+// and hostile. Each id is then resolved to its character, and projected onto
+// the screen through the camera the game draws with.
+using TargetsInRadius = void (*)(const void* engine, const void* character, const WorldPoint* centre, float radius, void* found, unsigned int ignore, bool hostile, bool hidden);
+using PathPosition = WorldPoint* (*)(const void* character, WorldPoint* result);
+using ProjectPoint = float* (*)(const void* camera, float* result, const WorldPoint* point, const int* viewport);
+using ObjectId = unsigned int (*)(const void* object);
+using ClassOf = const unsigned char* (*)(const void* object);
+
+TargetsInRadius targetsInRadius = nullptr;
+PathPosition pathPosition = nullptr;
+ProjectPoint projectPoint = nullptr;
+ObjectId objectId = nullptr;
+const unsigned char* characterClass = nullptr;
+const unsigned char* npcClass = nullptr;
+
+// The game appends to a vector of its own kind. This one lives for the whole
+// session and is emptied before each query, so only the game's allocator ever
+// grows or frees its storage.
+struct IdList
+{
+    unsigned int* first;
+    unsigned int* last;
+    unsigned int* end;
+};
+
+IdList found{};
+
+// A region's corner sits at whole world units, at these offsets in the region,
+// as the game's own Project reads them; a position is relative to its region.
+constexpr std::size_t RegionCorner = 0x3c;
+constexpr std::size_t ClassParent = 0x10;
+constexpr int Up = 1;
+constexpr float ScanRadius = 40;
+constexpr int MostTargets = 24;
+
+void FindTargets()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    HMODULE engine = GetModuleHandleW(L"Engine.dll");
+    CollisionEntry entries[] = {
+        {"?GetTargetsInRadius@GameEngine@GAME@@QEBAXAEBVCharacter@2@AEBVWorldVec3@2@MAEAV?$vector@I@mem@@I_N3@Z", "48895c24084889742410574883ec60488bf10f29742450488bca488d9af01900", reinterpret_cast<void**>(&targetsInRadius)},
+        {"?GetPathPosition@Character@GAME@@QEBA?AVWorldVec3@2@XZ", "40534883ec20488bdaff15", reinterpret_cast<void**>(&pathPosition)},
+    };
+    CollisionEntry engineEntries[] = {
+        {"?Project@WorldCamera@GAME@@QEBA?AVVec2@2@AEBVWorldVec3@2@AEBVViewport@2@@Z", "48895c240848896c24104889742418574883ec40488b0148", reinterpret_cast<void**>(&projectPoint)},
+        {"?GetObjectId@Object@GAME@@QEBAIXZ", "8b412cc3", reinterpret_cast<void**>(&objectId)},
+    };
+    characterClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@Character@GAME@@1VRTTI_ClassInfo@2@B"));
+    npcClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@Npc@GAME@@1VRTTI_ClassInfo@2@B"));
+
+    // A viewport is four whole numbers, as its constructor writes them; one is built here the same way.
+    void* viewport = reinterpret_cast<void*>(GetProcAddress(engine, "??0Viewport@GAME@@QEAA@HHHH@Z"));
+    bool fine = characterClass != nullptr && npcClass != nullptr && viewport != nullptr && StartsWith(viewport, "8b44242889410c488bc189114489410444894908c3");
+
+    for (CollisionEntry& entry : entries)
+    {
+        void* address = reinterpret_cast<void*>(GetProcAddress(game, entry.name));
+        fine = fine && address != nullptr && StartsWith(address, entry.prefix);
+        *entry.slot = address;
+    }
+
+    for (CollisionEntry& entry : engineEntries)
+    {
+        void* address = reinterpret_cast<void*>(GetProcAddress(engine, entry.name));
+        fine = fine && address != nullptr && StartsWith(address, entry.prefix);
+        *entry.slot = address;
+    }
+
+    if (!fine || mainPlayer == nullptr || findObject == nullptr || currentLife == nullptr || viewOffset == nullptr)
+    {
+        targetsInRadius = nullptr;
+        Say("Lock-on off: a targeting function is missing or has changed.");
+        return;
+    }
+
+    Say("Found the game's target query; lock-on can see enemies.");
+}
+
 LARGE_INTEGER lastFrame{};
 LARGE_INTEGER ticksPerSecond{};
 
@@ -1379,6 +1460,7 @@ DWORD WINAPI Start(LPVOID)
             FindInventoryRoute();
             FindCollision();
             FindHealth();
+            FindTargets();
         }
 
         HANDLE thread = CreateThread(nullptr, 0, Link, nullptr, 0, nullptr);
