@@ -224,9 +224,10 @@ unsigned int collisionSurface = 1;
 float collisionStart = 1.5f;
 bool togglePressed = false;
 
-// Lock-on's setting, from camera.ini: how far above a target's feet the cursor
-// and the camera aim.
+// Lock-on's settings, from camera.ini: how far above a target's feet the cursor
+// and the camera aim, and how quickly the camera turns to face it.
 float aimHeight = 1;
+float lockTurn = 8;
 
 float Setting(const wchar_t* key, float fallback)
 {
@@ -891,6 +892,7 @@ void TurnOn(void* camera)
     collideObjects = Setting(L"collision_objects", 1) != 0;
     collisionSurface = static_cast<unsigned int>(Setting(L"collision_surface", 1));
     collisionStart = Setting(L"collision_start", 1.5f);
+    lockTurn = Setting(L"lock_turn_speed", 8);
     aimHeight = Setting(L"lock_aim_height", 1);
     Say("Third person: distance %.1f to %.1f from %.1f, pitch %.1f to %.1f, view %.1f degrees.", behind[2], behind[3], behind[0], behind[4], behind[5], behind[10] * 180 / 3.14159265f);
     thirdPerson = true;
@@ -1439,6 +1441,179 @@ void CheckTargets(void* camera, float elapsed)
     }
 }
 
+// While locked in third person, the camera turns every frame until it looks
+// past the character at the target, the way an action game frames a duel.
+std::atomic<unsigned int> lockedId{0};
+unsigned int steeringId = 0;
+float yawSign = 0;
+constexpr float Pi = 3.14159265f;
+
+// A heading across the ground, ignoring height.
+float Heading(const float vector[3])
+{
+    return std::atan2(vector[2], vector[0]);
+}
+
+float Wrap(float angle)
+{
+    while (angle > Pi)
+    {
+        angle -= 2 * Pi;
+    }
+
+    while (angle < -Pi)
+    {
+        angle += 2 * Pi;
+    }
+
+    return angle;
+}
+
+bool CameraBack(void* camera, float back[3])
+{
+    __try
+    {
+        WorldPoint zero{cameraRegion(camera), 0, 0, 0};
+        WorldPoint offset{};
+        viewOffset(camera, &offset, &zero);
+        back[0] = offset.x;
+        back[1] = offset.y;
+        back[2] = offset.z;
+        return std::isfinite(offset.x) && std::isfinite(offset.z);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+// Where the target lies from the player, or false once it is gone.
+bool Bearing(unsigned int id, float toward[3])
+{
+    __try
+    {
+        const void* player = mainPlayer(*engineSlot);
+        void* manager = objectManager();
+
+        if (player == nullptr || manager == nullptr)
+        {
+            return false;
+        }
+
+        const void* target = findObject(manager, id);
+
+        if (target == nullptr || !IsA(target, characterClass))
+        {
+            return false;
+        }
+
+        WorldPoint from{};
+        WorldPoint to{};
+        pathPosition(player, &from);
+        pathPosition(target, &to);
+        float origin[3]{};
+        InWorld(from, origin);
+        InWorld(to, toward);
+
+        for (int axis = 0; axis < 3; axis++)
+        {
+            toward[axis] -= origin[axis];
+        }
+
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+// Which way the game's yaw turns the view is measured, not assumed: one frame
+// makes a small turn, and the next reads how the view's heading moved, since
+// the game only works the view out again in its own update.
+float probeHeading = 0;
+bool probing = false;
+
+// True once the direction is known; until then it may spend this frame probing.
+bool MeasureYaw(void* camera, const float back[3])
+{
+    if (!probing)
+    {
+        probeHeading = Heading(back);
+        reinterpret_cast<AdjustYaw>(required[2].address)(camera, 0.05f);
+        probing = true;
+        return false;
+    }
+
+    probing = false;
+    float change = Wrap(Heading(back) - probeHeading);
+
+    if (std::fabs(change) < 0.01f)
+    {
+        yawSign = 2;
+        Say("Lock-on: the camera's turn could not be measured, so it will not follow the target.");
+        return false;
+    }
+
+    if (change > 0)
+    {
+        yawSign = 1;
+    }
+    else
+    {
+        yawSign = -1;
+    }
+
+    Say("Lock-on: a turn of 0.05 moves the view's heading by %.3f.", change);
+    return true;
+}
+
+void Steer(void* camera, float elapsed)
+{
+    unsigned int id = lockedId.load();
+
+    if (id != steeringId)
+    {
+        steeringId = id;
+        Say("Lock-on: locked onto %u.", id);
+    }
+
+    if (id == 0 || !thirdPerson || elapsed <= 0 || targetsInRadius == nullptr)
+    {
+        return;
+    }
+
+    float back[3]{};
+    float toward[3]{};
+
+    // Right on top of the player the heading swings wildly, so the camera holds still.
+    if (!CameraBack(camera, back) || !Bearing(id, toward) || std::hypot(toward[0], toward[2]) < 1)
+    {
+        return;
+    }
+
+    if (yawSign == 0 && !MeasureYaw(camera, back))
+    {
+        return;
+    }
+
+    if (yawSign == 2)
+    {
+        return;
+    }
+
+    // The camera looks the opposite way to its offset from the character.
+    float error = Wrap(Heading(toward) - Heading(back) - Pi);
+    float turn = error * std::fmin(1.0f, lockTurn * elapsed);
+    float most = 6 * elapsed;
+    turn = std::fmax(-most, std::fmin(most, turn));
+
+    if (std::fabs(error) > 0.01f)
+    {
+        reinterpret_cast<AdjustYaw>(required[2].address)(camera, turn * yawSign);
+    }
+}
+
 LARGE_INTEGER lastFrame{};
 LARGE_INTEGER ticksPerSecond{};
 
@@ -1477,6 +1652,7 @@ void UpdatedCamera(void* camera)
     if (thirdPerson)
     {
         Collide(camera, elapsed);
+        Steer(camera, elapsed);
         float yaw = yawPerSecond.load();
 
         if (yaw != 0 && elapsed > 0)
@@ -1588,6 +1764,20 @@ void Obey(const std::string& line)
         yawPerSecond = NumberAfter(line, "\"yaw\":");
         zoomPerSecond = NumberAfter(line, "\"zoom\":");
     }
+
+    if (line.find("\"type\":\"lock\"") != std::string::npos)
+    {
+        std::size_t at = line.find("\"id\":");
+
+        if (at == std::string::npos)
+        {
+            lockedId = 0;
+        }
+        else
+        {
+            lockedId = static_cast<unsigned int>(std::strtoul(line.c_str() + at + 5, nullptr, 10));
+        }
+    }
 }
 
 void Converse(HANDLE pipe)
@@ -1683,6 +1873,7 @@ DWORD WINAPI Link(LPVOID)
         // A stick held when GDPilot went must not keep turning the camera.
         yawPerSecond = 0;
         zoomPerSecond = 0;
+        lockedId = 0;
         Say("GDPilot went away; listening for it again.");
     }
 }
