@@ -13,6 +13,16 @@ public sealed class LockOnTests
     }
 
     [Fact]
+    public void ALockBindingReadsPlainlyInTheLegend()
+    {
+        ButtonLayers combat = BindingTable.Parse(new Dictionary<string, string> { ["RightStick"] = "lock:toggle", ["LT+RightStick"] = "camera:toggle" }, 0.5);
+
+        Assert.IsType<LockBinding>(combat.BindingFor(GamepadButtons.RightStick, 0));
+        Assert.IsType<CameraToggleBinding>(combat.BindingFor(GamepadButtons.RightStick, 1));
+        Assert.Contains("RightStick: Lock on", OverlayState.Build(Mode.Combat, SuspendReason.None, combat).Legend);
+    }
+
+    [Fact]
     public void APressLocksOntoTheEnemyNearestTheMiddleOfTheView()
     {
         LockOn lockOn = new(new LockSettings());

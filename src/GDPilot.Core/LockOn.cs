@@ -1,5 +1,8 @@
 namespace GDPilot.Core;
 
+/// <summary>"lock:toggle": locks onto the enemy in view, or lets go of the one held.</summary>
+public sealed record LockBinding : ButtonBinding;
+
 /// <summary>What lock-on just did, for the rumble and the overlay.</summary>
 public enum LockChange
 {

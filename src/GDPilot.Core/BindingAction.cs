@@ -33,6 +33,8 @@ internal static class BindingAction
                 return new CameraToggleBinding();
             case "radial" when string.Equals(parts[1], "hotbar", StringComparison.OrdinalIgnoreCase):
                 return new RadialBinding();
+            case "lock" when string.Equals(parts[1], "toggle", StringComparison.OrdinalIgnoreCase):
+                return new LockBinding();
             default:
                 throw new FormatException($"\"{trigger}\": \"{parts[0]}\" bindings are not supported.");
         }
