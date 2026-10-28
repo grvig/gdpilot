@@ -48,6 +48,41 @@ void Say(const char* format, ...)
     std::fflush(journal);
 }
 
+// A first run finds camera.ini already there, holding every setting at its
+// default with a word on each, so tuning the view never starts from nothing.
+void WriteDefaultSettings()
+{
+    if (GetFileAttributesW(settingsPath.c_str()) != INVALID_FILE_ATTRIBUTES)
+    {
+        return;
+    }
+
+    FILE* file = nullptr;
+
+    if (_wfopen_s(&file, settingsPath.c_str(), L"w") != 0 || file == nullptr)
+    {
+        return;
+    }
+
+    std::fputs(
+        "; GDPilot's third-person camera. Read each time third person turns on.\n"
+        "; Distances are in world units; the game's own camera runs from 20 to 48.\n"
+        "[camera]\n"
+        "distance_min=4\n"
+        "distance_max=30\n"
+        "distance_start=10\n"
+        "; Tilt in degrees at the nearest and the farthest zoom.\n"
+        "pitch_min=12\n"
+        "pitch_max=40\n"
+        "field_of_view=50\n"
+        "; 1 keeps the camera in front of anything between it and the character.\n"
+        "collision=1\n"
+        "collision_skin=0.35\n"
+        "collision_extend=18\n",
+        file);
+    std::fclose(file);
+}
+
 void OpenJournal()
 {
     wchar_t folder[MAX_PATH]{};
@@ -60,6 +95,7 @@ void OpenJournal()
     std::wstring path = std::wstring(folder) + L"\\GDPilot";
     CreateDirectoryW(path.c_str(), nullptr);
     settingsPath = path + L"\\camera.ini";
+    WriteDefaultSettings();
     path += L"\\in-game.log";
     // Shared, so the log can be read while the game is still running.
     journal = _wfsopen(path.c_str(), L"a", _SH_DENYNO);
