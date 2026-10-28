@@ -4,6 +4,7 @@ using GDPilot.Core;
 using GDPilot.Input;
 using GDPilot.Output;
 using GDPilot.Overlay;
+using GDPilot.Vision;
 
 namespace GDPilot.App;
 
@@ -125,6 +126,7 @@ internal static class Host
             TimeSpan last = clock.Elapsed;
             bool wasSuspended = false;
             bool wheelShown = false;
+            IReadOnlyList<Picture?>? wheelPictures = null;
             ScreenRect? gameBounds = null;
             replayClock.Start();
 
@@ -167,7 +169,20 @@ internal static class Host
                         gameBounds = GameWindow.ClientBounds(config.GameProcess);
                     }
 
-                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson) with { Wheel = mapper.Wheel?.View() };
+                    // The icons are copied once as the wheel opens; the hotbar does not change while it is held.
+                    if (wheelOpen && !wheelShown)
+                    {
+                        wheelPictures = HotbarPictures(readiness, mapper.Wheel!);
+                    }
+
+                    WheelView? view = mapper.Wheel?.View();
+
+                    if (view is not null)
+                    {
+                        view = view with { Pictures = wheelPictures };
+                    }
+
+                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson) with { Wheel = view };
                     overlay.Update(state, gameBounds, config.Overlay.Corner);
                     wheelShown = wheelOpen;
                 }
@@ -189,6 +204,62 @@ internal static class Host
         double seconds = (clock.Elapsed - started).TotalSeconds;
         Console.WriteLine($"Stopped. Everything held has been released. {ticks} ticks at {ticks / seconds:F0} Hz against {config.Input.PollHz} configured.");
         return 0;
+    }
+
+    /// <summary>
+    /// Each wheel slot's icon, cut from one capture of the hotbar calibrated as the
+    /// "Hotbar" grid, or null without that grid. A slot with nothing on it still
+    /// gets its picture, which is the empty slot's dark square.
+    /// </summary>
+    private static IReadOnlyList<Picture?>? HotbarPictures(GridReadiness readiness, RadialMenu wheel)
+    {
+        if (!readiness.Ready || !readiness.Grids.TryGetValue("Hotbar", out GridSpec? hotbar))
+        {
+            return null;
+        }
+
+        int side = (int)(hotbar.PitchX * 0.8);
+        int left = (int)Math.Round(hotbar.OriginX - side / 2.0);
+        int top = (int)Math.Round(hotbar.OriginY - side / 2.0);
+        int width = (int)Math.Ceiling(hotbar.PitchX * (hotbar.Columns - 1)) + side;
+        CapturedFrame frame;
+
+        try
+        {
+            frame = ScreenCapture.Region(left, top, width, side);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+
+        List<Picture?> pictures = new();
+
+        foreach (KeyCode key in wheel.Slots)
+        {
+            if (RadialMenu.HotbarColumn(key) is not int column)
+            {
+                pictures.Add(null);
+                continue;
+            }
+
+            (int x, int _) = hotbar.Centre(new GridCell(column, 0));
+            pictures.Add(Cut(frame, x - side / 2 - left, side));
+        }
+
+        return pictures;
+    }
+
+    private static Picture Cut(CapturedFrame frame, int x, int side)
+    {
+        byte[] pixels = new byte[side * side * 4];
+
+        for (int row = 0; row < side; row++)
+        {
+            Array.Copy(frame.Pixels, (row * frame.Width + x) * 4, pixels, row * side * 4, side * 4);
+        }
+
+        return new Picture(pixels, side, side);
     }
 
     /// <summary>The middle of the game window, at the configured height, or null when the game is not running.</summary>

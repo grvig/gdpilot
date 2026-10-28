@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using GDPilot.Core;
 
 namespace GDPilot.Overlay;
@@ -23,6 +24,7 @@ public sealed class WheelWindow : Window
     private readonly Canvas canvas = new() { Width = Size, Height = Size };
     private readonly List<Border> discs = new();
     private int shownSlots = -1;
+    private IReadOnlyList<Picture?>? shownPictures;
 
     public WheelWindow()
     {
@@ -43,9 +45,9 @@ public sealed class WheelWindow : Window
 
     public void Display(WheelView wheel)
     {
-        if (wheel.Labels.Count != shownSlots)
+        if (wheel.Labels.Count != shownSlots || !ReferenceEquals(wheel.Pictures, shownPictures))
         {
-            Build(wheel.Labels);
+            Build(wheel.Labels, wheel.Pictures);
         }
 
         for (int slot = 0; slot < discs.Count; slot++)
@@ -59,11 +61,30 @@ public sealed class WheelWindow : Window
         }
     }
 
-    private void Build(IReadOnlyList<string> labels)
+    /// <summary>The skill's icon with its key small in the corner, or the key alone when there is no icon.</summary>
+    private static UIElement Face(TextBlock label, IReadOnlyList<Picture?>? pictures, int slot)
+    {
+        if (pictures is null || slot >= pictures.Count || pictures[slot] is not Picture picture)
+        {
+            return label;
+        }
+
+        BitmapSource icon = BitmapSource.Create(picture.Width, picture.Height, 96, 96, PixelFormats.Bgr32, null, picture.Bgra, picture.Width * 4);
+        label.FontSize = 14;
+        label.HorizontalAlignment = HorizontalAlignment.Right;
+        label.VerticalAlignment = VerticalAlignment.Bottom;
+        Grid face = new();
+        face.Children.Add(new Image { Source = icon, Stretch = Stretch.Uniform });
+        face.Children.Add(label);
+        return face;
+    }
+
+    private void Build(IReadOnlyList<string> labels, IReadOnlyList<Picture?>? pictures)
     {
         canvas.Children.Clear();
         discs.Clear();
         shownSlots = labels.Count;
+        shownPictures = pictures;
 
         for (int slot = 0; slot < labels.Count; slot++)
         {
@@ -85,7 +106,8 @@ public sealed class WheelWindow : Window
                 BorderBrush = Brushes.Gainsboro,
                 BorderThickness = new Thickness(2),
                 Background = Idle,
-                Child = text,
+                Padding = new Thickness(6),
+                Child = Face(text, pictures, slot),
             };
             Canvas.SetLeft(disc, Size / 2 + Ring * Math.Sin(angle) - Disc / 2);
             Canvas.SetTop(disc, Size / 2 - Ring * Math.Cos(angle) - Disc / 2);

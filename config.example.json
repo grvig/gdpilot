@@ -106,7 +106,8 @@
         "Stash": { "originX": 529, "originY": 293, "pitchX": 32, "pitchY": 32, "columns": 10, "rows": 19 },
         "Stash.Bag1": { "originX": 870, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 12, "rows": 8 },
         "Stash.Bag2": { "originX": 1263, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 },
-        "Stash.Tabs": { "originX": 473, "originY": 463, "pitchX": 1, "pitchY": 38, "columns": 1, "rows": 2 }
+        "Stash.Tabs": { "originX": 473, "originY": 463, "pitchX": 1, "pitchY": 38, "columns": 1, "rows": 2 },
+        "Hotbar": { "originX": 717, "originY": 1059, "pitchX": 44.18, "pitchY": 1, "columns": 12, "rows": 1 }
       }
     }
   }

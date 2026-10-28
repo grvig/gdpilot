@@ -3,8 +3,15 @@ namespace GDPilot.Core;
 /// <summary>"radial:hotbar": while held, the right stick points at a hotbar slot; letting go casts it.</summary>
 public sealed record RadialBinding : ButtonBinding;
 
+/// <summary>A small picture as 32-bit BGRA pixels, row after row from the top.</summary>
+public sealed record Picture(byte[] Bgra, int Width, int Height);
+
 /// <summary>What the overlay draws for an open wheel: each slot's label, and which is pointed at.</summary>
-public sealed record WheelView(IReadOnlyList<string> Labels, int? Selected);
+public sealed record WheelView(IReadOnlyList<string> Labels, int? Selected)
+{
+    /// <summary>Each slot's skill icon copied from the hotbar, or null where there is none.</summary>
+    public IReadOnlyList<Picture?>? Pictures { get; init; }
+}
 
 /// <summary>
 /// The skill wheel: slots laid round a circle, the first at the top and the
@@ -95,6 +102,31 @@ public sealed class RadialMenu
         }
 
         return new WheelView(labels, Selected);
+    }
+
+    /// <summary>
+    /// Where a key's slot sits on Grim Dawn's hotbar, counting its twelve cells
+    /// from the left: keys 1 to 5, then the two mouse-button slots, then 6 to 0.
+    /// Null for a key the hotbar does not show.
+    /// </summary>
+    public static int? HotbarColumn(KeyCode key)
+    {
+        if (key is >= KeyCode.D1 and <= KeyCode.D5)
+        {
+            return key - KeyCode.D1;
+        }
+
+        if (key is >= KeyCode.D6 and <= KeyCode.D9)
+        {
+            return key - KeyCode.D6 + 7;
+        }
+
+        if (key == KeyCode.D0)
+        {
+            return 11;
+        }
+
+        return null;
     }
 
     /// <summary>Which slot a stick direction points at: the first straight up, then clockwise.</summary>

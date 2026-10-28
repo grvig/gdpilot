@@ -111,4 +111,20 @@ public sealed class RadialMenuTests
         Assert.Equal(new[] { "1", "2", "3", "4" }, wheel.View()!.Labels);
         Assert.Equal(3, wheel.View()!.Selected);
     }
+
+    [Theory]
+    [InlineData(KeyCode.D1, 0)]
+    [InlineData(KeyCode.D5, 4)]
+    [InlineData(KeyCode.D6, 7)]
+    [InlineData(KeyCode.D0, 11)]
+    public void HotbarKeysSkipTheTwoMouseSlotsInTheMiddle(KeyCode key, int column)
+    {
+        Assert.Equal(column, RadialMenu.HotbarColumn(key));
+    }
+
+    [Fact]
+    public void AKeyTheHotbarDoesNotShowHasNoColumn()
+    {
+        Assert.Null(RadialMenu.HotbarColumn(KeyCode.Space));
+    }
 }
