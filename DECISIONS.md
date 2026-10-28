@@ -541,3 +541,50 @@ a suspension begins.
 **F8 and a pad binding both switch.** F8 is read only while the game is in
 front, and needs no GDPilot; `camera:toggle` is the pad's way, through the
 pipe. The example binds it to the right-stick click, which was free.
+
+## 2026-10-27 and 2026-10-28 — Reports from the game, collision, the wheel and rumble
+
+**GrimAction 0.3.0 matches the installed build.** Its newest release names the
+exact Game.dll and Engine.dll fingerprints installed here, so the offsets it
+maps beyond the camera were taken as mapped on this build: the UI object at
+`gGameEngine + 0x19b0` with one flag byte per panel, the player's controller id
+at `Player + 0x16c0`, and the unexported object lookup at `Game.dll + 0x19d40`,
+which is only called after its first bytes are checked.
+
+**Panels come from the game.** The tracked mode follows the reported panels,
+once any tap has had 300 ms to land, because a report is up to a tenth of a
+second old. The game raises its inventory flag for the stash and a trader too,
+so those modes are kept while it is up.
+
+**Items come from the game.** Each bag is read through `GetInventoryInSack` as
+a standard ordered tree, mapped by a logged probe on 2026-10-28: the head's left
+link is the first item, each node holds the item id at 0x1c and its rectangle
+at 0x20, in units of the game's inventory cell. Grid sizes and the cell size
+come from the game's own accessors. The stash's sacks are not reached this way,
+so the stash keeps screen reading.
+
+**Collision starts its ray past the character.** The level query with surface
+kind 0 meets terrain and buildings only, and every other kind met the character
+itself first, even with the character named as the entity to ignore. Starting
+the ray 1.5 units out along the arm and using kind 1 meets the town's carts and
+clutter, and was seen pulling the camera in live. Thirty refused queries turn
+collision off for the session.
+
+**The right stick's up and down zooms rather than tilts.** The game tilts its
+camera with its zoom, so zooming gives both, through the game's own easing of
+its zoom target, with nothing extra to keep in step.
+
+**Following is the host's.** Turning the camera toward a sideways walk needs
+only the sticks, so it is a pure rule in the mapper sending ordinary look
+rates. It never acts on a straight or backward walk, and the right stick always
+overrides it.
+
+**The wheel lives in the mapper.** Held, with a cast on letting go, it needs the
+held state and the stick together, which the mode controller's press edges do
+not see. Its icons are cut from one screen capture of the calibrated hotbar as
+it opens; the hotbar was measured by hand, since its separate boxes give the
+detector no ruled lines.
+
+**Rumble is decided in Core from health alone**: a jolt for ten points lost
+between two reports, and a heartbeat below 30% that quickens below 15%. Health
+is read through `Character::GetCurrentLife` and `CharacterBio::GetLifeLimit`.
