@@ -26,6 +26,9 @@ public sealed class InputConfig
     /// </summary>
     public double FollowSpeed { get; init; } = 0;
 
+    /// <summary>Whether the pad rumbles for heavy blows and low health, which needs the in-game part's health reports.</summary>
+    public bool Rumble { get; init; } = true;
+
     /// <summary>
     /// The keys on the skill wheel, the first at the top and the rest clockwise:
     /// by default Grim Dawn's hotbar, 1 to 0.

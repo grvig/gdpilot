@@ -13,6 +13,7 @@
     "lookSpeed": 2.5,
     "zoomSpeed": 0.6,
     "followSpeed": 1.2,
+    "rumble": true,
     "aimHeight": 0.38,
     "jumpToItems": true,
     "calibration": {

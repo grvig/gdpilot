@@ -58,6 +58,19 @@ public sealed unsafe class SdlGamepadSource : IGamepadSource, IDisposable
             RawAxis.Trigger(Axis(SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)));
     }
 
+    /// <summary>Buzzes the pad's two motors, each from 0 to 1; nothing happens without a pad or without motors.</summary>
+    public void Rumble(double heavy, double light, TimeSpan length)
+    {
+        if (pad == null)
+        {
+            return;
+        }
+
+        ushort heavyMotor = (ushort)(Math.Clamp(heavy, 0, 1) * ushort.MaxValue);
+        ushort lightMotor = (ushort)(Math.Clamp(light, 0, 1) * ushort.MaxValue);
+        SDL_RumbleGamepad(pad, heavyMotor, lightMotor, (uint)length.TotalMilliseconds);
+    }
+
     public void Dispose()
     {
         Close();

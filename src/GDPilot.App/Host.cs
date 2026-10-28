@@ -126,6 +126,7 @@ internal static class Host
             TimeSpan last = clock.Elapsed;
             bool wasSuspended = false;
             bool wheelShown = false;
+            RumblePolicy rumble = new();
             IReadOnlyList<Picture?>? wheelPictures = null;
             ScreenRect? gameBounds = null;
             replayClock.Start();
@@ -148,6 +149,12 @@ internal static class Host
                 }
                 StopTurningWhenSuspended(suspension, link, ref wasSuspended);
                 loop.Tick(now - last);
+
+                if (sdl is not null && config.Input.Rumble && rumble.Tick(link.Health, now - last) is Rumble buzz)
+                {
+                    sdl.Rumble(buzz.Heavy, buzz.Light, buzz.Length);
+                }
+
                 last = now;
                 ticks++;
 
