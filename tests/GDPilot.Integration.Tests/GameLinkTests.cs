@@ -85,6 +85,28 @@ public sealed class GameLinkTests
     }
 
     [Fact]
+    public void TargetsReachTheHostAndAreForgottenWhenTheGameGoes()
+    {
+        string name = "GDPilot.Test." + Guid.NewGuid().ToString("N");
+        ConcurrentQueue<string> said = new();
+
+        using GameLink link = new(new ReportedOccupancy(null), said.Enqueue, name);
+        Assert.Empty(link.Targets);
+
+        using (NamedPipeClientStream game = new(".", name, PipeDirection.InOut))
+        {
+            game.Connect(2000);
+            using StreamWriter writer = new(game) { AutoFlush = true };
+            writer.WriteLine(new TargetsReport(new[] { new SeenTarget(7, 0.5, 0.4, 6, 90, true) }).Write());
+
+            Assert.True(SpinWait.SpinUntil(() => link.Targets.Count == 1, 2000));
+            Assert.Equal(7u, link.Targets[0].Id);
+        }
+
+        Assert.True(SpinWait.SpinUntil(() => link.Targets.Count == 0, 2000));
+    }
+
+    [Fact]
     public void HealthReachesTheHostAndIsForgottenWhenTheGameGoes()
     {
         string name = "GDPilot.Test." + Guid.NewGuid().ToString("N");
