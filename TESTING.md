@@ -22,6 +22,37 @@ window's global hooks recorded. The window swallows injected events after
 logging them, so nothing lands in other applications, and your own typing
 passes through untouched. The window closes when the tests finish.
 
+The pipe tests stand in for the in-game part on a pipe of their own, and the
+loader tests load a system DLL into a hidden `ping` process; neither touches
+the game. Close Grim Dawn before a full run anyway, since the loopback tests
+inject input into whichever window is in front.
+
+## Checking against the game
+
+The in-game part is C++ and has no unit tests of its own; it is checked live,
+in the game, with recorded pad traces:
+
+1. `src\GDPilot.InGameuild.cmd`, then `dotnet build`.
+2. Start Grim Dawn and enter the world. A new build of the in-game part needs a
+   fresh game, because it is never unloaded from a running one.
+3. `GDPilot.exe --load-in-game`. What it found, and every switch it makes, goes
+   to `%LOCALAPPDATA%\GDPilot\in-game.log`.
+4. `GDPilot.exe --replay tests/fixtures/traces/<trace>.json` plays a recorded
+   pad performance through the whole program with the game in front.
+
+| Trace | Checks |
+| --- | --- |
+| `camera-turn.json` | Switching to third person, turning both ways, switching back |
+| `camera-zoom.json` | Zooming in and out with the right stick |
+| `camera-follow.json` | The camera swinging round toward a sideways walk |
+| `camera-wall.json` | Backing into clutter; the log shows collision pulling in |
+| `bag-jumps.json` | Jumping between items in the second bag |
+| `skill-wheel.json` | Holding the wheel, pointing at a slot, casting on release |
+| `stash-tour.json` | Stash cells, tabs, every grid, and a split |
+
+What each trace sent in the game is pinned by a test, so a change that alters
+it shows up in the suite, not only in the game.
+
 ## The three human tasks
 
 These are the only three. Anything else that seems to need a person needs a
@@ -65,8 +96,11 @@ motion. Move somewhere stiller and run it again.
 
 ### HT-2 — Capture calibration fixtures
 
-Phase 3. Not yet ready to run.
+Done: the bags and vendor on 2026-10-20 and the stash on 2026-10-24, by the
+development machine without a person. The captures are in
+`tests/fixtures/screens`.
 
 ### HT-3 — Feel tuning
 
-Phase 5. Not yet ready to run.
+Phase 8. Not yet ready to run. Until then, every speed and the camera's view
+are settings: `input` in `config.json` and `%LOCALAPPDATA%\GDPilot\camera.ini`.
