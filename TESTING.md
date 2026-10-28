@@ -32,7 +32,7 @@ inject input into whichever window is in front.
 The in-game part is C++ and has no unit tests of its own; it is checked live,
 in the game, with recorded pad traces:
 
-1. `src\GDPilot.InGameuild.cmd`, then `dotnet build`.
+1. `src\GDPilot.InGame\build.cmd`, then `dotnet build`.
 2. Start Grim Dawn and enter the world. A new build of the in-game part needs a
    fresh game, because it is never unloaded from a running one.
 3. `GDPilot.exe --load-in-game`. What it found, and every switch it makes, goes
