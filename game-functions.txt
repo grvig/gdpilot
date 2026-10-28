@@ -39,3 +39,16 @@ Game.dll ?GetInventory@InventorySack@GAME@@QEBAAEBV?$map@IVRect@GAME@@@mem@@XZ
 Game.dll ?GetGridWidth@InventorySack@GAME@@QEBAIXZ
 Game.dll ?GetGridHeight@InventorySack@GAME@@QEBAIXZ
 Game.dll ?GetItemUnderPoint@InventorySack@GAME@@QEBAIVVec2@2@@Z
+
+# The way to the bags, and the game engine whose UI flags say which panels are open.
+Game.dll ?GetInventoryCtrl@ControllerPlayer@GAME@@QEAAAEAVPlayerInventoryCtrl@2@XZ
+Game.dll ?GetInventoryInSack@PlayerInventoryCtrl@GAME@@QEBAAEBV?$map@IVRect@GAME@@@mem@@H@Z
+Game.dll ?GetSack@PlayerInventoryCtrl@GAME@@QEAAPEAVInventorySack@2@H@Z
+Game.dll ?GetInventoryCellSize@GameEngine@GAME@@QEAAXAEAM0@Z
+Game.dll ??_7ControllerPlayer@GAME@@6B@
+Game.dll ?gGameEngine@GAME@@3PEAVGameEngine@1@EA
+
+# Health, for rumble.
+Game.dll ?GetCurrentLife@Character@GAME@@QEBA?BNXZ
+Game.dll ?GetCharacterBio@Character@GAME@@QEBAAEBVCharacterBio@2@XZ
+Game.dll ?GetLifeLimit@CharacterBio@GAME@@QEBA?BMXZ
