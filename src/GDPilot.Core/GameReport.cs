@@ -44,6 +44,8 @@ public abstract record GameReport
                 return Layout(root);
             case "camera":
                 return new CameraReport(root["third"]?.GetValue<bool>() ?? false);
+            case "health":
+                return new HealthReport(Math.Clamp(root["percent"]?.GetValue<int>() ?? 100, 0, 100));
             default:
                 return null;
         }
@@ -69,6 +71,10 @@ public abstract record GameReport
             case CameraReport camera:
                 root["type"] = "camera";
                 root["third"] = camera.ThirdPerson;
+                break;
+            case HealthReport health:
+                root["type"] = "health";
+                root["percent"] = health.Percent;
                 break;
         }
 
@@ -136,6 +142,9 @@ public abstract record GameReport
 
 /// <summary>Which panels the game has open right now, by mode name, such as "Inventory" or "Stash".</summary>
 public sealed record PanelsReport(IReadOnlyList<string> Open) : GameReport;
+
+/// <summary>The player's life as a whole percentage of its limit, sent whenever it moves.</summary>
+public sealed record HealthReport(int Percent) : GameReport;
 
 /// <summary>Where every item sits in one grid, named as in the profiles, such as "Inventory.Bag2".</summary>
 public sealed record LayoutReport(string Grid, int Columns, int Rows, IReadOnlyList<ItemRect> Items) : GameReport;

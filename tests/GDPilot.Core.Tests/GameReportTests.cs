@@ -26,6 +26,13 @@ public sealed class GameReportTests
     }
 
     [Fact]
+    public void HealthIsAPercentKeptBetweenNoneAndFull()
+    {
+        Assert.Equal(new HealthReport(42), GameReport.Parse(new HealthReport(42).Write()));
+        Assert.Equal(new HealthReport(100), GameReport.Parse("""{"protocol":1,"type":"health","percent":140}"""));
+    }
+
+    [Fact]
     public void AKindOfReportThisVersionDoesNotKnowIsSkipped()
     {
         Assert.Null(GameReport.Parse("""{"protocol":1,"type":"weather","rain":0.5}"""));

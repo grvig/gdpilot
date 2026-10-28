@@ -25,6 +25,7 @@ public sealed class GameLink : IDisposable
     private PanelsReport? panels;
     private StreamWriter? writer;
     private volatile bool thirdPerson;
+    private volatile int health = -1;
 
     public GameLink(ReportedOccupancy layouts, Action<string> say, string pipeName = PipeName)
     {
@@ -39,6 +40,9 @@ public sealed class GameLink : IDisposable
 
     /// <summary>The panels the game last said were open, or null when it has not said or has gone.</summary>
     public PanelsReport? Panels => Volatile.Read(ref panels);
+
+    /// <summary>The player's life in percent, as last reported, or -1 when unknown.</summary>
+    public int Health => health;
 
     /// <summary>Whether the game last said it was showing the third-person camera; false once it has gone.</summary>
     public bool ThirdPerson => thirdPerson;
@@ -117,6 +121,7 @@ public sealed class GameLink : IDisposable
                 }
 
                 thirdPerson = false;
+                health = -1;
                 Volatile.Write(ref panels, null);
                 layouts.Forget();
             }
@@ -165,6 +170,9 @@ public sealed class GameLink : IDisposable
                 break;
             case CameraReport camera:
                 thirdPerson = camera.ThirdPerson;
+                break;
+            case HealthReport life:
+                health = life.Percent;
                 break;
         }
     }
