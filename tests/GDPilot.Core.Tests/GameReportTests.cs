@@ -33,6 +33,22 @@ public sealed class GameReportTests
     }
 
     [Fact]
+    public void TargetsKeepTheirPlaceOnScreenAndTheirLife()
+    {
+        TargetsReport sent = new(new[] { new SeenTarget(34539, 0.5125, 0.4, 7.5, 80, true), new SeenTarget(34735, 1.16, -0.04, 24.5, 100, false) });
+
+        TargetsReport received = Assert.IsType<TargetsReport>(GameReport.Parse(sent.Write()));
+
+        Assert.Equal(sent.Targets, received.Targets);
+    }
+
+    [Fact]
+    public void ATargetWithoutAnIdIsRefused()
+    {
+        Assert.Throws<FormatException>(() => GameReport.Parse("""{"protocol":1,"type":"targets","list":[{"x":0.5,"y":0.5}]}"""));
+    }
+
+    [Fact]
     public void AKindOfReportThisVersionDoesNotKnowIsSkipped()
     {
         Assert.Null(GameReport.Parse("""{"protocol":1,"type":"weather","rain":0.5}"""));

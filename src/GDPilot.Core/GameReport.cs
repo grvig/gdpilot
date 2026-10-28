@@ -46,6 +46,8 @@ public abstract record GameReport
                 return new CameraReport(root["third"]?.GetValue<bool>() ?? false);
             case "health":
                 return new HealthReport(Math.Clamp(root["percent"]?.GetValue<int>() ?? 100, 0, 100));
+            case "targets":
+                return Targets(root);
             default:
                 return null;
         }
@@ -75,6 +77,10 @@ public abstract record GameReport
             case HealthReport health:
                 root["type"] = "health";
                 root["percent"] = health.Percent;
+                break;
+            case TargetsReport targets:
+                root["type"] = "targets";
+                root["list"] = new JsonArray(targets.Targets.Select(Target).ToArray());
                 break;
         }
 
@@ -108,6 +114,43 @@ public abstract record GameReport
         }
 
         return new LayoutReport(grid, columns, rows, items);
+    }
+
+    private static TargetsReport Targets(JsonObject root)
+    {
+        List<SeenTarget> targets = new();
+
+        foreach (JsonNode? node in root["list"]?.AsArray() ?? new JsonArray())
+        {
+            JsonObject target = node?.AsObject() ?? throw new FormatException("An empty target.");
+            uint id = target["id"]?.GetValue<uint>() ?? 0;
+
+            if (id == 0)
+            {
+                throw new FormatException("A target needs a non-zero id.");
+            }
+
+            double x = target["x"]?.GetValue<double>() ?? throw new FormatException($"Target {id} has no position.");
+            double y = target["y"]?.GetValue<double>() ?? throw new FormatException($"Target {id} has no position.");
+            double distance = target["distance"]?.GetValue<double>() ?? 0;
+            int health = Math.Clamp(target["health"]?.GetValue<int>() ?? 100, 0, 100);
+            targets.Add(new SeenTarget(id, x, y, distance, health, target["seen"]?.GetValue<bool>() ?? false));
+        }
+
+        return new TargetsReport(targets);
+    }
+
+    private static JsonNode Target(SeenTarget target)
+    {
+        return new JsonObject
+        {
+            ["id"] = target.Id,
+            ["x"] = target.X,
+            ["y"] = target.Y,
+            ["distance"] = target.Distance,
+            ["health"] = target.Health,
+            ["seen"] = target.OnScreen,
+        };
     }
 
     private static JsonNode Item(ItemRect item)
@@ -148,3 +191,13 @@ public sealed record HealthReport(int Percent) : GameReport;
 
 /// <summary>Where every item sits in one grid, named as in the profiles, such as "Inventory.Bag2".</summary>
 public sealed record LayoutReport(string Grid, int Columns, int Rows, IReadOnlyList<ItemRect> Items) : GameReport;
+
+/// <summary>
+/// One enemy near the player, as lock-on sees it: where the game draws it, as
+/// fractions of the game window from the top left, how far it stands from the
+/// player in world units, its life in percent, and whether it is in view.
+/// </summary>
+public sealed record SeenTarget(uint Id, double X, double Y, double Distance, int Health, bool OnScreen);
+
+/// <summary>Every enemy the game would let a skill hit within reach of the player, sent whenever one moves.</summary>
+public sealed record TargetsReport(IReadOnlyList<SeenTarget> Targets) : GameReport;
