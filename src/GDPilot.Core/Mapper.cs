@@ -60,7 +60,10 @@ public sealed class Mapper
 
     /// <summary>The skill wheel, or null when no slots are configured.</summary>
     public RadialMenu? Wheel { get; set; }
-    private bool aimed;
+    private bool wasLocked;
+
+    /// <summary>Soft aim, drawing the cursor onto an enemy near the aim point in third person; null when turned off.</summary>
+    public SoftAim? SoftAim { get; set; }
 
     /// <summary>Lock-on, or null when it is not set up.</summary>
     public LockOn? Lock { get; set; }
@@ -108,6 +111,7 @@ public sealed class Mapper
         Lock?.Release();
         lockHeld = false;
         cursorAt = null;
+        wasLocked = false;
     }
 
     /// <summary>
@@ -124,10 +128,7 @@ public sealed class Mapper
             return;
         }
 
-        if (GameBounds is ScreenRect bounds && bounds.Height > 0)
-        {
-            Lock.Aspect = (double)bounds.Width / bounds.Height;
-        }
+        Lock.Aspect = Aspect();
 
         bool pressed = false;
 
@@ -195,36 +196,37 @@ public sealed class Mapper
     }
 
     /// <summary>
-    /// Keeps the cursor on the locked enemy, so attacks and skills land on it,
-    /// gliding between the game's reports. Moved only when the enemy has moved a
-    /// couple of pixels, so a still enemy sends nothing. An enemy out of view
-    /// leaves the cursor at the aim point.
+    /// Where an enemy is drawn this tick, in screen pixels, gliding between the
+    /// game's reports; null when it is out of view or the window is unknown.
     /// </summary>
-    private void FollowLock(SeenTarget held, TimeSpan elapsed, List<InputIntent> intents)
+    private (int X, int Y)? Glided(SeenTarget target, TimeSpan elapsed)
     {
-        if (held.Id != glidingId)
+        if (target.Id != glidingId)
         {
             glide.Reset();
-            glidingId = held.Id;
+            glidingId = target.Id;
             glidedReport = null;
         }
 
         if (!ReferenceEquals(Seen, glidedReport))
         {
             glidedReport = Seen;
-            glide.Report(held.X, held.Y);
+            glide.Report(target.X, target.Y);
         }
 
-        (double gliding, double glidingY) = glide.Advance(elapsed);
-        (int X, int Y)? spot = AimPoint;
-        LockPoint = null;
+        (double x, double y) = glide.Advance(elapsed);
 
-        if (held.OnScreen && GameBounds is ScreenRect bounds)
+        if (!target.OnScreen || GameBounds is not ScreenRect bounds)
         {
-            spot = ((int)Math.Round(bounds.X + gliding * bounds.Width), (int)Math.Round(bounds.Y + glidingY * bounds.Height));
-            LockPoint = spot;
+            return null;
         }
 
+        return ((int)Math.Round(bounds.X + x * bounds.Width), (int)Math.Round(bounds.Y + y * bounds.Height));
+    }
+
+    /// <summary>Puts the cursor on a spot, but only when it has moved a couple of pixels, so a still spot sends nothing.</summary>
+    private void Park((int X, int Y)? spot, List<InputIntent> intents)
+    {
         if (spot is not (int x, int y))
         {
             return;
@@ -237,6 +239,37 @@ public sealed class Mapper
 
         cursorAt = (x, y);
         intents.Add(new PointerMoveTo(x, y));
+    }
+
+    /// <summary>
+    /// In third person without a lock, the cursor waits at the aim point, or on
+    /// the enemy soft aim has drawn it onto.
+    /// </summary>
+    private (int X, int Y)? Resting(TimeSpan elapsed)
+    {
+        if (SoftAim is null)
+        {
+            return AimPoint;
+        }
+
+        (double x, double y) = AimFraction();
+
+        if (SoftAim.Pick(Seen, x, y, Aspect()) is SeenTarget soft && Glided(soft, elapsed) is (int X, int Y) spot)
+        {
+            return spot;
+        }
+
+        return AimPoint;
+    }
+
+    private double Aspect()
+    {
+        if (GameBounds is ScreenRect bounds && bounds.Height > 0)
+        {
+            return (double)bounds.Width / bounds.Height;
+        }
+
+        return 16.0 / 9;
     }
 
     /// <summary>
@@ -332,21 +365,24 @@ public sealed class Mapper
         List<InputIntent> intents = differ.Update(keys, pointerButtons);
         TickLock(snapshot, right, elapsed, wheelOpen, intents);
 
-        // Locked, the right stick only flicks between enemies, and the game turns the camera.
+        // Locked, the right stick only flicks between enemies, the game turns the
+        // camera, and the cursor stays on the enemy so attacks and skills land on it.
         if (Lock?.Target is SeenTarget held)
         {
-            FollowLock(held, elapsed, intents);
+            LockPoint = Glided(held, elapsed);
+            Park(LockPoint ?? AimPoint, intents);
             Look(0, 0, intents);
+            wasLocked = true;
             return intents;
         }
 
-        // Let go, the cursor goes back to waiting at the aim point.
+        // Let go, the cursor is placed again wherever it now belongs.
         LockPoint = null;
 
-        if (cursorAt is not null)
+        if (wasLocked)
         {
+            wasLocked = false;
             cursorAt = null;
-            aimed = false;
         }
 
         // While the wheel is open the right stick belongs to it alone.
@@ -358,12 +394,7 @@ public sealed class Mapper
 
         if (Looking)
         {
-            if (!aimed && AimPoint is (int x, int y))
-            {
-                intents.Add(new PointerMoveTo(x, y));
-            }
-
-            aimed = true;
+            Park(Resting(elapsed), intents);
             double yaw = right.X * settings.LookRadiansPerSecond;
 
             if (right.Magnitude == 0)
@@ -376,7 +407,8 @@ public sealed class Mapper
         }
 
         // Leaving third person with the stick still over must not leave the camera turning.
-        aimed = false;
+        cursorAt = null;
+        SoftAim?.Forget();
         Look(0, 0, intents);
         PointerMove? move = cursor.Step(right, elapsed);
 

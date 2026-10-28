@@ -147,4 +147,36 @@ public sealed class LockMappingTests
 
         Assert.DoesNotContain(new GameCommandIntent(new RecenterCommand()), mapper.Tick(Press, Tick));
     }
+
+    [Fact]
+    public void SoftAimDrawsTheCursorOntoAnEnemyNearTheAimPoint()
+    {
+        Mapper mapper = Locking();
+        mapper.SoftAim = new SoftAim();
+        mapper.Seen = new[] { new SeenTarget(21, 0.52, 0.4, 6, 100, true) };
+
+        Assert.Contains(new PointerMoveTo(998, 432), mapper.Tick(GamepadSnapshot.Rest, Tick));
+    }
+
+    [Fact]
+    public void WhenTheSoftTargetMovesAwayTheCursorReturnsToTheAimPoint()
+    {
+        Mapper mapper = Locking();
+        mapper.SoftAim = new SoftAim();
+        mapper.Seen = new[] { new SeenTarget(21, 0.52, 0.4, 6, 100, true) };
+        mapper.Tick(GamepadSnapshot.Rest, Tick);
+
+        mapper.Seen = new[] { new SeenTarget(21, 0.9, 0.4, 6, 100, true) };
+
+        Assert.Contains(new PointerMoveTo(960, 410), mapper.Tick(GamepadSnapshot.Rest, Tick));
+    }
+
+    [Fact]
+    public void WithoutSoftAimTheCursorWaitsAtTheAimPoint()
+    {
+        Mapper mapper = Locking();
+        mapper.Seen = new[] { new SeenTarget(21, 0.52, 0.4, 6, 100, true) };
+
+        Assert.Contains(new PointerMoveTo(960, 410), mapper.Tick(GamepadSnapshot.Rest, Tick));
+    }
 }
