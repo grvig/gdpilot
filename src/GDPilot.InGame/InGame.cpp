@@ -224,6 +224,10 @@ unsigned int collisionSurface = 1;
 float collisionStart = 1.5f;
 bool togglePressed = false;
 
+// Lock-on's setting, from camera.ini: how far above a target's feet the cursor
+// and the camera aim.
+float aimHeight = 1;
+
 float Setting(const wchar_t* key, float fallback)
 {
     wchar_t text[32]{};
@@ -887,6 +891,7 @@ void TurnOn(void* camera)
     collideObjects = Setting(L"collision_objects", 1) != 0;
     collisionSurface = static_cast<unsigned int>(Setting(L"collision_surface", 1));
     collisionStart = Setting(L"collision_start", 1.5f);
+    aimHeight = Setting(L"lock_aim_height", 1);
     Say("Third person: distance %.1f to %.1f from %.1f, pitch %.1f to %.1f, view %.1f degrees.", behind[2], behind[3], behind[0], behind[4], behind[5], behind[10] * 180 / 3.14159265f);
     thirdPerson = true;
     Say("Third person on.");
@@ -1194,6 +1199,246 @@ void FindTargets()
     Say("Found the game's target query; lock-on can see enemies.");
 }
 
+bool IsA(const void* object, const unsigned char* wanted)
+{
+    const void* const* table = *static_cast<const void* const* const*>(object);
+    const unsigned char* kind = reinterpret_cast<ClassOf>(table[0])(object);
+
+    for (int depth = 0; kind != nullptr && depth < 16; depth++)
+    {
+        if (kind == wanted)
+        {
+            return true;
+        }
+
+        kind = *reinterpret_cast<const unsigned char* const*>(kind + ClassParent);
+    }
+
+    return false;
+}
+
+void InWorld(const WorldPoint& point, float world[3])
+{
+    const int* corner = reinterpret_cast<const int*>(static_cast<const unsigned char*>(point.region) + RegionCorner);
+    world[0] = point.x + static_cast<float>(corner[0]);
+    world[1] = point.y + static_cast<float>(corner[1]);
+    world[2] = point.z + static_cast<float>(corner[2]);
+}
+
+// One enemy as lock-on sees it: where it is on the screen, as fractions of the
+// window, how far from the player, and how much life it has left.
+struct Seen
+{
+    unsigned int id;
+    float x;
+    float y;
+    float distance;
+    int health;
+    bool onScreen;
+};
+
+HWND gameWindow = nullptr;
+
+BOOL CALLBACK ConsiderWindow(HWND window, LPARAM)
+{
+    DWORD owner = 0;
+    GetWindowThreadProcessId(window, &owner);
+
+    if (owner == GetCurrentProcessId() && IsWindowVisible(window) && GetWindow(window, GW_OWNER) == nullptr)
+    {
+        gameWindow = window;
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+bool Viewport(int viewport[4])
+{
+    if (gameWindow == nullptr || !IsWindow(gameWindow))
+    {
+        gameWindow = nullptr;
+        EnumWindows(ConsiderWindow, 0);
+    }
+
+    RECT client{};
+
+    if (gameWindow == nullptr || !GetClientRect(gameWindow, &client) || client.right <= 0 || client.bottom <= 0)
+    {
+        return false;
+    }
+
+    viewport[0] = 0;
+    viewport[1] = 0;
+    viewport[2] = client.right;
+    viewport[3] = client.bottom;
+    return true;
+}
+
+bool described = false;
+
+// Reads every enemy in range, or returns -1 when the game cannot say. Guarded
+// throughout; nothing here owns memory, so a fault leaves nothing behind.
+int ScanTargets(void* camera, const int viewport[4], Seen seen[], int most)
+{
+    __try
+    {
+        void* engine = *engineSlot;
+        const void* player = mainPlayer(engine);
+        void* manager = objectManager();
+
+        if (player == nullptr || manager == nullptr)
+        {
+            return -1;
+        }
+
+        WorldPoint centre{};
+        pathPosition(player, &centre);
+        found.last = found.first;
+        targetsInRadius(engine, player, &centre, ScanRadius, &found, objectId(player), true, false);
+        float origin[3]{};
+        InWorld(centre, origin);
+        WorldPoint zero{cameraRegion(camera), 0, 0, 0};
+        WorldPoint offset{};
+        viewOffset(camera, &offset, &zero);
+        float back[3] = {offset.x, offset.y, offset.z};
+        int count = 0;
+
+        for (const unsigned int* id = found.first; id != found.last && count < most; id++)
+        {
+            const void* target = findObject(manager, *id);
+
+            if (target == nullptr || !IsA(target, characterClass) || IsA(target, npcClass))
+            {
+                continue;
+            }
+
+            double life = currentLife(target);
+            float limit = lifeLimit(characterBio(target));
+
+            if (!(life > 0) || !(limit > 0))
+            {
+                continue;
+            }
+
+            WorldPoint where{};
+            pathPosition(target, &where);
+            float at[3]{};
+            InWorld(where, at);
+            float relative[3] = {at[0] - origin[0], at[1] - origin[1], at[2] - origin[2]};
+
+            // In front of the camera when the way from the camera to it runs along the view, not back past the lens.
+            float ahead = 0;
+
+            for (int axis = 0; axis < 3; axis++)
+            {
+                ahead -= (relative[axis] - back[axis]) * back[axis];
+            }
+
+            (&where.x)[Up] += aimHeight;
+            float screen[2]{};
+            projectPoint(camera, screen, &where, viewport);
+
+            if (!described)
+            {
+                described = true;
+                Say("Lock-on: camera offset %.2f %.2f %.2f; a target %.2f %.2f %.2f from the player, drawn at %.1f, %.1f of %d by %d.", back[0], back[1], back[2], relative[0], relative[1], relative[2], screen[0], screen[1], viewport[2], viewport[3]);
+            }
+
+            Seen& entry = seen[count];
+            entry.id = *id;
+            entry.x = screen[0] / static_cast<float>(viewport[2]);
+            entry.y = screen[1] / static_cast<float>(viewport[3]);
+            entry.distance = std::sqrt(relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2]);
+            entry.health = static_cast<int>(std::lround(std::fmin(1.0, life / limit) * 100));
+            entry.onScreen = ahead > 0 && entry.x >= 0 && entry.x <= 1 && entry.y >= 0 && entry.y <= 1;
+            count++;
+        }
+
+        return count;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return -1;
+    }
+}
+
+Seen seen[MostTargets]{};
+float sinceTargetCheck = 0;
+std::string lastTargets;
+int lastTargetCount = -1;
+
+std::string Fixed(float value, int decimals)
+{
+    char text[32]{};
+    std::snprintf(text, sizeof(text), "%.*f", decimals, value);
+    return text;
+}
+
+// Thirty times a second, enough for the cursor to stay on a running enemy, and
+// sent only when something moved.
+void CheckTargets(void* camera, float elapsed)
+{
+    sinceTargetCheck += elapsed;
+
+    if (targetsInRadius == nullptr || !linked || sinceTargetCheck < 1.0f / 30)
+    {
+        return;
+    }
+
+    sinceTargetCheck = 0;
+    int viewport[4]{};
+
+    if (!Viewport(viewport))
+    {
+        return;
+    }
+
+    int count = ScanTargets(camera, viewport, seen, MostTargets);
+
+    if (count < 0)
+    {
+        return;
+    }
+
+    if ((count == 0) != (lastTargetCount == 0))
+    {
+        Say("Targets: %d in range.", count);
+    }
+
+    lastTargetCount = count;
+    std::string line = "{\"protocol\":1,\"type\":\"targets\",\"list\":[";
+
+    for (int index = 0; index < count; index++)
+    {
+        const Seen& entry = seen[index];
+
+        if (index > 0)
+        {
+            line += ",";
+        }
+
+        line += "{\"id\":" + std::to_string(entry.id) + ",\"x\":" + Fixed(entry.x, 4) + ",\"y\":" + Fixed(entry.y, 4) + ",\"distance\":" + Fixed(entry.distance, 1) + ",\"health\":" + std::to_string(entry.health);
+
+        if (entry.onScreen)
+        {
+            line += ",\"seen\":true}";
+        }
+        else
+        {
+            line += ",\"seen\":false}";
+        }
+    }
+
+    line += "]}\n";
+
+    if (line != lastTargets)
+    {
+        lastTargets = line;
+        Post(line);
+    }
+}
+
 LARGE_INTEGER lastFrame{};
 LARGE_INTEGER ticksPerSecond{};
 
@@ -1227,6 +1472,7 @@ void UpdatedCamera(void* camera)
     CheckPanels(elapsed);
     CheckLayouts(elapsed);
     CheckHealth(elapsed);
+    CheckTargets(camera, elapsed);
 
     if (thirdPerson)
     {
