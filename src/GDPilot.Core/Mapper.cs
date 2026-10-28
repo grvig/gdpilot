@@ -55,6 +55,11 @@ public sealed class Mapper
 
     private double sentYaw;
     private double sentZoom;
+    private KeyCode? casting;
+    private TimeSpan castHeldFor;
+
+    /// <summary>The skill wheel, or null when no slots are configured.</summary>
+    public RadialMenu? Wheel { get; set; }
     private bool aimed;
 
     /// <summary>
@@ -69,6 +74,45 @@ public sealed class Mapper
         // The host stops the camera turning when a suspension begins.
         sentYaw = 0;
         sentZoom = 0;
+    }
+
+    /// <summary>
+    /// Opens the wheel while its button is held and adds the cast slot's key for
+    /// one tap's length after it is let go. Returns whether the wheel is open.
+    /// </summary>
+    private bool TickWheel(GamepadSnapshot snapshot, StickPosition right, TimeSpan elapsed, HashSet<KeyCode> keys)
+    {
+        if (Wheel is not null)
+        {
+            bool held = false;
+
+            foreach ((GamepadButtons button, ButtonBinding binding, bool chorded) in Buttons.Entries)
+            {
+                if (binding is RadialBinding && !chorded && snapshot.IsPressed(button))
+                {
+                    held = true;
+                }
+            }
+
+            if (Wheel.Update(held, right) is KeyCode cast)
+            {
+                casting = cast;
+                castHeldFor = TimeSpan.Zero;
+            }
+        }
+
+        if (casting is KeyCode tapping)
+        {
+            keys.Add(tapping);
+            castHeldFor += elapsed;
+
+            if (castHeldFor >= ModeController.TapLength)
+            {
+                casting = null;
+            }
+        }
+
+        return Wheel is not null && Wheel.Open;
     }
 
     /// <summary>
@@ -120,8 +164,16 @@ public sealed class Mapper
 
         (HashSet<KeyCode> keys, HashSet<PointerButton> pointerButtons) = Buttons.Resolve(snapshot);
         keys.UnionWith(StickDirections.KeysFor(left, settings.WalkThreshold, settings.Movement));
+        bool wheelOpen = TickWheel(snapshot, right, elapsed, keys);
 
         List<InputIntent> intents = differ.Update(keys, pointerButtons);
+
+        // While the wheel is open the right stick belongs to it alone.
+        if (wheelOpen)
+        {
+            Look(0, 0, intents);
+            return intents;
+        }
 
         if (Looking)
         {

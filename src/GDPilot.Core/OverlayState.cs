@@ -94,6 +94,8 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
                 return "Back";
             case CameraToggleBinding:
                 return "Switch camera";
+            case RadialBinding:
+                return "Skill wheel";
             default:
                 return binding.ToString();
         }

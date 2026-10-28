@@ -27,6 +27,12 @@ public sealed class InputConfig
     public double FollowSpeed { get; init; } = 0;
 
     /// <summary>
+    /// The keys on the skill wheel, the first at the top and the rest clockwise:
+    /// by default Grim Dawn's hotbar, 1 to 0.
+    /// </summary>
+    public List<string> RadialSlots { get; init; } = new() { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
+
+    /// <summary>
     /// How far down the game window the cursor waits in third person, from 0 at
     /// the top to 1 at the bottom. Just above the character puts attacks ahead of it.
     /// </summary>

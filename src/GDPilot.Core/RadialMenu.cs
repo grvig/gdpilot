@@ -1,5 +1,8 @@
 namespace GDPilot.Core;
 
+/// <summary>"radial:hotbar": while held, the right stick points at a hotbar slot; letting go casts it.</summary>
+public sealed record RadialBinding : ButtonBinding;
+
 /// <summary>
 /// The skill wheel: slots laid round a circle, the first at the top and the
 /// rest clockwise. The stick points at a slot; letting go of the wheel's button

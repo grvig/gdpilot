@@ -67,6 +67,17 @@ public sealed class GDPilotConfig
     /// The button tables for one mode. A mode with no section of its own uses
     /// Combat's, since a panel bound to nothing would leave no way back out of it.
     /// </summary>
+    /// <summary>The skill wheel's keys, or null with none configured.</summary>
+    public RadialMenu? Wheel()
+    {
+        if (Input.RadialSlots.Count == 0)
+        {
+            return null;
+        }
+
+        return new RadialMenu(Input.RadialSlots.Select(name => BindingAction.Key(name, "input.radialSlots")).ToList());
+    }
+
     public ButtonLayers ButtonsFor(string mode)
     {
         Dictionary<string, string>? section;
@@ -107,6 +118,7 @@ public sealed class GDPilotConfig
         Require(Input.WalkThreshold is > 0 and <= 1, "input.walkThreshold must be above 0 and at most 1.");
         Require(Input.ChordTrigger is > 0 and <= 1, "input.chordTrigger must be above 0 and at most 1.");
         Require(Input.Cursor.BaseSpeed > 0 && Input.Cursor.Exponent > 0 && Input.Cursor.MaxSpeed > 0, "Cursor speeds and exponent must be positive.");
+        Wheel();
 
         foreach (string mode in Bindings.Keys)
         {

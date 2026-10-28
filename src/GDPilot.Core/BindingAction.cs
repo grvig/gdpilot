@@ -31,6 +31,8 @@ internal static class BindingAction
                 return new TabBinding(TabStep(parts[1], trigger));
             case "camera" when string.Equals(parts[1], "toggle", StringComparison.OrdinalIgnoreCase):
                 return new CameraToggleBinding();
+            case "radial" when string.Equals(parts[1], "hotbar", StringComparison.OrdinalIgnoreCase):
+                return new RadialBinding();
             default:
                 throw new FormatException($"\"{trigger}\": \"{parts[0]}\" bindings are not supported.");
         }

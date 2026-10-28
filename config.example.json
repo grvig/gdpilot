@@ -44,7 +44,8 @@
       "Start": "back",
       "LT+DPadUp": "panel:Vendor",
       "LT+DPadDown": "panel:Stash",
-      "RightStick": "camera:toggle"
+      "RightStick": "camera:toggle",
+      "Back": "radial:hotbar"
     },
     "Inventory": {
       "DPadUp": "grid:up",

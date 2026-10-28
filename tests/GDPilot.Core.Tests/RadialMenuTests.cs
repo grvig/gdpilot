@@ -58,4 +58,45 @@ public sealed class RadialMenuTests
 
         Assert.Null(wheel.Selected);
     }
+
+    private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600));
+
+    private static readonly ButtonLayers Combat = BindingTable.Parse(new Dictionary<string, string> { ["Back"] = "radial:hotbar", ["A"] = "key:Space" }, 0.5);
+
+    [Fact]
+    public void HoldingTheWheelButtonAndLettingGoTapsThePointedSlotsKey()
+    {
+        Mapper mapper = new(Settings, Combat) { Wheel = new RadialMenu(Hotbar) };
+        TimeSpan tick = TimeSpan.FromMilliseconds(10);
+        GamepadSnapshot holding = GamepadSnapshot.Rest with { Buttons = GamepadButtons.Back };
+        List<InputIntent> sent = new();
+
+        sent.AddRange(mapper.Tick(holding with { RightStick = new StickPosition(1, 0) }, tick));
+        sent.AddRange(mapper.Tick(holding, tick));
+        Assert.Empty(sent);
+
+        for (int index = 0; index < 6; index++)
+        {
+            sent.AddRange(mapper.Tick(GamepadSnapshot.Rest, tick));
+        }
+
+        Assert.Equal(new InputIntent[] { new KeyDown(KeyCode.D2), new KeyUp(KeyCode.D2) }, sent);
+    }
+
+    [Fact]
+    public void WhileTheWheelIsOpenTheRightStickMovesNoCursorAndFaceButtonsStillWork()
+    {
+        Mapper mapper = new(Settings, Combat) { Wheel = new RadialMenu(Hotbar) };
+
+        List<InputIntent> sent = mapper.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.Back | GamepadButtons.A, RightStick = new StickPosition(1, 0) }, TimeSpan.FromMilliseconds(20));
+
+        Assert.Equal(new InputIntent[] { new KeyDown(KeyCode.Space) }, sent);
+    }
+
+    [Fact]
+    public void TheWheelReadsPlainlyInTheLegendAndTheConfigurationGivesTenSlots()
+    {
+        Assert.Contains("Back: Skill wheel", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat).Legend);
+        Assert.Equal(KeyCode.D0, GDPilotConfig.Parse("{}").Wheel()!.Slots[9]);
+    }
 }
