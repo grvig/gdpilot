@@ -74,7 +74,7 @@ public sealed class LockMappingTests
         Assert.DoesNotContain(mapper.Tick(GamepadSnapshot.Rest, Tick), intent => intent is PointerMoveTo);
 
         mapper.Seen = new[] { Near with { X = 0.55 } };
-        Assert.Contains(new PointerMoveTo(1056, 432), mapper.Tick(GamepadSnapshot.Rest, Tick));
+        Assert.Contains(mapper.Tick(GamepadSnapshot.Rest, Tick), intent => intent is PointerMoveTo { X: >= 1056, Y: 432 });
     }
 
     [Fact]
@@ -112,5 +112,20 @@ public sealed class LockMappingTests
 
         Assert.Null(mapper.Lock!.Target);
         Assert.Contains(new GameCommandIntent(new LockCommand(0)), sent);
+    }
+
+    [Fact]
+    public void BetweenReportsTheCursorGlidesOnAtTheEnemysSpeed()
+    {
+        Mapper mapper = Locking();
+        mapper.Tick(Press, Tick);
+        mapper.Tick(GamepadSnapshot.Rest, TimeSpan.FromMilliseconds(32));
+        mapper.Seen = new[] { Near with { X = 0.51 } };
+        mapper.Tick(GamepadSnapshot.Rest, Tick);
+
+        mapper.Tick(GamepadSnapshot.Rest, TimeSpan.FromMilliseconds(16));
+
+        // 0.51, carried on a further 20 ms at 0.01 per 36 ms.
+        Assert.Equal((990, 432), mapper.LockPoint);
     }
 }

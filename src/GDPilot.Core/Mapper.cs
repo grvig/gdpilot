@@ -80,6 +80,12 @@ public sealed class Mapper
     private bool lockHeld;
     private uint sentLock;
     private (int X, int Y)? cursorAt;
+    private readonly Glide glide = new();
+    private uint glidingId;
+    private IReadOnlyList<SeenTarget>? glidedReport;
+
+    /// <summary>Where the locked enemy is drawn this tick, in screen pixels, followed smoothly between reports; null with nothing locked in view.</summary>
+    public (int X, int Y)? LockPoint { get; private set; }
 
     /// <summary>
     /// Forgets held state after a suspension has released everything, so a
@@ -183,17 +189,34 @@ public sealed class Mapper
     }
 
     /// <summary>
-    /// Keeps the cursor on the locked enemy, so attacks and skills land on it.
-    /// Moved only when the enemy has moved a couple of pixels, so a still enemy
-    /// sends nothing. An enemy out of view leaves the cursor at the aim point.
+    /// Keeps the cursor on the locked enemy, so attacks and skills land on it,
+    /// gliding between the game's reports. Moved only when the enemy has moved a
+    /// couple of pixels, so a still enemy sends nothing. An enemy out of view
+    /// leaves the cursor at the aim point.
     /// </summary>
-    private void FollowLock(SeenTarget held, List<InputIntent> intents)
+    private void FollowLock(SeenTarget held, TimeSpan elapsed, List<InputIntent> intents)
     {
+        if (held.Id != glidingId)
+        {
+            glide.Reset();
+            glidingId = held.Id;
+            glidedReport = null;
+        }
+
+        if (!ReferenceEquals(Seen, glidedReport))
+        {
+            glidedReport = Seen;
+            glide.Report(held.X, held.Y);
+        }
+
+        (double gliding, double glidingY) = glide.Advance(elapsed);
         (int X, int Y)? spot = AimPoint;
+        LockPoint = null;
 
         if (held.OnScreen && GameBounds is ScreenRect bounds)
         {
-            spot = ((int)Math.Round(bounds.X + held.X * bounds.Width), (int)Math.Round(bounds.Y + held.Y * bounds.Height));
+            spot = ((int)Math.Round(bounds.X + gliding * bounds.Width), (int)Math.Round(bounds.Y + glidingY * bounds.Height));
+            LockPoint = spot;
         }
 
         if (spot is not (int x, int y))
@@ -306,12 +329,14 @@ public sealed class Mapper
         // Locked, the right stick only flicks between enemies, and the game turns the camera.
         if (Lock?.Target is SeenTarget held)
         {
-            FollowLock(held, intents);
+            FollowLock(held, elapsed, intents);
             Look(0, 0, intents);
             return intents;
         }
 
         // Let go, the cursor goes back to waiting at the aim point.
+        LockPoint = null;
+
         if (cursorAt is not null)
         {
             cursorAt = null;
