@@ -63,6 +63,7 @@ lands on the top-left cell.
 | `Stash.Bag1`, the main bag | (870, 645) | 32 | 12 × 8 |
 | `Stash.Bag2`, the second bag | (1263, 645) | 32 | 8 × 8 |
 | `Stash.Tabs`, the tab buttons | (473, 463) | 38 down | 1 × 2 |
+| `Hotbar`, the skill bar | (717, 1059) | 44.18 | 12 × 1 |
 
 The bags appear three times because the game draws them in three places. With
 a trader's window open, the inventory panel moves right by 172 pixels and
@@ -150,6 +151,15 @@ the new count.
 To calibrate by hand instead, run `GDPilot.exe --capture <name>` to save the
 client area and its profile, then measure with `--detect` or an image editor.
 Pitch is the span divided by the count minus one: `(lastX - firstX) / (columns - 1)`.
+
+## The hotbar
+
+The `Hotbar` grid is the bar of skill slots along the bottom of the screen:
+twelve cells, which are keys 1 to 5, the two mouse-button slots, then keys 6
+to 0. Nothing navigates it. The skill wheel copies each slot's icon from it as
+the wheel opens. Its slots are separate boxes with gaps between them rather
+than one ruled grid, so the detector cannot read it; it was measured by hand
+from a capture, from the centre of the first slot to the centre of the last.
 
 ## Jumping between items
 
