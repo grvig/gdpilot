@@ -62,3 +62,4 @@ Game.dll ?classInfo@Npc@GAME@@1VRTTI_ClassInfo@2@B
 Engine.dll ?Project@WorldCamera@GAME@@QEBA?AVVec2@2@AEBVWorldVec3@2@AEBVViewport@2@@Z
 Engine.dll ?GetObjectId@Object@GAME@@QEBAIXZ
 Engine.dll ??0Viewport@GAME@@QEAA@HHHH@Z
+Engine.dll ?GetHeight@Actor@GAME@@QEBAMXZ

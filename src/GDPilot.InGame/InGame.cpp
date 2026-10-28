@@ -1134,11 +1134,13 @@ using PathPosition = WorldPoint* (*)(const void* character, WorldPoint* result);
 using ProjectPoint = float* (*)(const void* camera, float* result, const WorldPoint* point, const int* viewport);
 using ObjectId = unsigned int (*)(const void* object);
 using ClassOf = const unsigned char* (*)(const void* object);
+using ActorHeight = float (*)(const void* actor);
 
 TargetsInRadius targetsInRadius = nullptr;
 PathPosition pathPosition = nullptr;
 ProjectPoint projectPoint = nullptr;
 ObjectId objectId = nullptr;
+ActorHeight actorHeight = nullptr;
 const unsigned char* characterClass = nullptr;
 const unsigned char* npcClass = nullptr;
 
@@ -1173,6 +1175,7 @@ void FindTargets()
     CollisionEntry engineEntries[] = {
         {"?Project@WorldCamera@GAME@@QEBA?AVVec2@2@AEBVWorldVec3@2@AEBVViewport@2@@Z", "48895c240848896c24104889742418574883ec40488b0148", reinterpret_cast<void**>(&projectPoint)},
         {"?GetObjectId@Object@GAME@@QEBAIXZ", "8b412cc3", reinterpret_cast<void**>(&objectId)},
+        {"?GetHeight@Actor@GAME@@QEBAMXZ", "f30f1081a0040000f30f5981ac030000c3", reinterpret_cast<void**>(&actorHeight)},
     };
     characterClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@Character@GAME@@1VRTTI_ClassInfo@2@B"));
     npcClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@Npc@GAME@@1VRTTI_ClassInfo@2@B"));
@@ -1373,7 +1376,18 @@ int ScanTargets(void* camera, const int viewport[4], Seen seen[], int most)
                 ahead -= (relative[axis] - back[axis]) * back[axis];
             }
 
-            (&where.x)[Up] += aimHeight;
+            // Aimed at the chest: three fifths of the creature's own height, so a
+            // rat and a giant are each hit where they stand tallest.
+            float tall = actorHeight(target);
+            float lift = aimHeight;
+
+            if (tall > 0.3f && tall < 30)
+            {
+                lift = tall * 0.6f;
+            }
+
+            (&where.x)[Up] += lift;
+
             float screen[2]{};
             projectPoint(camera, screen, &where, viewport);
 
