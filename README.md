@@ -98,18 +98,26 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 | 1 | Pad input, movement, cursor, buttons, safety | **Done** |
 | 2 | Panel tracking, per-panel bindings, overlay | **Done** |
 | 3 | Grid navigation by calibration | **Done.** Bags, vendor and stash, checked in the game. |
-| 4 | Reading item positions | **Mostly done.** The D-pad jumps between items, read off the screen; exact sizes arrive with the in-game part. |
-| 5 | The in-game part and the action camera | **In progress.** The third-person camera works from the pad; panel and item reports next. |
-| 6 | Lock-on, camera-relative movement, smart interact | Not started |
-| 7 | Radial skills, rumble, snapping in every menu | Not started |
+| 4 | Reading item positions | **Done.** From the game itself, exactly, with the screen as a fallback. |
+| 5 | The in-game part and the action camera | **Done.** Third person with turning, zoom, collision and following, all from the pad. |
+| 6 | Lock-on, camera-relative movement, smart interact | **Started.** Movement follows the camera; lock-on and smart interact to come. |
+| 7 | Radial skills, rumble, snapping in every menu | **Started.** The skill wheel and rumble work; snapping in the other menus to come. |
 | 8 | Shortcuts, profiles, first run, tray, release | Not started |
 
 **Working today:**
 
 - **The third-person camera.** Click the right stick and the camera drops
-  behind your character; the right stick turns it, and walking follows. Click
-  again for the classic view, restored exactly. See
+  behind your character. The right stick turns and zooms it, walking turns
+  with it, it swings round as you walk sideways, and it stays in front of
+  walls and clutter. Click again for the classic view, restored exactly. See
   [docs/camera.md](docs/camera.md).
+- **The skill wheel.** Hold Back for a wheel of the whole hotbar, drawn with
+  your real skill icons; point the right stick and let go to cast.
+- **Rumble** for heavy blows, and a heartbeat when life runs low.
+- **GDPilot always knows which panel is open**, because the game tells it, and
+  an item larger than one cell is one stop on the D-pad.
+
+[docs/controls.md](docs/controls.md) lists every control.
 
 - The left stick walks and the right stick drives a curved cursor; every button
   is configurable, with a second layer on the left trigger.
