@@ -17,6 +17,7 @@ public sealed class OverlayHost : IDisposable
     private readonly Thread thread;
     private readonly ManualResetEventSlim ready = new();
     private OverlayWindow? window;
+    private WheelWindow? wheel;
 
     public OverlayHost()
     {
@@ -47,6 +48,7 @@ public sealed class OverlayHost : IDisposable
         window = new OverlayWindow();
         window.Show();
         Handle = window.Handle;
+        wheel = new WheelWindow();
         ready.Set();
         Dispatcher.Run();
     }
@@ -70,6 +72,30 @@ public sealed class OverlayHost : IDisposable
 
         // Re-asserted every update, since a borderless game can rise over a topmost window.
         SetWindowPos(Handle, TopmostSlot, x, y, 0, 0, NoSize | NoActivate);
+        ShowWheel(state.Wheel, area);
+    }
+
+    /// <summary>The wheel sits over the middle of the game while open, and is hidden otherwise.</summary>
+    private void ShowWheel(WheelView? view, ScreenRect area)
+    {
+        if (view is null)
+        {
+            wheel!.Hide();
+            return;
+        }
+
+        wheel!.Display(view);
+
+        if (!wheel.IsVisible)
+        {
+            wheel.Show();
+        }
+
+        wheel.UpdateLayout();
+        GetWindowRect(wheel.Handle, out Bounds own);
+        int width = own.Right - own.Left;
+        int height = own.Bottom - own.Top;
+        SetWindowPos(wheel.Handle, TopmostSlot, area.X + (area.Width - width) / 2, area.Y + (area.Height - height) / 2, 0, 0, NoSize | NoActivate);
     }
 
     [StructLayout(LayoutKind.Sequential)]

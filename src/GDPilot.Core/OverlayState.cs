@@ -6,6 +6,9 @@ namespace GDPilot.Core;
 /// </summary>
 public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<string> Legend)
 {
+    /// <summary>The skill wheel to draw over the game, or null while it is closed.</summary>
+    public WheelView? Wheel { get; init; }
+
     /// <param name="gridFellBack">Whether grid presses are stepping because the screen could not be read, said first so it is noticed.</param>
     /// <param name="thirdPerson">Whether the third-person camera is on, which changes what the right stick does.</param>
     public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false)

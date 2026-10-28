@@ -3,6 +3,9 @@ namespace GDPilot.Core;
 /// <summary>"radial:hotbar": while held, the right stick points at a hotbar slot; letting go casts it.</summary>
 public sealed record RadialBinding : ButtonBinding;
 
+/// <summary>What the overlay draws for an open wheel: each slot's label, and which is pointed at.</summary>
+public sealed record WheelView(IReadOnlyList<string> Labels, int? Selected);
+
 /// <summary>
 /// The skill wheel: slots laid round a circle, the first at the top and the
 /// rest clockwise. The stick points at a slot; letting go of the wheel's button
@@ -67,6 +70,31 @@ public sealed class RadialMenu
         }
 
         return null;
+    }
+
+    /// <summary>The wheel as the overlay should show it, or null while closed. Number keys read as their digit.</summary>
+    public WheelView? View()
+    {
+        if (!Open)
+        {
+            return null;
+        }
+
+        List<string> labels = new();
+
+        foreach (KeyCode key in Slots)
+        {
+            if (key is >= KeyCode.D0 and <= KeyCode.D9)
+            {
+                labels.Add(((int)(key - KeyCode.D0)).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                labels.Add(key.ToString());
+            }
+        }
+
+        return new WheelView(labels, Selected);
     }
 
     /// <summary>Which slot a stick direction points at: the first straight up, then clockwise.</summary>

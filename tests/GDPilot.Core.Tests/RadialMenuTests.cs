@@ -99,4 +99,16 @@ public sealed class RadialMenuTests
         Assert.Contains("Back: Skill wheel", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat).Legend);
         Assert.Equal(KeyCode.D0, GDPilotConfig.Parse("{}").Wheel()!.Slots[9]);
     }
+
+    [Fact]
+    public void TheOverlayIsGivenDigitsAndThePointedSlotOnlyWhileTheWheelIsOpen()
+    {
+        RadialMenu wheel = new(Hotbar);
+        Assert.Null(wheel.View());
+
+        wheel.Update(true, new StickPosition(-1, 0));
+
+        Assert.Equal(new[] { "1", "2", "3", "4" }, wheel.View()!.Labels);
+        Assert.Equal(3, wheel.View()!.Selected);
+    }
 }

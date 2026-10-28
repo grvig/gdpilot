@@ -124,6 +124,8 @@ internal static class Host
         {
             TimeSpan last = clock.Elapsed;
             bool wasSuspended = false;
+            bool wheelShown = false;
+            ScreenRect? gameBounds = null;
             replayClock.Start();
 
             while (!stop.IsCancellationRequested && (duration is null || clock.Elapsed < duration))
@@ -153,11 +155,23 @@ internal static class Host
                     Console.WriteLine($"Mode: {shownMode}");
                 }
 
-                if (overlay is not null && ticks % overlayInterval == 0)
+                // The wheel follows the stick, so while it is open it is redrawn about fifty
+                // times a second, using the game's bounds from the last regular redraw.
+                bool regular = ticks % overlayInterval == 0;
+                bool wheelOpen = mapper.Wheel is not null && mapper.Wheel.Open;
+
+                if (overlay is not null && (regular || (wheelOpen && ticks % 5 == 0) || wheelOpen != wheelShown))
                 {
-                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson);
-                    overlay.Update(state, GameWindow.ClientBounds(config.GameProcess), config.Overlay.Corner);
+                    if (regular)
+                    {
+                        gameBounds = GameWindow.ClientBounds(config.GameProcess);
+                    }
+
+                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson) with { Wheel = mapper.Wheel?.View() };
+                    overlay.Update(state, gameBounds, config.Overlay.Corner);
+                    wheelShown = wheelOpen;
                 }
+
                 TimeSpan wait = period - (clock.Elapsed - now);
 
                 if (wait > TimeSpan.Zero)
