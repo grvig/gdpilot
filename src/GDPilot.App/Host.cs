@@ -204,7 +204,7 @@ internal static class Host
                     OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson, locked) with
                     {
                         Wheel = view,
-                        Marker = LockMarker.For(locked, gameBounds),
+                        Marker = LockMarker.For(locked, mapper.LockPoint),
                     };
                     overlay.Update(state, gameBounds, config.Overlay.Corner);
                     wheelShown = wheelOpen;

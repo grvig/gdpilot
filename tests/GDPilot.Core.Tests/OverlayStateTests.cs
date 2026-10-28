@@ -56,18 +56,18 @@ public sealed class OverlayStateTests
     }
 
     [Fact]
-    public void TheMarkerSitsOverTheEnemyInScreenPixels()
+    public void TheMarkerSitsWhereTheCursorFollowsTheEnemy()
     {
-        LockMarker? marker = LockMarker.For(new SeenTarget(5, 0.5, 0.25, 6, 64, true), new ScreenRect(100, 50, 1920, 1080));
+        LockMarker? marker = LockMarker.For(new SeenTarget(5, 0.5, 0.25, 6, 64, true), (1060, 320));
 
         Assert.Equal(new LockMarker(1060, 320, 64), marker);
     }
 
     [Fact]
-    public void ThereIsNoMarkerForAnEnemyOutOfViewOrWithoutAGameWindow()
+    public void ThereIsNoMarkerForAnEnemyOutOfViewOrWithoutAPoint()
     {
-        Assert.Null(LockMarker.For(new SeenTarget(5, 1.3, 0.25, 6, 64, false), new ScreenRect(0, 0, 1920, 1080)));
+        Assert.Null(LockMarker.For(new SeenTarget(5, 1.3, 0.25, 6, 64, false), (1060, 320)));
         Assert.Null(LockMarker.For(new SeenTarget(5, 0.5, 0.25, 6, 64, true), null));
-        Assert.Null(LockMarker.For(null, new ScreenRect(0, 0, 1920, 1080)));
+        Assert.Null(LockMarker.For(null, (1060, 320)));
     }
 }

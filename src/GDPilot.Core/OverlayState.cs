@@ -118,14 +118,18 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
 /// <summary>Where to draw the lock-on marker, in screen pixels, and the life of the enemy under it, in percent.</summary>
 public sealed record LockMarker(int X, int Y, int Health)
 {
-    /// <summary>The marker for a locked enemy, or null when there is none to draw: nothing locked, out of view, or no game window.</summary>
-    public static LockMarker? For(SeenTarget? target, ScreenRect? game)
+    /// <summary>
+    /// The marker for a locked enemy at the point the cursor follows, so the two
+    /// glide together; null when there is none to draw: nothing locked, out of
+    /// view, or no game window.
+    /// </summary>
+    public static LockMarker? For(SeenTarget? target, (int X, int Y)? spot)
     {
-        if (target is null || !target.OnScreen || game is not ScreenRect bounds)
+        if (target is null || !target.OnScreen || spot is not (int x, int y))
         {
             return null;
         }
 
-        return new LockMarker((int)Math.Round(bounds.X + target.X * bounds.Width), (int)Math.Round(bounds.Y + target.Y * bounds.Height), target.Health);
+        return new LockMarker(x, y, target.Health);
     }
 }
