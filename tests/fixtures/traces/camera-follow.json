@@ -1,0 +1,12 @@
+{
+  "entries": [
+    { "at": 0 },
+    { "at": 3000, "buttons": "RightStick" },
+    { "at": 3100 },
+    { "at": 4000, "leftX": 1 },
+    { "at": 6500 },
+    { "at": 8000, "buttons": "RightStick" },
+    { "at": 8100 },
+    { "at": 9000 }
+  ]
+}
