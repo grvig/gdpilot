@@ -481,12 +481,14 @@ public sealed class Mapper
     /// </summary>
     private (int X, int Y)? Aimed(StickPosition left, StickPosition right, TimeSpan elapsed, ScreenRect bounds)
     {
-        double reach = 1;
+        // Between two and a half and seven world units out: live, a full push to the ring's
+        // one and a half reached the edge of the screen, too far for a sword or a spell.
+        double reach = 0.8;
 
         if (right.Magnitude > 0)
         {
             aimAngle = Math.Atan2(-right.Y, right.X);
-            reach = 0.5 + right.Magnitude;
+            reach = 0.4 + 0.8 * right.Magnitude;
         }
         else if (left.Magnitude >= settings.WalkThreshold)
         {
@@ -621,6 +623,7 @@ public sealed class Mapper
         if (Lock?.Target is SeenTarget held)
         {
             LockPoint = Glided(held, elapsed);
+
             Park(LockPoint ?? AimPoint, intents);
             Look(0, 0, intents);
             wasLocked = true;

@@ -10,7 +10,8 @@ public sealed class TwinStickTests
 
     private static readonly ButtonLayers NoButtons = BindingTable.Parse(new Dictionary<string, string>(), 0.5);
 
-    // An overhead ring on a square window, so a reach of 1 is 0.2 of the window from the feet.
+    // An overhead ring on a square window, so a reach of 1 is 0.2 of the window from the feet;
+    // a full push reaches 1.2, a stick let go 0.8.
     private static readonly TargetsReport Near = new(Array.Empty<SeenTarget>())
     {
         Feet = new ScreenSpot(0.5, 0.5),
@@ -32,8 +33,7 @@ public sealed class TwinStickTests
     {
         Mapper mapper = Aiming();
 
-        // Fully over to the right: one and a half of the ring's reach.
-        Assert.Contains(new PointerMoveTo(800, 500), mapper.Tick(Sticks(0, 0, 1, 0), Tick));
+        Assert.Contains(new PointerMoveTo(740, 500), mapper.Tick(Sticks(0, 0, 1, 0), Tick));
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public sealed class TwinStickTests
         Mapper mapper = Aiming();
         mapper.Tick(Sticks(0, 0, 1, 0), Tick);
 
-        Assert.Contains(new PointerMoveTo(300, 500), mapper.Tick(Sticks(-1, 0, 0, 0), Tick));
+        Assert.Contains(new PointerMoveTo(340, 500), mapper.Tick(Sticks(-1, 0, 0, 0), Tick));
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public sealed class TwinStickTests
         Mapper mapper = Aiming();
         mapper.Tick(Sticks(0, 0, 0, -1), Tick);
 
-        Assert.Contains(new PointerMoveTo(500, 700), mapper.Tick(GamepadSnapshot.Rest, Tick));
+        Assert.Contains(new PointerMoveTo(500, 660), mapper.Tick(GamepadSnapshot.Rest, Tick));
     }
 
     [Fact]
