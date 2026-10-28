@@ -19,7 +19,16 @@ internal static class DetectMode
     internal static int Run(string[] values)
     {
         int[] box = values.Skip(1).Take(4).Select(value => int.Parse(value, CultureInfo.InvariantCulture)).ToArray();
-        GridSpec? grid = Find(Load(values[0]), box[0], box[1], box[2], box[3]);
+        CapturedFrame frame = Load(values[0]);
+
+        // The right and bottom edges are the last pixels read, so they must lie inside the image.
+        if (box[0] < 0 || box[1] < 0 || box[2] >= frame.Width || box[3] >= frame.Height || box[0] >= box[2] || box[1] >= box[3])
+        {
+            Console.Error.WriteLine($"The rectangle must lie inside the {frame.Width} by {frame.Height} image, with left below right and top below bottom.");
+            return 2;
+        }
+
+        GridSpec? grid = Find(frame, box[0], box[1], box[2], box[3]);
 
         if (grid is null)
         {
