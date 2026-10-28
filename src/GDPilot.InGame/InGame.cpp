@@ -83,8 +83,8 @@ void WriteDefaultSettings()
         "; and how quickly the camera turns to face it.\n"
         "lock_aim_height=1\n"
         "lock_turn_speed=8\n"
-        "; How far to the right of the character a locked enemy is framed, in degrees.\n"
-        "lock_offset=6\n",
+        "; How far right of the middle of the view a locked enemy is framed, in degrees.\n"
+        "lock_offset=8\n",
         file);
     std::fclose(file);
 }
@@ -235,10 +235,10 @@ bool togglePressed = false;
 float aimHeight = 1;
 float lockTurn = 8;
 
-// How far to one side of the character a locked enemy is framed, in radians,
-// so the character never stands between the camera and its target. Positive
-// frames it to the right; six degrees clears the character's shoulder.
-float lockOffset = 0.105f;
+// How far right of the middle of the view a locked enemy is framed, in
+// radians, so the character never stands between the camera and its target.
+// Eight degrees puts it clear of the character's shoulder at any distance.
+float lockOffset = 0.14f;
 
 // camera.ini's [camera] section, read whole in one go when third person turns
 // on, since asking Windows for each key opens the file again every time and a
@@ -941,7 +941,7 @@ void TurnOn(void* camera)
     collisionSurface = static_cast<unsigned int>(Setting(L"collision_surface", 1));
     collisionStart = Setting(L"collision_start", 1.5f);
     lockTurn = Setting(L"lock_turn_speed", 8);
-    lockOffset = Setting(L"lock_offset", 6) * 3.14159265f / 180;
+    lockOffset = Setting(L"lock_offset", 8) * 3.14159265f / 180;
     aimHeight = Setting(L"lock_aim_height", 1);
     Say("Third person: distance %.1f to %.1f from %.1f, pitch %.1f to %.1f, view %.1f degrees.", behind[2], behind[3], behind[0], behind[4], behind[5], behind[10] * 180 / 3.14159265f);
     thirdPerson = true;
@@ -2137,7 +2137,7 @@ bool Facing(float& heading)
 // Where the camera should look across the ground: past the character at the
 // locked enemy, a little to one side so the character never hides it, or the
 // way the character faces while recentring. False when it should hold still.
-bool Wanted(unsigned int id, float& heading, float elapsed)
+bool Wanted(unsigned int id, float& heading, float elapsed, const float back[3])
 {
     if (id != 0)
     {
@@ -2150,7 +2150,10 @@ bool Wanted(unsigned int id, float& heading, float elapsed)
             return false;
         }
 
-        heading = Heading(toward) - lockOffset;
+        // Framed from where the camera stands, not the character, so a close enemy
+        // is turned out from behind the character as surely as a far one.
+        float fromCamera[3] = {toward[0] - back[0], toward[1] - back[1], toward[2] - back[2]};
+        heading = Heading(fromCamera) - lockOffset;
         return true;
     }
 
@@ -2213,7 +2216,7 @@ void Steer(void* camera, float elapsed)
 
     float wanted = 0;
 
-    if (!Wanted(id, wanted, elapsed))
+    if (!Wanted(id, wanted, elapsed, back))
     {
         return;
     }
@@ -2531,6 +2534,15 @@ void Tilt(void* camera, float elapsed)
     tiltOffset = wanted;
     Write(camera, PitchMinimum, pitchNear + tiltOffset);
     Write(camera, PitchMaximum, pitchFar + tiltOffset);
+
+    // The game works the pitch out from the two only in its own SetZoom, as
+    // live showed; it is asked to at the zoom the camera stands at, and the
+    // player's chosen zoom is given back, as collision does.
+    float nearest = Read(camera, ZoomNear);
+    float farthest = Read(camera, ZoomFar);
+    float chosen = Read(camera, ZoomTarget);
+    reinterpret_cast<SetZoom>(required[1].address)(camera, nearest + (farthest - nearest) * Read(camera, ZoomLive));
+    Write(camera, ZoomTarget, chosen);
 }
 
 void Work(void* camera, float elapsed)
