@@ -746,3 +746,22 @@ Talking to Kerrick and using the rift gate both worked from A live. Picking up
 loot did not: the entity's position lies about a unit from the item drawn, so
 the click lands beside it. Two items dropped for testing were lost to area
 resets before that was understood.
+
+**Loot is clicked at the middle of its bounds.** An entity's region bounds sit
+at 0x44 in it, a centre then half the size, as `GetRegionBoundingBox` returns
+them. For a dropped item the centre lay where the item was drawn and its own
+position a unit off; a click at the centre picked it up live, where one at the
+position had missed. Townsfolk and the world's fixed things keep the points
+that worked live, since the rift gate did not open from its bounds' centre in
+the one try made.
+
+**Rift gates and portals offer Travel.** They are teleporters, apart from the
+world's other fixed things, so the prompt says what A does there.
+
+**The bug pass found four.** An attack held on the bumper stayed let go after
+an interact click; the in-game part looked for GDPilot only every two
+seconds, so early presses did nothing; and both scans kept the first things
+the game listed rather than the nearest, which in a big fight could leave out
+the enemy or the item at the character's feet. Each is fixed, the first with a
+test. A frame of 2.4 ms of the in-game part's own work was logged once, just
+after an area loaded; it did not recur.
