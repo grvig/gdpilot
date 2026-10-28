@@ -7,9 +7,15 @@ namespace GDPilot.Core;
 public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<string> Legend)
 {
     /// <param name="gridFellBack">Whether grid presses are stepping because the screen could not be read, said first so it is noticed.</param>
-    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false)
+    /// <param name="thirdPerson">Whether the third-person camera is on, which changes what the right stick does.</param>
+    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false)
     {
         List<string> legend = new();
+
+        if (thirdPerson)
+        {
+            legend.Add("Camera: third person; right stick turns and zooms");
+        }
 
         if (gridFellBack)
         {

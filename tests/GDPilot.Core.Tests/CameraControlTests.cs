@@ -135,4 +135,11 @@ public sealed class CameraControlTests
 
         Assert.Equal(new InputIntent[] { new PointerMoveTo(960, 410) }, mapper.Tick(GamepadSnapshot.Rest, Tick));
     }
+
+    [Fact]
+    public void TheOverlaySaysWhenTheRightStickDrivesTheCamera()
+    {
+        Assert.Equal("Camera: third person; right stick turns and zooms", OverlayState.Build(Mode.Combat, SuspendReason.None, NoButtons, thirdPerson: true).Legend[0]);
+        Assert.Empty(OverlayState.Build(Mode.Combat, SuspendReason.None, NoButtons).Legend);
+    }
 }

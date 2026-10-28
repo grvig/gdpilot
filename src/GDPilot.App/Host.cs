@@ -155,7 +155,7 @@ internal static class Host
 
                 if (overlay is not null && ticks % overlayInterval == 0)
                 {
-                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack);
+                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson);
                     overlay.Update(state, GameWindow.ClientBounds(config.GameProcess), config.Overlay.Corner);
                 }
                 TimeSpan wait = period - (clock.Elapsed - now);
