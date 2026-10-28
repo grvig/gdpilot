@@ -34,13 +34,16 @@ it.
 | Right stick click | Switch between the game's camera and third person |
 | Right stick left and right, in third person | Turn the camera; left stick "forward" turns with it |
 | Right stick up and down, in third person | Zoom in and out; the camera levels out as it comes closer |
+| Left stick sideways, right stick still | The camera swings round toward where you walk |
 | F8 | The same switch from the keyboard |
 
 In third person the cursor waits a little ahead of the character, so attacks
 and skills go where the camera faces. `aimHeight` under `input` sets how far
 down the window that is, `lookSpeed` how fast the stick turns the camera, in
-radians per second at full tilt, and `zoomSpeed` how fast it zooms, in parts of
-the zoom range per second.
+radians per second at full tilt, `zoomSpeed` how fast it zooms, in parts of
+the zoom range per second, and `followSpeed` how fast it turns toward a
+sideways walk, in radians per second; 0 turns following off. The overlay's
+first line says when third person is on.
 
 Switching back restores the game's own camera exactly as it was, down to the
 zoom.
@@ -48,7 +51,8 @@ zoom.
 ## Tuning the view
 
 `%LOCALAPPDATA%\GDPilot\camera.ini` is read each time third person turns on,
-so changes apply at the next switch without restarting anything:
+so changes apply at the next switch without restarting anything. The first
+load writes it with every setting at its default:
 
 ```ini
 [camera]
@@ -110,6 +114,5 @@ so in the log.
 
 ## Not yet
 
-- **Following the character.** The camera keeps its heading until turned.
 - **Loading without a command.** For release, a loader in the game folder will
   start the in-game part with the game.
