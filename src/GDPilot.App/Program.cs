@@ -53,6 +53,11 @@ internal static class Program
             return CaptureMode.Run(config, args[captureAt + 1], directory);
         }
 
+        if (args.Contains("--rumble-test"))
+        {
+            return RumbleTestMode.Run();
+        }
+
         if (args.Contains("--load-in-game"))
         {
             return LoadInGameMode.Run(config);
