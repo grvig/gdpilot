@@ -101,7 +101,7 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 | 3 | Grid navigation by calibration | **Done.** Bags, vendor and stash, checked in the game. |
 | 4 | Reading item positions | **Done.** From the game itself, exactly, with the screen as a fallback. |
 | 5 | The in-game part and the action camera | **Done.** Third person with turning, zoom, collision and following, all from the pad. |
-| 6 | Lock-on, camera-relative movement, smart interact | **Mostly done.** Lock-on and movement that follows the camera work; smart interact to come. |
+| 6 | Lock-on, camera-relative movement, smart interact | **Done.** Lock-on, walking in any direction, twin-stick aiming, tilting, the dodge and smart interact, all checked in the game. |
 | 7 | Radial skills, rumble, snapping in every menu | **Started.** The skill wheel and rumble work; snapping in the other menus to come. |
 | 8 | Shortcuts, profiles, first run, tray, release | Not started |
 
@@ -114,6 +114,11 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
   enemy that way; when one falls, the lock moves to the next. Enemies behind
   walls are never offered, and a click with nothing to lock swings the camera
   back behind you. See [docs/controls.md](docs/controls.md).
+- **Smart interact on A.** Pick up the nearest loot, talk, travel through a
+  rift gate or use a shrine without aiming; a prompt says what A will do.
+- **Aiming with the right stick** in the game's own camera: it points at the
+  ground round your character, so skills go where it points. In third person
+  it turns and tilts the view, with LT to zoom.
 - **Soft aim and a dodge.** Without a lock, swings drift onto the enemy you
   roughly face. B fires your movement skill as a dodge the way the left stick
   points, no cursor needed.
