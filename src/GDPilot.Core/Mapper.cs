@@ -74,6 +74,10 @@ public sealed class Mapper
         // The host stops the camera turning when a suspension begins.
         sentYaw = 0;
         sentZoom = 0;
+
+        // A wheel open when input stopped must not cast when it resumes.
+        Wheel?.Close();
+        casting = null;
     }
 
     /// <summary>

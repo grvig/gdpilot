@@ -129,6 +129,13 @@ public sealed class RadialMenu
         return null;
     }
 
+    /// <summary>Shuts the wheel without casting, as when input is suspended with it open.</summary>
+    public void Close()
+    {
+        Open = false;
+        Selected = null;
+    }
+
     /// <summary>Which slot a stick direction points at: the first straight up, then clockwise.</summary>
     public int SlotAt(StickPosition stick)
     {

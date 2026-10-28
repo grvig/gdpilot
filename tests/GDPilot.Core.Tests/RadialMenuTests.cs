@@ -127,4 +127,17 @@ public sealed class RadialMenuTests
     {
         Assert.Null(RadialMenu.HotbarColumn(KeyCode.Space));
     }
+
+    [Fact]
+    public void ASuspensionWithTheWheelOpenClosesItWithoutCasting()
+    {
+        Mapper mapper = new(Settings, Combat) { Wheel = new RadialMenu(Hotbar) };
+        mapper.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.Back, RightStick = new StickPosition(1, 0) }, TimeSpan.FromMilliseconds(10));
+
+        mapper.Reset();
+        List<InputIntent> sent = mapper.Tick(GamepadSnapshot.Rest, TimeSpan.FromMilliseconds(10));
+
+        Assert.False(mapper.Wheel!.Open);
+        Assert.Empty(sent);
+    }
 }
