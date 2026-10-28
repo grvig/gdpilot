@@ -21,6 +21,21 @@ public sealed class GameCommandTests
     }
 
     [Fact]
+    public void ALockNamesTheTargetTheGameReported()
+    {
+        string line = new LockCommand(34539).Write();
+
+        Assert.Equal("""{"protocol":1,"type":"lock","id":34539}""", line);
+        Assert.Equal(new LockCommand(34539), GameCommands.Parse(line));
+    }
+
+    [Fact]
+    public void ALockOfZeroLetsTheCameraGo()
+    {
+        Assert.Equal(new LockCommand(0), GameCommands.Parse("""{"protocol":1,"type":"lock","id":0}"""));
+    }
+
+    [Fact]
     public void TheGameReportsWhichCameraItShows()
     {
         CameraReport report = Assert.IsType<CameraReport>(GameReport.Parse("""{"protocol":1,"type":"camera","third":true}"""));

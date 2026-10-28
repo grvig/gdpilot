@@ -44,6 +44,20 @@ public sealed record LookCommand(double YawPerSecond, double ZoomPerSecond) : Ga
     }
 }
 
+/// <summary>
+/// The enemy to keep the third-person camera turned toward, by the id the game
+/// reported it under, until the next lock command. Zero lets the camera go.
+/// </summary>
+public sealed record LockCommand(uint Id) : GameCommand
+{
+    public override string Write()
+    {
+        JsonObject root = Start("lock");
+        root["id"] = Id;
+        return root.ToJsonString();
+    }
+}
+
 /// <summary>Which camera the game is showing, reported whenever it changes.</summary>
 public sealed record CameraReport(bool ThirdPerson) : GameReport;
 
@@ -60,6 +74,8 @@ public static class GameCommands
                 return new ToggleCameraCommand();
             case "look":
                 return new LookCommand(root["yaw"]?.GetValue<double>() ?? 0, root["zoom"]?.GetValue<double>() ?? 0);
+            case "lock":
+                return new LockCommand(root["id"]?.GetValue<uint>() ?? 0);
             default:
                 return null;
         }
