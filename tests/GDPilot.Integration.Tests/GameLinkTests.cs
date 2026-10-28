@@ -83,4 +83,25 @@ public sealed class GameLinkTests
         writer.WriteLine(new CameraReport(true).Write());
         Assert.True(SpinWait.SpinUntil(() => link.ThirdPerson, 2000));
     }
+
+    [Fact]
+    public void HealthReachesTheHostAndIsForgottenWhenTheGameGoes()
+    {
+        string name = "GDPilot.Test." + Guid.NewGuid().ToString("N");
+        ConcurrentQueue<string> said = new();
+
+        using GameLink link = new(new ReportedOccupancy(null), said.Enqueue, name);
+        Assert.Equal(-1, link.Health);
+
+        using (NamedPipeClientStream game = new(".", name, PipeDirection.InOut))
+        {
+            game.Connect(2000);
+            using StreamWriter writer = new(game) { AutoFlush = true };
+            writer.WriteLine(new HealthReport(27).Write());
+
+            Assert.True(SpinWait.SpinUntil(() => link.Health == 27, 2000));
+        }
+
+        Assert.True(SpinWait.SpinUntil(() => link.Health == -1, 2000));
+    }
 }
