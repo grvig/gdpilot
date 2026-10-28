@@ -65,4 +65,81 @@ public sealed class LockOnTests
         Assert.Equal(1u, lockOn.Target!.Id);
         Assert.Equal(0.7, lockOn.Target.X);
     }
+
+    private static LockOn LockedOnto(SeenTarget[] seen, uint id)
+    {
+        LockOn lockOn = new(new LockSettings());
+        SeenTarget held = seen.Single(target => target.Id == id);
+        lockOn.Toggle(new[] { held }, held.X, held.Y);
+        return lockOn;
+    }
+
+    [Fact]
+    public void AFlickRightSwitchesToTheNextEnemyToTheRight()
+    {
+        SeenTarget[] seen = { Enemy(1, 0.3, 0.4), Enemy(2, 0.5, 0.4), Enemy(3, 0.62, 0.45), Enemy(4, 0.9, 0.4) };
+        LockOn lockOn = LockedOnto(seen, 2);
+
+        Assert.Equal(LockChange.Switched, lockOn.Update(seen, new StickPosition(0.9, 0), Frame));
+        Assert.Equal(3u, lockOn.Target!.Id);
+    }
+
+    [Fact]
+    public void AFlickLeftSwitchesLeft()
+    {
+        SeenTarget[] seen = { Enemy(1, 0.3, 0.4), Enemy(2, 0.5, 0.4), Enemy(3, 0.62, 0.45) };
+        LockOn lockOn = LockedOnto(seen, 2);
+
+        lockOn.Update(seen, new StickPosition(-0.9, 0), Frame);
+
+        Assert.Equal(1u, lockOn.Target!.Id);
+    }
+
+    [Fact]
+    public void AFlickUpReachesTheEnemyFurtherIntoTheView()
+    {
+        SeenTarget[] seen = { Enemy(1, 0.5, 0.6), Enemy(2, 0.52, 0.3), Enemy(3, 0.8, 0.6) };
+        LockOn lockOn = LockedOnto(seen, 1);
+
+        lockOn.Update(seen, new StickPosition(0, 0.9), Frame);
+
+        Assert.Equal(2u, lockOn.Target!.Id);
+    }
+
+    [Fact]
+    public void HoldingTheStickOverSwitchesOnceUntilItComesBack()
+    {
+        SeenTarget[] seen = { Enemy(1, 0.3, 0.4), Enemy(2, 0.5, 0.4), Enemy(3, 0.7, 0.4) };
+        LockOn lockOn = LockedOnto(seen, 1);
+        StickPosition right = new(0.9, 0);
+
+        lockOn.Update(seen, right, Frame);
+        lockOn.Update(seen, right, Frame);
+        Assert.Equal(2u, lockOn.Target!.Id);
+
+        lockOn.Update(seen, Still, Frame);
+        lockOn.Update(seen, right, Frame);
+        Assert.Equal(3u, lockOn.Target!.Id);
+    }
+
+    [Fact]
+    public void AFlickWithNothingThatWayKeepsTheLock()
+    {
+        SeenTarget[] seen = { Enemy(1, 0.3, 0.4), Enemy(2, 0.5, 0.4) };
+        LockOn lockOn = LockedOnto(seen, 2);
+
+        Assert.Equal(LockChange.None, lockOn.Update(seen, new StickPosition(0.9, 0), Frame));
+        Assert.Equal(2u, lockOn.Target!.Id);
+    }
+
+    [Fact]
+    public void AGentleNudgeIsNotAFlick()
+    {
+        SeenTarget[] seen = { Enemy(1, 0.5, 0.4), Enemy(2, 0.7, 0.4) };
+        LockOn lockOn = LockedOnto(seen, 1);
+
+        lockOn.Update(seen, new StickPosition(0.5, 0), Frame);
+
+        Assert.Equal(1u, lockOn.Target!.Id);
+    }
 }
