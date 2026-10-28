@@ -36,6 +36,13 @@ public sealed class GameCommandTests
     }
 
     [Fact]
+    public void RecenteringNeedsNothingButItsType()
+    {
+        Assert.Equal("""{"protocol":1,"type":"recenter"}""", new RecenterCommand().Write());
+        Assert.IsType<RecenterCommand>(GameCommands.Parse(new RecenterCommand().Write()));
+    }
+
+    [Fact]
     public void TheGameReportsWhichCameraItShows()
     {
         CameraReport report = Assert.IsType<CameraReport>(GameReport.Parse("""{"protocol":1,"type":"camera","third":true}"""));

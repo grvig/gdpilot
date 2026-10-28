@@ -58,6 +58,18 @@ public sealed record LockCommand(uint Id) : GameCommand
     }
 }
 
+/// <summary>
+/// Swings the third-person camera round behind the character, the way action
+/// games answer a lock-on press with nothing to lock onto.
+/// </summary>
+public sealed record RecenterCommand : GameCommand
+{
+    public override string Write()
+    {
+        return Start("recenter").ToJsonString();
+    }
+}
+
 /// <summary>Which camera the game is showing, reported whenever it changes.</summary>
 public sealed record CameraReport(bool ThirdPerson) : GameReport;
 
@@ -76,6 +88,8 @@ public static class GameCommands
                 return new LookCommand(root["yaw"]?.GetValue<double>() ?? 0, root["zoom"]?.GetValue<double>() ?? 0);
             case "lock":
                 return new LockCommand(root["id"]?.GetValue<uint>() ?? 0);
+            case "recenter":
+                return new RecenterCommand();
             default:
                 return null;
         }
