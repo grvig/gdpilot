@@ -4,9 +4,10 @@ Read this first in every session, then the plan section for the current phase.
 
 ## Current phase
 
-Phase 5 — the in-game part and the action camera, PLAN.md section 17. The
-project was widened on 2026-10-25 into a controller-first overhaul; section 17
-of the plan holds the new phases and the rules for the in-game part.
+Phases 6 and 7, PLAN.md section 17: lock-on, smart interact and snapping in
+every menu. Phase 5 is done, and parts of 6 and 7 with it. The project was
+widened on 2026-10-25 into a controller-first overhaul; section 17 of the plan
+holds the phases and the rules for the in-game part.
 
 ## State
 
@@ -16,10 +17,10 @@ of the plan holds the new phases and the rules for the in-game part.
 | 1. Input plumbing and safety | Done |
 | 2. Mode state machine and overlay | Done, checked live in the game |
 | 3. Grid navigation by calibration | Done, checked live in the game end to end through `--replay` |
-| 4. Occupancy detection | Mostly done: screen reading and jumping checked live; exact multi-cell items wait for the in-game part's reports |
-| 5. In-game part and action camera | In progress: the third-person camera works live from the pad; reports of panels and items next |
-| 6. Lock-on, camera-relative movement, smart interact | Not started |
-| 7. Radial skills, rumble, snapping in every menu | Not started |
+| 4. Occupancy detection | Done: exact item layouts from the game, checked live; screen reading as the fallback |
+| 5. In-game part and action camera | Done: camera, turning, zoom, collision, following, panel and item reports, all checked live |
+| 6. Lock-on, camera-relative movement, smart interact | Started: camera-relative movement works; lock-on and smart interact not started |
+| 7. Radial skills, rumble, snapping in every menu | Started: the skill wheel with icons checked live; rumble built, health checked live; snapping in other menus not started |
 | 8. Shortcuts, profiles, first run, release | Not started |
 
 ## What exists
@@ -103,8 +104,22 @@ Safety:
 | Turning with the right stick | Done: look rates down the pipe, applied with the game's `AdjustYaw`; movement follows the camera |
 | Aim point | Done: the cursor waits ahead of the character in third person |
 | Two-way pipe | Done: buffered, overlapped on the game's side; the camera stops on any suspension |
-| Panel and item reports from the game | Not started |
-| Camera collision, stick tilt, follow | Not started |
+| Panel and item reports from the game | Done 2026-10-27: panels from UI flags, the mode follows them; bags as exact rectangles |
+| Camera collision, stick tilt, follow | Done: collision through the level query, zoom on the stick's up and down, following a sideways walk |
+
+## 2026-10-27 and 2026-10-28
+
+| Piece | Status |
+| --- | --- |
+| Panel reports | Done: inventory, skills, map, dialogue and the menu, read live as each opened and closed |
+| The mode following the game | Done: panels opened and closed by keyboard were followed, live |
+| Exact bag layouts | Done: 59 and 9 items read live; the bag trace's sword is one stop |
+| Camera collision | Done: seen pulling the camera in front of the town's clutter |
+| Stick zoom, camera following | Done, both checked live |
+| Skill wheel | Done: held on Back, real icons from the hotbar, the pointed slot lit, live |
+| Health and rumble | Done: health read live at 100%; `--rumble-test` ran on the pad; the low-health beat is tested in Core only |
+| Default `camera.ini` | Done: written with notes on first load, checked live |
+| `--check-game` | 42 functions, all present; it also finds the game through Steam when it is closed |
 
 ## Live check in the game, 2026-10-19
 
@@ -188,7 +203,13 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   with the stick, and switched back, all through the pipe. The cursor moved to
   the aim point as third person began.
 
-312 core tests and 62 integration tests, all passing.
+- **2026-10-27 and 2026-10-28, live, unattended:** every panel was reported as
+  it opened and closed; GDPilot followed panels it never opened itself; the
+  bags were read exactly, and the bag trace stopped once on the tall sword;
+  collision pulled the camera in front of clutter; zoom, following and the
+  skill wheel with real icons all worked from recorded pad traces.
+
+350 core tests and 64 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -197,13 +218,17 @@ Not yet verified:
 - **The pad's D mode.**
 - **A real button press reaching the game end to end.** Each link is checked
   separately, but nobody has pressed the pad with the game running.
+- **Rumble felt in the hand.** `--rumble-test` ran without error, but nobody
+  was holding the pad.
 - **The pad-driven wizard in the game.** Its steps run live through `--at`;
   the stick-and-button loop around them needs someone at the pad.
 
 ## Known issues
 
-- Until the in-game part reports layouts, an item larger than one cell takes
-  one press per cell, as the screen reading cannot tell items apart reliably.
+- Without the in-game part, an item larger than one cell takes one press per
+  cell, as the screen reading cannot tell items apart reliably. The stash is
+  always read off the screen; its sacks are not yet reached from the game.
+- Collision does not stop for trees and some props; the game fades those itself.
 - With the panel closed but the tool still in a panel mode, the reading sees
   the world, which reads as all items, so presses step as they did in Phase 3.
   Harmless, and only after a mode desync, which Start and Back resolve.
@@ -222,23 +247,25 @@ Nothing.
 
 ## Next session starts here
 
-The rest of Phase 5, PLAN.md section 17.
+Phases 6 and 7, PLAN.md section 17.
 
-1. **Panel reports.** Find which panels are open from inside the game.
-   GrimAction reads flag bytes in the game's UI object for the inventory,
-   stash, vendor, skills, map and menu; map those on the installed build, send
-   `panels` reports, and let GDPilot follow them instead of tracking presses.
-   That ends mode desync.
-2. **Item layouts.** Read each bag's and the stash's items through
-   `InventorySack::GetInventory` and send `layout` reports, then check live
-   that the three-cell sword in the second bag is one stop.
-3. **Camera feel.** Collision, so the camera never sits inside a wall; the
-   stick's up and down for tilt; and an option to follow the character.
+1. **Lock-on.** Report nearby enemies from the in-game part: positions and
+   health, from the game's own entity lists, found by name like everything
+   else. Then a lock button, flicking the right stick to switch targets, and
+   the cursor kept on the locked enemy so skills land on it.
+2. **Smart interact.** The same nearby list, with loot, characters and chests:
+   one button to pick up, talk or open the nearest.
+3. **The stash from the game.** Find the stash's sacks, so the stash is exact
+   too.
+4. **Snapping in every menu**: skill tree nodes, devotion stars, dialogue
+   choices, the blacksmith's list.
 
 Workflow: `src\GDPilot.InGame\build.cmd`, `dotnet build`, restart the game,
 enter the world, `GDPilot.exe --load-in-game`, then replay a trace. A new
 in-game build always needs a game restart. The game driver used for unattended
-checks lives in `%LOCALAPPDATA%\GDPilot\driver`, outside the repository.
+checks lives in `%LOCALAPPDATA%\GDPilot\driver`, and a clone of GrimAction in
+`%LOCALAPPDATA%\GDPilot\reference`, both outside the repository.
 
 When someone is at the pad, also settle "Not yet verified": move the sticks
-during `--dry-run`, try D mode, and run `--calibrate` with the stick.
+during `--dry-run`, try D mode, run `--calibrate` with the stick, and feel
+`--rumble-test`.
