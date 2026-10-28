@@ -128,4 +128,23 @@ public sealed class LockMappingTests
         // 0.51, carried on a further 20 ms at 0.01 per 36 ms.
         Assert.Equal((990, 432), mapper.LockPoint);
     }
+
+    [Fact]
+    public void APressWithNothingToLockRecentresTheCameraInThirdPerson()
+    {
+        Mapper mapper = Locking();
+        mapper.Seen = Array.Empty<SeenTarget>();
+
+        Assert.Contains(new GameCommandIntent(new RecenterCommand()), mapper.Tick(Press, Tick));
+    }
+
+    [Fact]
+    public void InTheGamesOwnCameraThereIsNothingToRecentre()
+    {
+        Mapper mapper = Locking();
+        mapper.Seen = Array.Empty<SeenTarget>();
+        mapper.Looking = false;
+
+        Assert.DoesNotContain(new GameCommandIntent(new RecenterCommand()), mapper.Tick(Press, Tick));
+    }
 }

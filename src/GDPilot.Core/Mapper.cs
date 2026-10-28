@@ -147,6 +147,12 @@ public sealed class Mapper
         {
             (double x, double y) = AimFraction();
             LockChanged = Lock.Toggle(Seen, x, y);
+
+            // Nothing to lock onto: the camera swings round behind the character instead.
+            if (LockChanged == LockChange.None && Looking)
+            {
+                intents.Add(new GameCommandIntent(new RecenterCommand()));
+            }
         }
 
         lockHeld = pressed;
