@@ -680,11 +680,13 @@ animation; everything else about feel is in scope:
   to the stick's angle.
 - **A dodge in the left stick's direction** on one button. Done.
 - **Skills that need no cursor:** cast where the character faces, or at the
-  lock.
+  lock. Done: twin-stick aiming in the game's camera, the lock and soft aim in
+  third person.
 - **Rumble from the fight itself:** wounds, heavy blows, kills. Done, read
   from the targets reports.
 - **A Souls camera:** the stick's up and down tilts rather than zooms, and the
-  camera settles behind a running character.
+  camera settles behind a running character. Done: tilting, with LT to zoom,
+  and following a sideways walk.
 
 ### Phase 9 — Hardening
 
