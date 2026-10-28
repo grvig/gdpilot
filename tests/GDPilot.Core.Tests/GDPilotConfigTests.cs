@@ -85,6 +85,13 @@ public sealed class GDPilotConfigTests
     }
 
     [Fact]
+    public void SoftAimIsOnUnlessTurnedOff()
+    {
+        Assert.NotNull(GDPilotConfig.Parse("{}").SoftAim());
+        Assert.Null(GDPilotConfig.Parse("""{ "input": { "softAim": false } }""").SoftAim());
+    }
+
+    [Fact]
     public void TheTrackedExampleFileParses()
     {
         GDPilotConfig config = GDPilotConfig.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "config.example.json")));

@@ -16,6 +16,7 @@
     "rumble": true,
     "aimHeight": 0.38,
     "lockRange": 25,
+    "softAim": true,
     "jumpToItems": true,
     "calibration": {
       "leftCenterX": 0.0,

@@ -78,6 +78,17 @@ public sealed class GDPilotConfig
         return new RadialMenu(Input.RadialSlots.Select(name => BindingAction.Key(name, "input.radialSlots")).ToList());
     }
 
+    /// <summary>Soft aim, or null when turned off.</summary>
+    public SoftAim? SoftAim()
+    {
+        if (!Input.SoftAim)
+        {
+            return null;
+        }
+
+        return new SoftAim();
+    }
+
     /// <summary>Lock-on, reaching as far as the configuration says.</summary>
     public LockOn LockOn()
     {

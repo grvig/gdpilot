@@ -48,6 +48,12 @@ public sealed class InputConfig
     public double LockRange { get; init; } = 25;
 
     /// <summary>
+    /// Whether, in third person without a lock, the cursor drifts onto an enemy
+    /// close to where the camera points, so a rough swing lands.
+    /// </summary>
+    public bool SoftAim { get; init; } = true;
+
+    /// <summary>
     /// Whether grid presses read the screen and jump between items. Off, they
     /// step one cell at a time, which never depends on what the screen shows.
     /// </summary>
