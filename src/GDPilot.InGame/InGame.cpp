@@ -630,6 +630,95 @@ void CheckLayouts(float elapsed)
     }
 }
 
+// The player's health, read through the game's own accessors: current life
+// from the character, its limit from the character's bio. Reported as a
+// fraction five times a second, and only when it has moved, so GDPilot can
+// make the pad rumble when life runs low or a heavy blow lands.
+using CurrentLife = double (*)(const void* character);
+using CharacterBio = const void* (*)(const void* character);
+using LifeLimit = float (*)(const void* bio);
+
+CurrentLife currentLife = nullptr;
+CharacterBio characterBio = nullptr;
+LifeLimit lifeLimit = nullptr;
+float sinceHealthCheck = 0;
+std::atomic<int> sentHealth{-1};
+
+void FindHealth()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    currentLife = reinterpret_cast<CurrentLife>(GetProcAddress(game, "?GetCurrentLife@Character@GAME@@QEBA?BNXZ"));
+    characterBio = reinterpret_cast<CharacterBio>(GetProcAddress(game, "?GetCharacterBio@Character@GAME@@QEBAAEBVCharacterBio@2@XZ"));
+    lifeLimit = reinterpret_cast<LifeLimit>(GetProcAddress(game, "?GetLifeLimit@CharacterBio@GAME@@QEBA?BMXZ"));
+
+    if (currentLife == nullptr || characterBio == nullptr || lifeLimit == nullptr)
+    {
+        currentLife = nullptr;
+        Say("Health reports off: a life function is no longer exported.");
+    }
+}
+
+// Life as a fraction of its limit, or a negative number when it cannot be read.
+double HealthFraction()
+{
+    __try
+    {
+        const void* player = mainPlayer(*engineSlot);
+
+        if (player == nullptr)
+        {
+            return -1;
+        }
+
+        double life = currentLife(player);
+        float limit = lifeLimit(characterBio(player));
+
+        if (!(limit > 0) || !std::isfinite(life))
+        {
+            return -1;
+        }
+
+        return life / limit;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return -1;
+    }
+}
+
+void CheckHealth(float elapsed)
+{
+    sinceHealthCheck += elapsed;
+
+    if (currentLife == nullptr || mainPlayer == nullptr || sinceHealthCheck < 0.2f)
+    {
+        return;
+    }
+
+    sinceHealthCheck = 0;
+    double fraction = HealthFraction();
+
+    if (fraction < 0)
+    {
+        return;
+    }
+
+    // Whole percent, so a regenerating trickle does not send a line every check.
+    int percent = static_cast<int>(std::lround(std::fmin(1.0, fraction) * 100));
+
+    if (percent != sentHealth)
+    {
+        // Logged in tens, enough to follow a fight without a line per point.
+        if (sentHealth < 0 || percent / 10 != sentHealth / 10)
+        {
+            Say("Health: %d%%", percent);
+        }
+
+        sentHealth = percent;
+        Post("{\"protocol\":1,\"type\":\"health\",\"percent\":" + std::to_string(percent) + "}\n");
+    }
+}
+
 std::string PanelsLine(const std::string& open)
 {
     return "{\"protocol\":1,\"type\":\"panels\",\"open\":" + open + "}\n";
@@ -1020,6 +1109,7 @@ void UpdatedCamera(void* camera)
     float elapsed = SecondsSinceLastFrame();
     CheckPanels(elapsed);
     CheckLayouts(elapsed);
+    CheckHealth(elapsed);
 
     if (thirdPerson)
     {
@@ -1146,6 +1236,7 @@ void Converse(HANDLE pipe)
     bool healthy = WriteLine(pipe, writeDone, CameraLine());
     panelsWanted = true;
     layoutsWanted = true;
+    sentHealth = -1;
 
     while (healthy)
     {
@@ -1251,6 +1342,7 @@ DWORD WINAPI Start(LPVOID)
         {
             FindInventoryRoute();
             FindCollision();
+            FindHealth();
         }
 
         HANDLE thread = CreateThread(nullptr, 0, Link, nullptr, 0, nullptr);
