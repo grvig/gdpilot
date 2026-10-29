@@ -68,6 +68,7 @@ collision_skin=0.35
 collision_extend=18
 lock_aim_height=1
 lock_turn_speed=8
+lock_offset=6
 ```
 
 | Key | Meaning |
@@ -79,8 +80,9 @@ lock_turn_speed=8
 | `collision` | 1 keeps the camera in front of anything between it and the character, 0 lets it pass through |
 | `collision_extend` | How fast the camera eases back out once clear, in world units per second; 18 by default |
 | `collision_skin` | How far short of an obstacle the camera stops; 0.35 by default |
-| `lock_aim_height` | How far above a locked enemy's feet the cursor and the camera aim, in world units |
+| `lock_aim_height` | How far above an enemy's feet to aim when the game gives no height for it; otherwise lock-on aims at three fifths of the enemy's own height |
 | `lock_turn_speed` | How quickly the camera turns to face a locked enemy; higher is snappier |
+| `lock_offset` | How far to the right of the character a locked enemy is framed, in degrees; negative frames it to the left |
 
 The game tilts the camera between the two pitches as the zoom moves between
 the two distances, so a close camera also looks along the ground rather than
@@ -135,6 +137,18 @@ first time third person turns on in a session, the in-game part makes one tiny
 turn and watches how the view follows: which way, and how long it takes. The
 log records both. From then on a lock counts any turn still on its way, so the
 camera glides onto the enemy and stops there instead of swinging past.
+
+Pressing lock-on with nothing to lock asks for a recentre instead: the camera
+swings round behind the character, reading which way it faces from the
+rotation the game keeps for it, and gives way at once to the right stick.
+
+## What it costs the game
+
+Every half minute the log records how long the in-game part's own work took
+per frame, as an average and a worst frame. Measured live on 2026-10-30 with
+enemies around, it averaged about 30 microseconds, a fiftieth of a 60 fps
+frame, with the worst frame near a third of a millisecond. Switching third
+person on reads `camera.ini` and costs a couple of milliseconds, once.
 
 ## Not yet
 
