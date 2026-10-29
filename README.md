@@ -18,8 +18,9 @@ stash and trading where the D-pad lands on items instead of pixels.
 - **A third-person action camera.** Drop the camera behind your character, over
   either shoulder, and look around with the right stick. It stays out of walls,
   and a button swaps back to the classic top-down view at any time.
-- **Lock-on.** One button locks onto the nearest enemy; flick the stick to
-  switch targets. Skills fire at whatever you have locked.
+- **Lock-on.** Click the right stick to lock onto the enemy you face; flick
+  the stick to switch targets. Skills fire at whatever you have locked, the
+  camera turns to keep it in view, and when it falls the lock moves on.
 - **Movement that follows the camera.** Push the stick away from you and you
   walk away from the camera, however it is turned.
 - **Every skill within reach.** The four face buttons are instant skills, with
@@ -100,16 +101,22 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 | 3 | Grid navigation by calibration | **Done.** Bags, vendor and stash, checked in the game. |
 | 4 | Reading item positions | **Done.** From the game itself, exactly, with the screen as a fallback. |
 | 5 | The in-game part and the action camera | **Done.** Third person with turning, zoom, collision and following, all from the pad. |
-| 6 | Lock-on, camera-relative movement, smart interact | **Started.** Movement follows the camera; lock-on and smart interact to come. |
+| 6 | Lock-on, camera-relative movement, smart interact | **Mostly done.** Lock-on and movement that follows the camera work; smart interact to come. |
 | 7 | Radial skills, rumble, snapping in every menu | **Started.** The skill wheel and rumble work; snapping in the other menus to come. |
 | 8 | Shortcuts, profiles, first run, tray, release | Not started |
 
 **Working today:**
 
-- **The third-person camera.** Click the right stick and the camera drops
-  behind your character. The right stick turns and zooms it, walking turns
+- **Lock-on.** Click the right stick to lock onto the enemy you face. A ring
+  marks it with a bar of its life, the cursor stays on it so every attack and
+  skill lands on it, and in third person the camera glides round to keep it in
+  view. Flick the stick to switch to the next enemy that way; when one falls,
+  the lock moves to the next. Enemies behind walls are never offered. See
+  [docs/controls.md](docs/controls.md).
+- **The third-person camera.** Hold the left trigger and click the right stick
+  and the camera drops behind your character. The right stick turns and zooms it, walking turns
   with it, it swings round as you walk sideways, and it stays in front of
-  walls and clutter. Click again for the classic view, restored exactly. See
+  walls and clutter. Do it again for the classic view, restored exactly. See
   [docs/camera.md](docs/camera.md).
 - **The skill wheel.** Hold Back for a wheel of the whole hotbar, drawn with
   your real skill icons; point the right stick and let go to cast.
