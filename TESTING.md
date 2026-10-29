@@ -59,6 +59,13 @@ reports none in view, which is correct. The low-level cemetery by the Lower
 Crossing riftgate has enemies a few steps from the gate. The log records the
 camera's measured turn as third person first starts each session.
 
+Every half minute the log also records what the in-game part cost the game
+per frame, as an average and a worst frame. A figure much above a tenth of a
+millisecond on average is worth chasing before anything else; about 30
+microseconds was measured with enemies around. When judging the game's own
+frame rate, take no screenshots while watching it: copying the whole screen
+stalls the game for a moment on its own.
+
 What each trace sent in the game is pinned by a test, so a change that alters
 it shows up in the suite, not only in the game.
 
