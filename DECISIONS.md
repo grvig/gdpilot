@@ -588,3 +588,42 @@ detector no ruled lines.
 **Rumble is decided in Core from health alone**: a jolt for ten points lost
 between two reports, and a heartbeat below 30% that quickens below 15%. Health
 is read through `Character::GetCurrentLife` and `CharacterBio::GetLifeLimit`.
+
+## 2026-10-29 — Lock-on
+
+**Lock-on is on the right stick click, as in action games.** Switching the
+camera moved to the left trigger with the click: the camera is chosen once, a
+lock many times a fight.
+
+**Targets come from the game's own query.** `GameEngine::GetTargetsInRadius`,
+the call its skills use, already drops townsfolk, the dead and the hidden. Its
+flag after the ignored id picks friends when true and foes when false: its
+filter calls `FactionManager::IsFriend` for true and `IsFoe` for false, and a
+live run in Devil's Crossing returned the town guards for true. The vector it
+fills is kept for the session and only emptied, so the game's allocator alone
+grows or frees it. Each id is checked to be a `Character` and not an `Npc` by
+the class chain the game's own filter walks.
+
+**Positions are drawn through the game's camera.** `WorldCamera::Project`, with
+a viewport of four integers exactly as its constructor writes them, gives
+pixels; checked live against a guard at the reported spot. Up is the y axis,
+as the camera's offset shows. An enemy only counts as in view when it is in
+front of the camera, inside the window, and the level query finds no wall
+between it and the player. That ray starts 1.5 units out, as collision's does,
+after the first version met the player's own body and let a lock through the
+town wall.
+
+**Choosing and switching are Core's.** The in-game part reports and turns the
+camera; which enemy, the flicks, the falls and the breaks are all decided in
+`LockOn` from the reports alone, and tested without a game. The first lock goes
+to the enemy nearest the aim point, with a third of a screen height of weight
+for distance across the whole reach. A flick picks the nearest enemy within
+sixty degrees of its direction, with those off the line counting as further.
+
+**The camera's turn is measured, then compensated.** The game eases the view
+toward the yaw field over about a quarter of a second, so turning by the
+remaining error each frame overshot by a fifth of the screen, seen live. The
+in-game part now makes one small turn as third person first starts, measures
+the direction and the easing time from the view's heading, and counts the turn
+still on its way when steering. Live, a lock from the edge settled in the
+middle without passing it.
