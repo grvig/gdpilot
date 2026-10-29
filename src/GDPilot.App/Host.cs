@@ -89,7 +89,7 @@ internal static class Host
         }
 
         ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness, jumping));
-        Mapper mapper = new(config.Mapping(), layers[Mode.Combat]) { Wheel = config.Wheel() };
+        Mapper mapper = new(config.Mapping(), layers[Mode.Combat]) { Wheel = config.Wheel(), Lock = config.LockOn() };
 
         // A replay is timed from the first tick, so startup does not eat into it.
         Stopwatch replayClock = new();
@@ -141,6 +141,15 @@ internal static class Host
                 }
 
                 mapper.Looking = link.ThirdPerson;
+                mapper.Seen = link.Targets;
+                mapper.InWorld = loop.Mode == Mode.Combat;
+
+                // Lock-on places the cursor by the game window, so its bounds are kept fresh whether or not the overlay draws.
+                if (ticks % overlayInterval == 0)
+                {
+                    gameBounds = GameWindow.ClientBounds(config.GameProcess);
+                    mapper.GameBounds = gameBounds;
+                }
 
                 // With the in-game part connected, the game says which panels are open; without it, presses are tracked.
                 if (link.Panels is PanelsReport panels)
@@ -171,11 +180,6 @@ internal static class Host
 
                 if (overlay is not null && (regular || (wheelOpen && ticks % 5 == 0) || wheelOpen != wheelShown))
                 {
-                    if (regular)
-                    {
-                        gameBounds = GameWindow.ClientBounds(config.GameProcess);
-                    }
-
                     // The icons are copied once as the wheel opens; the hotbar does not change while it is held.
                     if (wheelOpen && !wheelShown)
                     {
@@ -291,6 +295,7 @@ internal static class Host
         if (suspended && !wasSuspended)
         {
             link.Send(new LookCommand(0, 0));
+            link.Send(new LockCommand(0));
         }
 
         wasSuspended = suspended;
