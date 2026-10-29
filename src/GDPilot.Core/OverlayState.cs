@@ -9,13 +9,21 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     /// <summary>The skill wheel to draw over the game, or null while it is closed.</summary>
     public WheelView? Wheel { get; init; }
 
+    /// <summary>The marker over the locked enemy, or null with nothing locked or the enemy out of view.</summary>
+    public LockMarker? Marker { get; init; }
+
     /// <param name="gridFellBack">Whether grid presses are stepping because the screen could not be read, said first so it is noticed.</param>
     /// <param name="thirdPerson">Whether the third-person camera is on, which changes what the right stick does.</param>
-    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false)
+    /// <param name="locked">The enemy held by lock-on, which changes it again.</param>
+    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false, SeenTarget? locked = null)
     {
         List<string> legend = new();
 
-        if (thirdPerson)
+        if (locked is not null)
+        {
+            legend.Add($"Locked on: {locked.Health}% life; flick the right stick to switch");
+        }
+        else if (thirdPerson)
         {
             legend.Add("Camera: third person; right stick turns and zooms");
         }
@@ -104,5 +112,20 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
             default:
                 return binding.ToString();
         }
+    }
+}
+
+/// <summary>Where to draw the lock-on marker, in screen pixels, and the life of the enemy under it, in percent.</summary>
+public sealed record LockMarker(int X, int Y, int Health)
+{
+    /// <summary>The marker for a locked enemy, or null when there is none to draw: nothing locked, out of view, or no game window.</summary>
+    public static LockMarker? For(SeenTarget? target, ScreenRect? game)
+    {
+        if (target is null || !target.OnScreen || game is not ScreenRect bounds)
+        {
+            return null;
+        }
+
+        return new LockMarker((int)Math.Round(bounds.X + target.X * bounds.Width), (int)Math.Round(bounds.Y + target.Y * bounds.Height), target.Health);
     }
 }
