@@ -2175,6 +2175,68 @@ bool Wanted(unsigned int id, float& heading, float elapsed, const float back[3])
     return recentering;
 }
 
+// The locked enemy drawn every frame, so the cursor and the marker follow it
+// with no more delay than a frame and the pipe. Live, the thirty-a-second
+// report left them trailing a moving camera by a hand's width.
+std::string lastLockPoint;
+
+bool LockSpot(void* camera, unsigned int id, const int viewport[4], float& x, float& y)
+{
+    __try
+    {
+        void* manager = objectManager();
+        const void* target = findObject(manager, id);
+
+        if (target == nullptr || !IsA(target, characterClass))
+        {
+            return false;
+        }
+
+        WorldPoint where{};
+        pathPosition(target, &where);
+        float tall = actorHeight(target);
+        float lift = aimHeight;
+
+        if (tall > 0.3f && tall < 30)
+        {
+            lift = tall * 0.6f;
+        }
+
+        (&where.x)[Up] += lift;
+        float screen[2]{};
+        projectPoint(camera, screen, &where, viewport);
+        x = screen[0] / static_cast<float>(viewport[2]);
+        y = screen[1] / static_cast<float>(viewport[3]);
+        return std::isfinite(x) && std::isfinite(y);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+void ReportLockPoint(void* camera)
+{
+    unsigned int id = lockedId.load();
+    int viewport[4]{};
+    float x = 0;
+    float y = 0;
+
+    if (id == 0 || !linked || targetsInRadius == nullptr || !Viewport(viewport) || !LockSpot(camera, id, viewport, x, y))
+    {
+        lastLockPoint.clear();
+        return;
+    }
+
+    std::string line = "{\"protocol\":1,\"type\":\"lockpoint\",\"id\":" + std::to_string(id) + ",\"x\":" + Fixed(x, 4) + ",\"y\":" + Fixed(y, 4) + "}\n";
+
+    if (line != lastLockPoint)
+    {
+        lastLockPoint = line;
+        Post(line);
+    }
+}
+
 void Steer(void* camera, float elapsed)
 {
     unsigned int id = lockedId.load();
@@ -2553,6 +2615,7 @@ void Work(void* camera, float elapsed)
     CheckHealth(elapsed);
     CheckTargets(camera, elapsed);
     CheckThings(camera, elapsed);
+    ReportLockPoint(camera);
 
     if (thirdPerson)
     {
