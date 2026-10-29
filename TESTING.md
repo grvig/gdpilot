@@ -49,6 +49,15 @@ in the game, with recorded pad traces:
 | `bag-jumps.json` | Jumping between items in the second bag |
 | `skill-wheel.json` | Holding the wheel, pointing at a slot, casting on release |
 | `stash-tour.json` | Stash cells, tabs, every grid, and a split |
+| `lock-on.json` | Locking on, flicking right then left, letting go; the log names each lock |
+| `lock-fight.json` | Locking on and holding the attack, near enemies outside a town |
+
+Lock-on needs foes near the character and in view. `GDPilot.exe --targets`
+prints what the in-game part sees, which of them are in view, and which one a
+press would lock onto; in a town the foes are usually beyond the walls, so it
+reports none in view, which is correct. The low-level cemetery by the Lower
+Crossing riftgate has enemies a few steps from the gate. The log records the
+camera's measured turn as third person first starts each session.
 
 What each trace sent in the game is pinned by a test, so a change that alters
 it shows up in the suite, not only in the game.
