@@ -78,7 +78,11 @@ void WriteDefaultSettings()
         "; 1 keeps the camera in front of anything between it and the character.\n"
         "collision=1\n"
         "collision_skin=0.35\n"
-        "collision_extend=18\n",
+        "collision_extend=18\n"
+        "; Lock-on: how far above an enemy's feet the cursor and the camera aim,\n"
+        "; and how quickly the camera turns to face it.\n"
+        "lock_aim_height=1\n"
+        "lock_turn_speed=8\n",
         file);
     std::fclose(file);
 }
@@ -1198,6 +1202,8 @@ void FindTargets()
         return;
     }
 
+    // Read here as well as on each switch, since lock-on aims in the game's own camera too.
+    aimHeight = Setting(L"lock_aim_height", 1);
     Say("Found the game's target query; lock-on can see enemies.");
 }
 
