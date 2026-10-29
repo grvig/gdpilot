@@ -64,6 +64,9 @@ public sealed class Mapper
     public RadialMenu? Wheel { get; set; }
     private bool wasLocked;
 
+    /// <summary>Where the game last drew the locked enemy, every frame it moves; preferred to the glide when it is the enemy held.</summary>
+    public LockPointReport? LockSpot { get; set; }
+
     /// <summary>What lies close by to pick up, talk to or use, as the game last reported it.</summary>
     public IReadOnlyList<NearbyThing> Things { get; set; } = Array.Empty<NearbyThing>();
 
@@ -623,6 +626,11 @@ public sealed class Mapper
         if (Lock?.Target is SeenTarget held)
         {
             LockPoint = Glided(held, elapsed);
+
+            if (LockSpot is LockPointReport spot && spot.Id == held.Id && held.OnScreen && GameBounds is ScreenRect drawn)
+            {
+                LockPoint = ((int)Math.Round(drawn.X + spot.X * drawn.Width), (int)Math.Round(drawn.Y + spot.Y * drawn.Height));
+            }
 
             Park(LockPoint ?? AimPoint, intents);
             Look(0, 0, intents);

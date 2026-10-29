@@ -148,6 +148,7 @@ internal static class Host
                 mapper.Seen = near.Targets;
                 mapper.Near = near;
                 mapper.Things = link.Things;
+                mapper.LockSpot = link.LockPoint;
                 // A panel over the world, or the character lying dead, lets go of any lock.
                 mapper.InWorld = loop.Mode == Mode.Combat && link.Health != 0;
 
@@ -197,7 +198,15 @@ internal static class Host
                 SeenTarget? locked = mapper.Lock?.Target;
                 bool moving = wheelOpen || locked is not null;
 
-                if (overlay is not null && (regular || (moving && ticks % 5 == 0) || wheelOpen != wheelShown || (locked is not null) != markerShown))
+                // A locked marker keeps up with the per-frame lock point: about a hundred redraws a second.
+                int movingEvery = 5;
+
+                if (locked is not null)
+                {
+                    movingEvery = 2;
+                }
+
+                if (overlay is not null && (regular || (moving && ticks % movingEvery == 0) || wheelOpen != wheelShown || (locked is not null) != markerShown))
                 {
                     // The icons are copied once as the wheel opens; the hotbar does not change while it is held.
                     if (wheelOpen && !wheelShown)

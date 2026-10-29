@@ -179,4 +179,27 @@ public sealed class LockMappingTests
 
         Assert.Contains(new PointerMoveTo(960, 410), mapper.Tick(GamepadSnapshot.Rest, Tick));
     }
+
+    [Fact]
+    public void TheGamesEveryFramePointIsPreferredForTheEnemyHeld()
+    {
+        Mapper mapper = Locking();
+        mapper.Tick(Press, Tick);
+        mapper.LockSpot = new LockPointReport(11, 0.55, 0.45);
+
+        Assert.Contains(new PointerMoveTo(1056, 486), mapper.Tick(GamepadSnapshot.Rest, Tick));
+        Assert.Equal((1056, 486), mapper.LockPoint);
+    }
+
+    [Fact]
+    public void APointForAnotherEnemyIsIgnored()
+    {
+        Mapper mapper = Locking();
+        mapper.Tick(Press, Tick);
+        mapper.LockSpot = new LockPointReport(99, 0.9, 0.9);
+
+        mapper.Tick(GamepadSnapshot.Rest, Tick);
+
+        Assert.Equal((960, 432), mapper.LockPoint);
+    }
 }
