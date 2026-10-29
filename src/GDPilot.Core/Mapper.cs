@@ -62,6 +62,25 @@ public sealed class Mapper
     public RadialMenu? Wheel { get; set; }
     private bool aimed;
 
+    /// <summary>Lock-on, or null when it is not set up.</summary>
+    public LockOn? Lock { get; set; }
+
+    /// <summary>The enemies the game last reported near the player.</summary>
+    public IReadOnlyList<SeenTarget> Seen { get; set; } = Array.Empty<SeenTarget>();
+
+    /// <summary>The game window's client area on the screen, for putting the cursor on a locked enemy; null when unknown.</summary>
+    public ScreenRect? GameBounds { get; set; }
+
+    /// <summary>False while a panel is open over the world, which lets go of any lock.</summary>
+    public bool InWorld { get; set; } = true;
+
+    /// <summary>What lock-on did on the last tick, for the rumble.</summary>
+    public LockChange LockChanged { get; private set; }
+
+    private bool lockHeld;
+    private uint sentLock;
+    private (int X, int Y)? cursorAt;
+
     /// <summary>
     /// Forgets held state after a suspension has released everything, so a
     /// stick still pushed on resume presses its keys again.
@@ -78,6 +97,117 @@ public sealed class Mapper
         // A wheel open when input stopped must not cast when it resumes.
         Wheel?.Close();
         casting = null;
+
+        // The next tick tells the game the lock has gone.
+        Lock?.Release();
+        lockHeld = false;
+        cursorAt = null;
+    }
+
+    /// <summary>
+    /// Locks on as the lock button goes down, follows the lock, and tells the
+    /// game whenever the enemy held changes. While the wheel is open the right
+    /// stick belongs to it, so it cannot flick the lock elsewhere.
+    /// </summary>
+    private void TickLock(GamepadSnapshot snapshot, StickPosition right, TimeSpan elapsed, bool wheelOpen, List<InputIntent> intents)
+    {
+        LockChanged = LockChange.None;
+
+        if (Lock is null)
+        {
+            return;
+        }
+
+        if (GameBounds is ScreenRect bounds && bounds.Height > 0)
+        {
+            Lock.Aspect = (double)bounds.Width / bounds.Height;
+        }
+
+        bool pressed = false;
+
+        foreach ((GamepadButtons button, ButtonBinding binding, bool _) in Buttons.Entries)
+        {
+            if (binding is LockBinding && snapshot.IsPressed(button) && Buttons.BindingFor(button, snapshot.LeftTrigger) is LockBinding)
+            {
+                pressed = true;
+            }
+        }
+
+        if (!InWorld)
+        {
+            Lock.Release();
+        }
+        else if (pressed && !lockHeld)
+        {
+            (double x, double y) = AimFraction();
+            LockChanged = Lock.Toggle(Seen, x, y);
+        }
+
+        lockHeld = pressed;
+
+        if (LockChanged == LockChange.None)
+        {
+            StickPosition flick = right;
+
+            if (wheelOpen)
+            {
+                flick = StickPosition.Centre;
+            }
+
+            LockChanged = Lock.Update(Seen, flick, elapsed);
+        }
+
+        uint id = 0;
+
+        if (Lock.Target is SeenTarget held)
+        {
+            id = held.Id;
+        }
+
+        if (id != sentLock)
+        {
+            sentLock = id;
+            intents.Add(new GameCommandIntent(new LockCommand(id)));
+        }
+    }
+
+    /// <summary>Where the player looks, as fractions of the game window: the aim point in third person, else the middle.</summary>
+    private (double X, double Y) AimFraction()
+    {
+        if (Looking && AimPoint is (int x, int y) && GameBounds is ScreenRect bounds && bounds.Width > 0 && bounds.Height > 0)
+        {
+            return ((double)(x - bounds.X) / bounds.Width, (double)(y - bounds.Y) / bounds.Height);
+        }
+
+        return (0.5, 0.5);
+    }
+
+    /// <summary>
+    /// Keeps the cursor on the locked enemy, so attacks and skills land on it.
+    /// Moved only when the enemy has moved a couple of pixels, so a still enemy
+    /// sends nothing. An enemy out of view leaves the cursor at the aim point.
+    /// </summary>
+    private void FollowLock(SeenTarget held, List<InputIntent> intents)
+    {
+        (int X, int Y)? spot = AimPoint;
+
+        if (held.OnScreen && GameBounds is ScreenRect bounds)
+        {
+            spot = ((int)Math.Round(bounds.X + held.X * bounds.Width), (int)Math.Round(bounds.Y + held.Y * bounds.Height));
+        }
+
+        if (spot is not (int x, int y))
+        {
+            return;
+        }
+
+        if (cursorAt is (int lastX, int lastY) && Math.Abs(lastX - x) < 2 && Math.Abs(lastY - y) < 2)
+        {
+            return;
+        }
+
+        cursorAt = (x, y);
+        intents.Add(new PointerMoveTo(x, y));
     }
 
     /// <summary>
@@ -171,6 +301,22 @@ public sealed class Mapper
         bool wheelOpen = TickWheel(snapshot, right, elapsed, keys);
 
         List<InputIntent> intents = differ.Update(keys, pointerButtons);
+        TickLock(snapshot, right, elapsed, wheelOpen, intents);
+
+        // Locked, the right stick only flicks between enemies, and the game turns the camera.
+        if (Lock?.Target is SeenTarget held)
+        {
+            FollowLock(held, intents);
+            Look(0, 0, intents);
+            return intents;
+        }
+
+        // Let go, the cursor goes back to waiting at the aim point.
+        if (cursorAt is not null)
+        {
+            cursorAt = null;
+            aimed = false;
+        }
 
         // While the wheel is open the right stick belongs to it alone.
         if (wheelOpen)
