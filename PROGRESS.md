@@ -19,7 +19,7 @@ holds the phases and the rules for the in-game part.
 | 3. Grid navigation by calibration | Done, checked live in the game end to end through `--replay` |
 | 4. Occupancy detection | Done: exact item layouts from the game, checked live; screen reading as the fallback |
 | 5. In-game part and action camera | Done: camera, turning, zoom, collision, following, panel and item reports, all checked live |
-| 6. Lock-on, camera-relative movement, smart interact | Started: camera-relative movement works; lock-on and smart interact not started |
+| 6. Lock-on, camera-relative movement, smart interact | Mostly done: lock-on and camera-relative movement checked live; smart interact not started |
 | 7. Radial skills, rumble, snapping in every menu | Started: the skill wheel with icons checked live; rumble built, health checked live; snapping in other menus not started |
 | 8. Shortcuts, profiles, first run, release | Not started |
 
@@ -121,6 +121,18 @@ Safety:
 | Default `camera.ini` | Done: written with notes on first load, checked live |
 | `--check-game` | 42 functions, all present; it also finds the game through Steam when it is closed |
 
+## Lock-on, 2026-10-29
+
+| Piece | Status |
+| --- | --- |
+| Targets from the game | Done: the game's own target query, foes only, drawn onto the screen, thirty times a second |
+| Sight lines | Done: enemies behind the town wall are never offered, checked by turning a full circle live |
+| Choosing, flicking, falls and breaks | Done in Core, tested; flicking right and left switched live |
+| The camera turning to the lock | Done: measured easing, locked at the screen's edge and settled in the middle live, without overshoot |
+| Cursor, marker and life bar | Done: the marker sat on a Walking Dead in Burial Hill and the attacks landed on it, live |
+| Rumble ticks | Built and tested in Core; not yet felt |
+| `--check-game` | 49 functions, all present |
+
 ## Live check in the game, 2026-10-19
 
 Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
@@ -209,7 +221,15 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   collision pulled the camera in front of clutter; zoom, following and the
   skill wheel with real icons all worked from recorded pad traces.
 
-350 core tests and 64 integration tests, all passing.
+- **2026-10-29, live, unattended:** in Devil's Crossing the in-game part found
+  the foes beyond the town wall and, after the sight-line fix, offered none of
+  them through it. A lock taken at the screen's edge brought the enemy to the
+  middle in under a second without passing it. At Burial Hill, through
+  `--replay` of `tests/fixtures/traces/lock-fight.json`, the right stick click
+  locked onto a Walking Dead, the marker and the cursor sat on it, the held
+  attack killed it, and the lock moved on to the next.
+
+383 core tests and 66 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -219,7 +239,8 @@ Not yet verified:
 - **A real button press reaching the game end to end.** Each link is checked
   separately, but nobody has pressed the pad with the game running.
 - **Rumble felt in the hand.** `--rumble-test` ran without error, but nobody
-  was holding the pad.
+  was holding the pad; the same goes for lock-on's ticks.
+- **Lock-on from the real pad.** Every lock so far came from recorded traces.
 - **The pad-driven wizard in the game.** Its steps run live through `--at`;
   the stick-and-button loop around them needs someone at the pad.
 
@@ -249,16 +270,15 @@ Nothing.
 
 Phases 6 and 7, PLAN.md section 17.
 
-1. **Lock-on.** Report nearby enemies from the in-game part: positions and
-   health, from the game's own entity lists, found by name like everything
-   else. Then a lock button, flicking the right stick to switch targets, and
-   the cursor kept on the locked enemy so skills land on it.
-2. **Smart interact.** The same nearby list, with loot, characters and chests:
-   one button to pick up, talk or open the nearest.
-3. **The stash from the game.** Find the stash's sacks, so the stash is exact
+1. **Smart interact.** A nearby list like lock-on's, with loot, characters
+   and chests: one button to pick up, talk or open the nearest.
+2. **The stash from the game.** Find the stash's sacks, so the stash is exact
    too.
-4. **Snapping in every menu**: skill tree nodes, devotion stars, dialogue
+3. **Snapping in every menu**: skill tree nodes, devotion stars, dialogue
    choices, the blacksmith's list.
+4. **Lock-on polish**, if play shows the need: a camera that recentres behind
+   the character when there is nothing to lock, and pitch that frames tall
+   enemies.
 
 Workflow: `src\GDPilot.InGame\build.cmd`, `dotnet build`, restart the game,
 enter the world, `GDPilot.exe --load-in-game`, then replay a trace. A new
