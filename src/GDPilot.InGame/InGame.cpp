@@ -1122,10 +1122,10 @@ void Collide(void* camera, float elapsed)
 
 // Lock-on's eyes: the enemies near the player, found with the game's own
 // target query, so nothing the game would refuse a skill is ever offered. Its
-// filter takes characters only, never townsfolk, and only those alive, seen
-// and hostile. Each id is then resolved to its character, and projected onto
+// filter takes characters only, never townsfolk, and only those alive and
+// seen; asked without friends, it asks the game's faction rules for foes. Each id is then resolved to its character, and projected onto
 // the screen through the camera the game draws with.
-using TargetsInRadius = void (*)(const void* engine, const void* character, const WorldPoint* centre, float radius, void* found, unsigned int ignore, bool hostile, bool hidden);
+using TargetsInRadius = void (*)(const void* engine, const void* character, const WorldPoint* centre, float radius, void* found, unsigned int ignore, bool friends, bool hidden);
 using PathPosition = WorldPoint* (*)(const void* character, WorldPoint* result);
 using ProjectPoint = float* (*)(const void* camera, float* result, const WorldPoint* point, const int* viewport);
 using ObjectId = unsigned int (*)(const void* object);
@@ -1297,7 +1297,7 @@ int ScanTargets(void* camera, const int viewport[4], Seen seen[], int most)
         WorldPoint centre{};
         pathPosition(player, &centre);
         found.last = found.first;
-        targetsInRadius(engine, player, &centre, ScanRadius, &found, objectId(player), true, false);
+        targetsInRadius(engine, player, &centre, ScanRadius, &found, objectId(player), false, false);
         float origin[3]{};
         InWorld(centre, origin);
         WorldPoint zero{cameraRegion(camera), 0, 0, 0};
