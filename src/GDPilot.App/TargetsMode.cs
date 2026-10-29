@@ -7,7 +7,7 @@ namespace GDPilot.App;
 /// --targets: prints the enemies the in-game part reports, once a second, and
 /// which one a press of lock-on would take, so a lock that will not come can
 /// be told apart from an enemy the game does not offer; and where the ground a
-/// dodge aims through falls on the screen.
+/// dodge aims through falls on the screen, and what lies close by for A.
 /// </summary>
 internal static class TargetsMode
 {
@@ -36,9 +36,27 @@ internal static class TargetsMode
             Thread.Sleep(1000);
             Print(link.Targets, config.LockOn());
             PrintGround(link.Near);
+            PrintThings(link.Things);
         }
 
         return 0;
+    }
+
+    /// <summary>What lies close by to pick up, talk to, use or travel through, and what A would do.</summary>
+    private static void PrintThings(IReadOnlyList<NearbyThing> things)
+    {
+        foreach (NearbyThing thing in things.OrderBy(thing => thing.Distance))
+        {
+            Console.WriteLine($"  {SmartInteract.Verb(thing.Kind)} {thing.Id}: {thing.Distance:F1} away, at {thing.X:F2}, {thing.Y:F2}");
+        }
+
+        if (SmartInteract.Offer(things) is NearbyThing offered)
+        {
+            Console.WriteLine($"  A would {SmartInteract.Verb(offered.Kind).ToLowerInvariant()} {offered.Id}.");
+            return;
+        }
+
+        Console.WriteLine("  Nothing in reach of A.");
     }
 
     /// <summary>Where the character's feet and the ring of ground a dodge aims through fall on the screen.</summary>
