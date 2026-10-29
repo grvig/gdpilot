@@ -18,6 +18,7 @@ public sealed class OverlayHost : IDisposable
     private readonly ManualResetEventSlim ready = new();
     private OverlayWindow? window;
     private WheelWindow? wheel;
+    private MarkerWindow? marker;
 
     public OverlayHost()
     {
@@ -49,6 +50,7 @@ public sealed class OverlayHost : IDisposable
         window.Show();
         Handle = window.Handle;
         wheel = new WheelWindow();
+        marker = new MarkerWindow();
         ready.Set();
         Dispatcher.Run();
     }
@@ -73,6 +75,31 @@ public sealed class OverlayHost : IDisposable
         // Re-asserted every update, since a borderless game can rise over a topmost window.
         SetWindowPos(Handle, TopmostSlot, x, y, 0, 0, NoSize | NoActivate);
         ShowWheel(state.Wheel, area);
+        ShowMarker(state.Marker);
+    }
+
+    /// <summary>The marker is centred on the locked enemy, and hidden with nothing to mark.</summary>
+    private void ShowMarker(LockMarker? view)
+    {
+        if (view is null)
+        {
+            marker!.Hide();
+            return;
+        }
+
+        marker!.Display(view);
+
+        if (!marker.IsVisible)
+        {
+            marker.Show();
+        }
+
+        // The window's own units are scaled by the display; its physical size says by how much.
+        GetWindowRect(marker.Handle, out Bounds own);
+        double scale = (own.Right - own.Left) / marker.ActualWidth;
+        int x = view.X - (int)Math.Round(MarkerWindow.CentreX * scale);
+        int y = view.Y - (int)Math.Round(MarkerWindow.CentreY * scale);
+        SetWindowPos(marker.Handle, TopmostSlot, x, y, 0, 0, NoSize | NoActivate);
     }
 
     /// <summary>The wheel sits over the middle of the game while open, and is hidden otherwise.</summary>

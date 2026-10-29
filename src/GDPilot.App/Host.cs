@@ -126,6 +126,7 @@ internal static class Host
             TimeSpan last = clock.Elapsed;
             bool wasSuspended = false;
             bool wheelShown = false;
+            bool markerShown = false;
             RumblePolicy rumble = new();
             IReadOnlyList<Picture?>? wheelPictures = null;
             ScreenRect? gameBounds = null;
@@ -173,12 +174,14 @@ internal static class Host
                     Console.WriteLine($"Mode: {shownMode}");
                 }
 
-                // The wheel follows the stick, so while it is open it is redrawn about fifty
-                // times a second, using the game's bounds from the last regular redraw.
+                // The wheel follows the stick and the marker its enemy, so while either is up
+                // the overlay is redrawn about fifty times a second.
                 bool regular = ticks % overlayInterval == 0;
                 bool wheelOpen = mapper.Wheel is not null && mapper.Wheel.Open;
+                SeenTarget? locked = mapper.Lock?.Target;
+                bool moving = wheelOpen || locked is not null;
 
-                if (overlay is not null && (regular || (wheelOpen && ticks % 5 == 0) || wheelOpen != wheelShown))
+                if (overlay is not null && (regular || (moving && ticks % 5 == 0) || wheelOpen != wheelShown || (locked is not null) != markerShown))
                 {
                     // The icons are copied once as the wheel opens; the hotbar does not change while it is held.
                     if (wheelOpen && !wheelShown)
@@ -193,9 +196,14 @@ internal static class Host
                         view = view with { Pictures = wheelPictures };
                     }
 
-                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson) with { Wheel = view };
+                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson, locked) with
+                    {
+                        Wheel = view,
+                        Marker = LockMarker.For(locked, gameBounds),
+                    };
                     overlay.Update(state, gameBounds, config.Overlay.Corner);
                     wheelShown = wheelOpen;
+                    markerShown = locked is not null;
                 }
 
                 TimeSpan wait = period - (clock.Elapsed - now);
