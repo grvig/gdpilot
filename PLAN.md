@@ -660,6 +660,37 @@ Section 13's scope, plus profiles per character. Fast travel, quick-sell,
 portal and return, tray icon, first-run setup, feel tuning (HT-3), and a
 single release download using the drop-in loader.
 
+### The bar for "complete"
+
+The owner set it: playing on a controller must compare with a game made for
+one, a soulslike above all, without making Grim Dawn itself any worse.
+Lock-on is to match Souls one to one. Grim Dawn's combat stays its own, so
+there is no dodge with invulnerability, no stamina, no parry and no strafing
+animation; everything else about feel is in scope:
+
+- **Lock-on at Souls parity:** chest aiming, framing off the shoulder,
+  recentring on an empty press, gliding between reports. Done.
+- **Soft aim** without a lock. Done.
+- **Analog movement in any direction**, through the game's own controller
+  direction rather than eight keys. This writes more than the camera, so it
+  waits for the owner's yes, and rule 3 above is amended when it comes.
+- **A dodge in the left stick's direction** on one button.
+- **Skills that need no cursor:** cast where the character faces, or at the
+  lock.
+- **Rumble from the fight itself:** hits landed, criticals, kills.
+- **A Souls camera:** the stick's up and down tilts rather than zooms, and the
+  camera settles behind a running character.
+
+### Phase 9 — Hardening
+
+Before calling the project complete, a phase of its own spent trying to break
+it, with a bug pass at the end of every earlier phase too. Game patches, loss
+of focus, alt-tab, loading screens, death and respawn, the pad unplugged
+mid-fight, full bags, other resolutions and UI scales, the kill switch at the
+worst moment, and sessions of hours. Every bug found is fixed with a test that
+pins it. The frame cost of the in-game part and the overlay is measured
+throughout, since the game must never run worse with GDPilot than without it.
+
 ### Shelved
 
 - **Gyro aiming.** Possible through SDL, set aside by the owner on 2026-10-25.
