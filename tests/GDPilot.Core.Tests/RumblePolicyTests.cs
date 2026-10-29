@@ -67,4 +67,14 @@ public sealed class RumblePolicyTests
 
         Assert.Null(policy.Tick(0, Tick));
     }
+
+    [Fact]
+    public void TakingSwitchingAndLosingALockEachTickButLettingGoDoesNot()
+    {
+        Assert.Equal(0, RumblePolicy.ForLock(LockChange.Locked)!.Value.Heavy);
+        Assert.True(RumblePolicy.ForLock(LockChange.Switched)!.Value.Light > 0);
+        Assert.True(RumblePolicy.ForLock(LockChange.Lost)!.Value.Heavy > 0);
+        Assert.Null(RumblePolicy.ForLock(LockChange.Released));
+        Assert.Null(RumblePolicy.ForLock(LockChange.None));
+    }
 }

@@ -165,6 +165,11 @@ internal static class Host
                     sdl.Rumble(buzz.Heavy, buzz.Light, buzz.Length);
                 }
 
+                if (sdl is not null && config.Input.Rumble && RumblePolicy.ForLock(mapper.LockChanged) is Rumble tick)
+                {
+                    sdl.Rumble(tick.Heavy, tick.Light, tick.Length);
+                }
+
                 last = now;
                 ticks++;
 

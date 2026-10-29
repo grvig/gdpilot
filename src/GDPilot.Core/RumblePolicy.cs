@@ -4,9 +4,10 @@ namespace GDPilot.Core;
 public readonly record struct Rumble(double Heavy, double Light, TimeSpan Length);
 
 /// <summary>
-/// When the pad should rumble, from the player's health alone: a jolt when a
-/// heavy blow lands, and a heartbeat that quickens as life runs out. It feels
-/// like a warning, so it says nothing while health is full or unknown.
+/// When the pad should rumble: a jolt when a heavy blow lands, a heartbeat that
+/// quickens as life runs out, and the lightest of ticks as lock-on takes or
+/// changes its enemy. Health feels like a warning, so it says nothing while
+/// health is full or unknown.
 /// </summary>
 public sealed class RumblePolicy
 {
@@ -18,6 +19,26 @@ public sealed class RumblePolicy
 
     private static readonly TimeSpan LowBeat = TimeSpan.FromMilliseconds(1200);
     private static readonly TimeSpan CriticalBeat = TimeSpan.FromMilliseconds(700);
+
+    /// <summary>
+    /// The tick for a lock taken, switched or lost, on the light motor alone so it
+    /// is felt in the fingers rather than the palms. Letting go on purpose needs
+    /// no telling.
+    /// </summary>
+    public static Rumble? ForLock(LockChange change)
+    {
+        switch (change)
+        {
+            case LockChange.Locked:
+                return new Rumble(0, 0.45, TimeSpan.FromMilliseconds(60));
+            case LockChange.Switched:
+                return new Rumble(0, 0.3, TimeSpan.FromMilliseconds(40));
+            case LockChange.Lost:
+                return new Rumble(0.25, 0, TimeSpan.FromMilliseconds(90));
+            default:
+                return null;
+        }
+    }
 
     private int last = -1;
     private TimeSpan sinceBeat;
