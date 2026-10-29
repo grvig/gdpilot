@@ -58,6 +58,11 @@ internal static class Program
             return RumbleTestMode.Run();
         }
 
+        if (args.Contains("--targets"))
+        {
+            return TargetsMode.Run(config, duration);
+        }
+
         if (args.Contains("--load-in-game"))
         {
             return LoadInGameMode.Run(config);

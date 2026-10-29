@@ -160,6 +160,7 @@ Other commands:
 | --- | --- |
 | `--load-in-game` | Loads the in-game part into the running game, for the third-person camera; see [docs/camera.md](docs/camera.md) |
 | `--check-game` | Checks an installed game version still has everything the in-game part needs |
+| `--targets` | Prints the enemies the in-game part sees, and which one lock-on would take |
 | `--calibrate <Grid>` | Measures a menu grid for a new resolution or UI scale |
 | `--occupancy <Grid>` | Prints which cells of an open grid hold items |
 | `--replay <trace>` | Plays a recorded pad performance instead of reading the pad |
