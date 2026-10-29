@@ -1528,25 +1528,69 @@ bool Bearing(unsigned int id, float toward[3])
     }
 }
 
-// Which way the game's yaw turns the view is measured, not assumed: one frame
-// makes a small turn, and the next reads how the view's heading moved, since
-// the game only works the view out again in its own update.
-float probeHeading = 0;
+// The game eases the view toward its yaw rather than jumping, so both which
+// way the yaw turns the view and how long the view takes to follow are
+// measured, not assumed: once the view has held still, a small turn is made,
+// and the view's heading is sampled until it has settled.
+float easing = 0.2f;
+float turnOnItsWay = 0;
+float stillFor = 0;
+float lastHeading = 0;
 bool probing = false;
+float probeHeading = 0;
+float probeClock = 0;
+constexpr int ProbeSamples = 128;
+float probeTimes[ProbeSamples]{};
+float probeMoves[ProbeSamples]{};
+int probeCount = 0;
 
-// True once the direction is known; until then it may spend this frame probing.
-bool MeasureYaw(void* camera, const float back[3])
+// True once both are known; until then it may spend this frame probing.
+bool MeasureYaw(void* camera, const float back[3], float elapsed)
 {
+    float heading = Heading(back);
+
     if (!probing)
     {
-        probeHeading = Heading(back);
+        if (std::fabs(Wrap(heading - lastHeading)) > 0.001f)
+        {
+            stillFor = 0;
+        }
+        else
+        {
+            stillFor += elapsed;
+        }
+
+        lastHeading = heading;
+
+        if (stillFor < 0.15f)
+        {
+            return false;
+        }
+
+        probeHeading = heading;
         reinterpret_cast<AdjustYaw>(required[2].address)(camera, 0.05f);
         probing = true;
+        probeClock = 0;
+        probeCount = 0;
+        return false;
+    }
+
+    probeClock += elapsed;
+
+    if (probeCount < ProbeSamples)
+    {
+        probeTimes[probeCount] = probeClock;
+        probeMoves[probeCount] = std::fabs(Wrap(heading - probeHeading));
+        probeCount++;
+    }
+
+    if (probeClock < 0.8f)
+    {
         return false;
     }
 
     probing = false;
-    float change = Wrap(Heading(back) - probeHeading);
+    float change = Wrap(heading - probeHeading);
 
     if (std::fabs(change) < 0.01f)
     {
@@ -1564,7 +1608,19 @@ bool MeasureYaw(void* camera, const float back[3])
         yawSign = -1;
     }
 
-    Say("Lock-on: a turn of 0.05 moves the view's heading by %.3f.", change);
+    // How long the view takes to cover all but a third of a turn.
+    easing = probeClock;
+
+    for (int index = 0; index < probeCount; index++)
+    {
+        if (probeMoves[index] >= 0.632f * std::fabs(change))
+        {
+            easing = probeTimes[index];
+            break;
+        }
+    }
+
+    Say("Lock-on: a turn of 0.05 moves the view's heading by %.3f, eased over %.2f s.", change, easing);
     return true;
 }
 
@@ -1578,39 +1634,50 @@ void Steer(void* camera, float elapsed)
         Say("Lock-on: locked onto %u.", id);
     }
 
-    if (id == 0 || !thirdPerson || elapsed <= 0 || targetsInRadius == nullptr)
+    if (elapsed > 0)
+    {
+        turnOnItsWay *= std::exp(-elapsed / easing);
+    }
+
+    if (!thirdPerson || elapsed <= 0 || targetsInRadius == nullptr)
     {
         return;
     }
 
     float back[3]{};
+
+    if (!CameraBack(camera, back))
+    {
+        return;
+    }
+
+    // Measured as soon as third person is on, so the first lock turns at once.
+    if (yawSign == 0)
+    {
+        MeasureYaw(camera, back, elapsed);
+        return;
+    }
+
     float toward[3]{};
 
     // Right on top of the player the heading swings wildly, so the camera holds still.
-    if (!CameraBack(camera, back) || !Bearing(id, toward) || std::hypot(toward[0], toward[2]) < 1)
+    if (yawSign == 2 || id == 0 || !Bearing(id, toward) || std::hypot(toward[0], toward[2]) < 1)
     {
         return;
     }
 
-    if (yawSign == 0 && !MeasureYaw(camera, back))
-    {
-        return;
-    }
-
-    if (yawSign == 2)
-    {
-        return;
-    }
-
-    // The camera looks the opposite way to its offset from the character.
-    float error = Wrap(Heading(toward) - Heading(back) - Pi);
+    // The camera looks the opposite way to its offset from the character. What
+    // has been asked of the game but not yet shown is counted as done, so the
+    // view glides onto the target instead of swinging past it.
+    float error = Wrap(Heading(toward) - Heading(back) - Pi) - turnOnItsWay;
     float turn = error * std::fmin(1.0f, lockTurn * elapsed);
     float most = 6 * elapsed;
     turn = std::fmax(-most, std::fmin(most, turn));
 
-    if (std::fabs(error) > 0.01f)
+    if (std::fabs(error) > 0.005f)
     {
         reinterpret_cast<AdjustYaw>(required[2].address)(camera, turn * yawSign);
+        turnOnItsWay += turn;
     }
 }
 
@@ -1655,7 +1722,8 @@ void UpdatedCamera(void* camera)
         Steer(camera, elapsed);
         float yaw = yawPerSecond.load();
 
-        if (yaw != 0 && elapsed > 0)
+        // The stick waits while the camera's turn is measured, which happens once, as third person first turns on.
+        if (yaw != 0 && elapsed > 0 && !probing)
         {
             reinterpret_cast<AdjustYaw>(required[2].address)(camera, yaw * elapsed);
         }
