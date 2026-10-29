@@ -627,3 +627,33 @@ in-game part now makes one small turn as third person first starts, measures
 the direction and the easing time from the view's heading, and counts the turn
 still on its way when steering. Live, a lock from the edge settled in the
 middle without passing it.
+
+**Aim at the chest, from the game's own height.** `Actor::GetHeight` is a
+two-field product, checked by its bytes; the Walking Dead read 2.0 to 2.2
+units tall live. Lock-on aims at three fifths of that, and falls back to
+`lock_aim_height` when a height looks wrong.
+
+**Recentring reads the character's own facing.** The rotation sits at 0xf0 in
+the character, three axes of three floats, and the third is forward: checked
+live by swinging the camera away and recentring, which left the character's
+back to the camera.
+
+**A lock is framed off the shoulder.** Steering straight at the enemy put it
+directly behind the character, where the marker sat on the character's
+shoulder. The camera now aims six degrees to one side, measured live to settle
+the enemy at 0.55 of the screen's width, clear of the character.
+
+**Between reports the cursor glides.** Reports come thirty times a second, so
+the cursor and marker now carry on at the enemy's last speed for at most one
+report's gap, rather than stepping.
+
+**Soft aim is a pull, not a lock.** It reaches 0.14 of a screen height from the
+aim point and 12 world units from the character, keeps its choice out to half
+as far again, and shows no marker, so it never feels like a lock the player
+did not ask for.
+
+**The overlay moves only what moved.** Re-asserting topmost on every redraw
+made the desktop recompose fifty times a second while the marker was up; now
+a window is moved only when its spot changes, and kept on top once a second.
+The in-game part was measured at the same time at about 30 microseconds a
+frame, so it was never the cause of the dips the owner saw.
