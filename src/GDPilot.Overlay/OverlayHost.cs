@@ -20,6 +20,13 @@ public sealed class OverlayHost : IDisposable
     private WheelWindow? wheel;
     private MarkerWindow? marker;
 
+    // Where each window was last put, so one that has not moved costs nothing.
+    // Being topmost is re-asserted once a second, since a borderless game can rise
+    // over a topmost window; doing it on every redraw made the desktop recompose
+    // fifty times a second while the marker was up.
+    private readonly Dictionary<IntPtr, (int X, int Y)> placed = new();
+    private DateTime lastAsserted = DateTime.MinValue;
+
     public OverlayHost()
     {
         thread = new Thread(Run);
@@ -72,8 +79,13 @@ public sealed class OverlayHost : IDisposable
 
         (int x, int y) = OverlayPlacement.Place(area, own.Right - own.Left, own.Bottom - own.Top, corner);
 
-        // Re-asserted every update, since a borderless game can rise over a topmost window.
-        SetWindowPos(Handle, TopmostSlot, x, y, 0, 0, NoSize | NoActivate);
+        if (DateTime.UtcNow - lastAsserted > TimeSpan.FromSeconds(1))
+        {
+            placed.Clear();
+            lastAsserted = DateTime.UtcNow;
+        }
+
+        Place(Handle, x, y);
         ShowWheel(state.Wheel, area);
         ShowMarker(state.Marker);
     }
@@ -83,7 +95,12 @@ public sealed class OverlayHost : IDisposable
     {
         if (view is null)
         {
-            marker!.Hide();
+            if (marker!.IsVisible)
+            {
+                marker.Hide();
+                placed.Remove(marker.Handle);
+            }
+
             return;
         }
 
@@ -99,7 +116,19 @@ public sealed class OverlayHost : IDisposable
         double scale = (own.Right - own.Left) / marker.ActualWidth;
         int x = view.X - (int)Math.Round(MarkerWindow.CentreX * scale);
         int y = view.Y - (int)Math.Round(MarkerWindow.CentreY * scale);
-        SetWindowPos(marker.Handle, TopmostSlot, x, y, 0, 0, NoSize | NoActivate);
+        Place(marker.Handle, x, y);
+    }
+
+    /// <summary>Moves a window and keeps it on top, but only when it has moved or the once-a-second check is due.</summary>
+    private void Place(IntPtr window, int x, int y)
+    {
+        if (placed.TryGetValue(window, out (int X, int Y) at) && at == (x, y))
+        {
+            return;
+        }
+
+        placed[window] = (x, y);
+        SetWindowPos(window, TopmostSlot, x, y, 0, 0, NoSize | NoActivate);
     }
 
     /// <summary>The wheel sits over the middle of the game while open, and is hidden otherwise.</summary>
@@ -107,7 +136,12 @@ public sealed class OverlayHost : IDisposable
     {
         if (view is null)
         {
-            wheel!.Hide();
+            if (wheel!.IsVisible)
+            {
+                wheel.Hide();
+                placed.Remove(wheel.Handle);
+            }
+
             return;
         }
 
@@ -122,7 +156,7 @@ public sealed class OverlayHost : IDisposable
         GetWindowRect(wheel.Handle, out Bounds own);
         int width = own.Right - own.Left;
         int height = own.Bottom - own.Top;
-        SetWindowPos(wheel.Handle, TopmostSlot, area.X + (area.Width - width) / 2, area.Y + (area.Height - height) / 2, 0, 0, NoSize | NoActivate);
+        Place(wheel.Handle, area.X + (area.Width - width) / 2, area.Y + (area.Height - height) / 2);
     }
 
     [StructLayout(LayoutKind.Sequential)]
