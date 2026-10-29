@@ -31,7 +31,8 @@ it.
 
 | Control | What it does |
 | --- | --- |
-| Right stick click | Switch between the game's camera and third person |
+| Left trigger + right stick click | Switch between the game's camera and third person |
+| Right stick click | Lock on; the camera turns to face the enemy, see [controls.md](controls.md) |
 | Right stick left and right, in third person | Turn the camera; left stick "forward" turns with it |
 | Right stick up and down, in third person | Zoom in and out; the camera levels out as it comes closer |
 | Left stick sideways, right stick still | The camera swings round toward where you walk |
@@ -63,6 +64,10 @@ pitch_min=12
 pitch_max=40
 field_of_view=50
 collision=1
+collision_skin=0.35
+collision_extend=18
+lock_aim_height=1
+lock_turn_speed=8
 ```
 
 | Key | Meaning |
@@ -74,6 +79,8 @@ collision=1
 | `collision` | 1 keeps the camera in front of anything between it and the character, 0 lets it pass through |
 | `collision_extend` | How fast the camera eases back out once clear, in world units per second; 18 by default |
 | `collision_skin` | How far short of an obstacle the camera stops; 0.35 by default |
+| `lock_aim_height` | How far above a locked enemy's feet the cursor and the camera aim, in world units |
+| `lock_turn_speed` | How quickly the camera turns to face a locked enemy; higher is snappier |
 
 The game tilts the camera between the two pitches as the zoom moves between
 the two distances, so a close camera also looks along the ground rather than
@@ -90,7 +97,8 @@ and pitch 38 to 52.
 - **Camera only.** It writes the camera's distance, tilt, zoom and field of
   view, and turns it through the game's own `AdjustYaw`. Beyond the camera it
   only reads: which panels are open, so GDPilot's mode always matches the
-  game's, and where each item sits in your bags, so a large item is one stop.
+  game's, where each item sits in your bags, so a large item is one stop, and
+  where the enemies near you stand, for lock-on.
 - **On the game's thread.** It attaches to the game's camera update and does
   its work just after the game's own, every frame, so nothing races the game.
 - **Never waits.** The pipe to GDPilot is buffered on both sides and read
@@ -111,6 +119,22 @@ chosen zoom. The ray starts a short way out from the character, so it never
 meets the character itself. If the game refuses the query thirty times, as it
 might during an unusual load, collision switches off for the session and says
 so in the log.
+
+## Lock-on
+
+Thirty times a second the in-game part asks the game's own target query, the
+one its skills use, for the foes near the player. That query already leaves
+out townsfolk, the dead and anything hidden, and asks the game's faction rules
+who is a foe. Each foe is then drawn onto the screen through the game's camera
+and checked for a clear line through the level query collision uses, so an
+enemy behind a wall is never offered. GDPilot picks and switches targets from
+those reports; the in-game part only reports, and turns the camera.
+
+The game eases its view toward the camera's yaw rather than jumping, so the
+first time third person turns on in a session, the in-game part makes one tiny
+turn and watches how the view follows: which way, and how long it takes. The
+log records both. From then on a lock counts any turn still on its way, so the
+camera glides onto the enemy and stops there instead of swinging past.
 
 ## Not yet
 
