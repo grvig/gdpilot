@@ -259,6 +259,38 @@ public sealed class TraceReplayTests
         }
     }
 
+    [Fact]
+    public void TheLockOnTraceLocksFlicksRightThenLeftAndLetsGo()
+    {
+        GamepadTrace trace = Load("lock-on.json");
+        TimeSpan now = TimeSpan.Zero;
+        ReplayGamepadSource source = new(trace, () => now);
+        ButtonLayers combat = BindingTable.Parse(new Dictionary<string, string> { ["RightStick"] = "lock:toggle", ["LT+RightStick"] = "camera:toggle" }, 0.5);
+        Mapper mapper = new(Settings, combat)
+        {
+            Lock = new LockOn(new LockSettings()),
+            Seen = new[] { new SeenTarget(1, 0.3, 0.45, 9, 100, true), new SeenTarget(2, 0.5, 0.45, 8, 100, true), new SeenTarget(3, 0.7, 0.45, 9, 100, true) },
+            GameBounds = new ScreenRect(0, 0, 1920, 1080),
+        };
+        List<uint> locks = new();
+
+        while (!source.IsFinished)
+        {
+            foreach (InputIntent intent in mapper.Tick(source.Read(), Tick))
+            {
+                if (intent is GameCommandIntent { Command: LockCommand command })
+                {
+                    locks.Add(command.Id);
+                }
+            }
+
+            now += Tick;
+        }
+
+        // The trigger-held clicks switch the camera and never lock.
+        Assert.Equal(new uint[] { 2, 3, 2, 0 }, locks);
+    }
+
     private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600));
 
     private static GamepadTrace Load(string fixture)

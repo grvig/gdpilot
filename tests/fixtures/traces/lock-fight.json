@@ -1,0 +1,16 @@
+{
+  "entries": [
+    { "at": 0 },
+    { "at": 1000, "buttons": "RightStick" },
+    { "at": 1100 },
+    { "at": 1500, "buttons": "RightBumper" },
+    { "at": 6000 },
+    { "at": 6500, "rightX": 1 },
+    { "at": 6650 },
+    { "at": 7000, "buttons": "RightBumper" },
+    { "at": 11000 },
+    { "at": 12000, "buttons": "RightStick" },
+    { "at": 12100 },
+    { "at": 13000 }
+  ]
+}
