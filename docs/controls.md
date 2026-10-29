@@ -16,7 +16,8 @@ game always shows what each button does in the mode you are in.
 | X, Y, B | Hotbar slots 2, 3 and 4 |
 | Left trigger + A, X, Y, B | Hotbar slots 1, 5, 6 and 7 |
 | Back, held | The skill wheel |
-| Right stick click | Switch between the game's camera and third person |
+| Right stick click | Lock on to the enemy in view; again to let go |
+| Left trigger + right stick click | Switch between the game's camera and third person |
 | D-pad up, left, right, down | Inventory, devotion, skills, map |
 | Left trigger + D-pad up, down | Tell GDPilot a trader's or the stash's window is open |
 | Start | Back out of the top panel, or open the game's menu |
@@ -34,10 +35,36 @@ The wheel's slots are `radialSlots` under `input`, 1 to 0 by default. The
 icons come from the hotbar calibrated as the `Hotbar` grid; without it the
 wheel shows the keys instead.
 
+## Lock-on
+
+With the in-game part loaded, click the right stick and GDPilot locks on to the
+enemy you are most plainly facing: the one nearest the middle of the view,
+with nearer enemies preferred. A ring marks it, with a bar of its life, and the
+cursor stays on it, so attacks and skills land on it wherever it runs.
+
+| Control | Does |
+| --- | --- |
+| Right stick click | Lock on; again to let go |
+| Right stick, flicked | Move the lock to the next enemy that way on the screen |
+
+- **One flick, one switch.** The stick has to come back toward the middle
+  before the next flick counts, so holding it over never skips past anyone.
+- **In third person the camera turns to face the lock**, smoothly, keeping the
+  enemy ahead of your character.
+- **When the enemy falls, the lock moves on** to the enemy nearest where it
+  stood, so a fight flows from one to the next.
+- **Walls block it.** An enemy behind a wall or a building is never offered.
+- **It lets go** when the enemy gets a third further away than `lockRange`
+  under `input` (25 world units by default), stays out of view for three
+  seconds, or when a panel opens.
+
+The pad ticks lightly as a lock is taken or switched, and a little more firmly
+as one is lost.
+
 ## Third person
 
-With the in-game part loaded, clicking the right stick drops the camera behind
-your character. Then:
+With the in-game part loaded, holding the left trigger and clicking the right
+stick drops the camera behind your character. Then:
 
 | Stick | Does |
 | --- | --- |
@@ -66,7 +93,8 @@ part is loaded, since the game then says exactly where each item sits.
 ## Rumble
 
 With the in-game part loaded the pad gives a short jolt when a heavy blow lands,
-and a heartbeat when life is low that quickens as it runs out. `rumble` under
+a heartbeat when life is low that quickens as it runs out, and a light tick as
+lock-on takes, switches or loses an enemy. `rumble` under
 `input` turns it off. `GDPilot.exe --rumble-test` buzzes each motor in turn, to
 check the pad has rumble at all.
 
