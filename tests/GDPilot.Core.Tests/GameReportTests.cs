@@ -91,6 +91,12 @@ public sealed class GameReportTests
     }
 
     [Fact]
+    public void TheLockPointTravelsOnOneLine()
+    {
+        Assert.Equal(new LockPointReport(7, 0.51, 0.42), GameReport.Parse(new LockPointReport(7, 0.51, 0.42).Write()));
+    }
+
+    [Fact]
     public void AKindOfReportThisVersionDoesNotKnowIsSkipped()
     {
         Assert.Null(GameReport.Parse("""{"protocol":1,"type":"weather","rain":0.5}"""));

@@ -48,6 +48,8 @@ public abstract record GameReport
                 return new HealthReport(Math.Clamp(root["percent"]?.GetValue<int>() ?? 100, 0, 100));
             case "targets":
                 return Targets(root);
+            case "lockpoint":
+                return new LockPointReport(root["id"]?.GetValue<uint>() ?? 0, root["x"]?.GetValue<double>() ?? -1, root["y"]?.GetValue<double>() ?? -1);
             case "interactables":
                 return Interactables(root);
             case "abilities":
@@ -81,6 +83,12 @@ public abstract record GameReport
             case HealthReport health:
                 root["type"] = "health";
                 root["percent"] = health.Percent;
+                break;
+            case LockPointReport point:
+                root["type"] = "lockpoint";
+                root["id"] = point.Id;
+                root["x"] = point.X;
+                root["y"] = point.Y;
                 break;
             case InteractablesReport near:
                 root["type"] = "interactables";
@@ -329,6 +337,13 @@ public sealed record TargetsReport(IReadOnlyList<SeenTarget> Targets) : GameRepo
 
 /// <summary>What the in-game part found it can do, said once as it connects: whether it can steer the character from the stick.</summary>
 public sealed record AbilitiesReport(bool AnalogMovement) : GameReport;
+
+/// <summary>
+/// Where the locked enemy is drawn, as fractions of the game window, sent
+/// every frame it moves rather than thirty times a second, so the cursor and
+/// the marker keep up with a running fight.
+/// </summary>
+public sealed record LockPointReport(uint Id, double X, double Y) : GameReport;
 
 /// <summary>What a click on a nearby thing does: pick it up, talk to it, or use it.</summary>
 public enum ThingKind

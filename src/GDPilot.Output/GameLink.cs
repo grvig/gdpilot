@@ -25,6 +25,7 @@ public sealed class GameLink : IDisposable
     private PanelsReport? panels;
     private TargetsReport near = new(Array.Empty<SeenTarget>());
     private IReadOnlyList<NearbyThing> things = Array.Empty<NearbyThing>();
+    private LockPointReport? lockPoint;
     private StreamWriter? writer;
     private volatile bool thirdPerson;
     private volatile int health = -1;
@@ -52,6 +53,9 @@ public sealed class GameLink : IDisposable
 
     /// <summary>The last targets report whole, with where the character and the ground round it fall on the screen.</summary>
     public TargetsReport Near => Volatile.Read(ref near);
+
+    /// <summary>Where the locked enemy was last drawn, every frame it moves; null once the game has gone.</summary>
+    public LockPointReport? LockPoint => Volatile.Read(ref lockPoint);
 
     /// <summary>What lies close by to pick up, talk to or use, as last reported; nothing once the game has gone.</summary>
     public IReadOnlyList<NearbyThing> Things => Volatile.Read(ref things);
@@ -141,6 +145,7 @@ public sealed class GameLink : IDisposable
                 Volatile.Write(ref panels, null);
                 Volatile.Write(ref near, new TargetsReport(Array.Empty<SeenTarget>()));
                 Volatile.Write(ref things, Array.Empty<NearbyThing>());
+                Volatile.Write(ref lockPoint, null);
                 layouts.Forget();
             }
         }
@@ -191,6 +196,9 @@ public sealed class GameLink : IDisposable
                 break;
             case HealthReport life:
                 health = life.Percent;
+                break;
+            case LockPointReport point:
+                Volatile.Write(ref lockPoint, point);
                 break;
             case InteractablesReport close:
                 Volatile.Write(ref things, close.Things);
