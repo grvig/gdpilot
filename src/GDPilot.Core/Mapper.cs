@@ -106,6 +106,9 @@ public sealed class Mapper
     /// </summary>
     public bool TwinStick { get; set; }
 
+    /// <summary>How far the right stick must lean for twin-stick aiming to take its way.</summary>
+    private const double AimTakesWay = 0.35;
+
     /// <summary>The way twin-stick aiming last pointed, as a screen angle; up the screen to begin with.</summary>
     private double aimAngle = -Math.PI / 2;
 
@@ -491,9 +494,15 @@ public sealed class Mapper
         // one and a half reached the edge of the screen, too far for a sword or a spell.
         double reach = 0.8;
 
-        if (right.Magnitude > 0)
+        // The way is only taken from a stick leaning well over: a stick let go springs
+        // back past the middle, and would otherwise flip the aim behind the character.
+        if (right.Magnitude >= AimTakesWay)
         {
             aimAngle = Math.Atan2(-right.Y, right.X);
+        }
+
+        if (right.Magnitude > 0)
+        {
             reach = 0.4 + 0.8 * right.Magnitude;
         }
         else if (left.Magnitude >= settings.WalkThreshold)

@@ -94,4 +94,16 @@ public sealed class TwinStickTests
 
         Assert.IsType<PointerMove>(Assert.Single(mapper.Tick(Sticks(0, 0, 1, 0), TimeSpan.FromMilliseconds(20))));
     }
+
+    [Fact]
+    public void AStickSpringingBackPastTheMiddleDoesNotFlipTheAim()
+    {
+        Mapper mapper = Aiming();
+        mapper.Tick(Sticks(0, 0, 1, 0), Tick);
+
+        List<InputIntent> sent = mapper.Tick(Sticks(0, 0, -0.25, 0), Tick);
+
+        PointerMoveTo move = Assert.Single(sent.OfType<PointerMoveTo>());
+        Assert.True(move.X > 500, $"The aim flipped to {move.X}.");
+    }
 }
