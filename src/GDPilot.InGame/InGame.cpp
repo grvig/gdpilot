@@ -1406,6 +1406,9 @@ float sinceTargetCheck = 0;
 std::string lastTargets;
 int lastTargetCount = -1;
 
+// Set by the pipe thread on connecting, so a newcomer hears the targets even if none has moved.
+std::atomic<bool> targetsWanted{false};
+
 std::string Fixed(float value, int decimals)
 {
     char text[32]{};
@@ -1469,6 +1472,11 @@ void CheckTargets(void* camera, float elapsed)
     }
 
     line += "]}\n";
+
+    if (targetsWanted.exchange(false))
+    {
+        lastTargets.clear();
+    }
 
     if (line != lastTargets)
     {
@@ -1893,6 +1901,7 @@ void Converse(HANDLE pipe)
     bool healthy = WriteLine(pipe, writeDone, CameraLine());
     panelsWanted = true;
     layoutsWanted = true;
+    targetsWanted = true;
     sentHealth = -1;
 
     while (healthy)
