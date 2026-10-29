@@ -1,7 +1,7 @@
 {
   "entries": [
     { "at": 0 },
-    { "at": 3000, "buttons": "RightStick" },
+    { "at": 3000, "buttons": "RightStick", "leftTrigger": 1.0 },
     { "at": 3100 },
     { "at": 4000, "rightX": 1 },
     { "at": 5257 },
