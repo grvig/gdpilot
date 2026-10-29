@@ -1279,6 +1279,36 @@ bool Viewport(int viewport[4])
 
 bool described = false;
 
+// Whether the way from the player to a target is clear, through the same level
+// query collision uses, from chest height to chest height, so a lock is never
+// taken through a wall. Like collision's, the ray starts a little way out, past
+// the player's own body, and the target's body ends it, so only a hit well
+// short of the target counts. Without the level query, everything is in sight.
+bool InSight(const WorldPoint& from, const float relative[3], const void* player)
+{
+    if (intersect == nullptr)
+    {
+        return true;
+    }
+
+    void* level = regionLevel(from.region);
+    float length = std::sqrt(relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2]);
+
+    if (level == nullptr || length < 2)
+    {
+        return true;
+    }
+
+    float along[3] = {relative[0] / length, relative[1] / length, relative[2] / length};
+    LevelRay ray{{from.x + along[0] * collisionStart, from.y + aimHeight + along[1] * collisionStart, from.z + along[2] * collisionStart}, {along[0], along[1], along[2]}};
+    alignas(16) unsigned char intersection[128]{};
+    void* hit = nullptr;
+    intersect(level, &ray, intersection, collisionSurface, &hit, length, player, true);
+    float clear = 0;
+    std::memcpy(&clear, intersection, sizeof(clear));
+    return !std::isfinite(clear) || clear + collisionStart >= length - 2;
+}
+
 // Reads every enemy in range, or returns -1 when the game cannot say. Guarded
 // throughout; nothing here owns memory, so a fault leaves nothing behind.
 int ScanTargets(void* camera, const int viewport[4], Seen seen[], int most)
@@ -1353,7 +1383,7 @@ int ScanTargets(void* camera, const int viewport[4], Seen seen[], int most)
             entry.y = screen[1] / static_cast<float>(viewport[3]);
             entry.distance = std::sqrt(relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2]);
             entry.health = static_cast<int>(std::lround(std::fmin(1.0, life / limit) * 100));
-            entry.onScreen = ahead > 0 && entry.x >= 0 && entry.x <= 1 && entry.y >= 0 && entry.y <= 1;
+            entry.onScreen = ahead > 0 && entry.x >= 0 && entry.x <= 1 && entry.y >= 0 && entry.y <= 1 && InSight(centre, relative, player);
             count++;
         }
 
