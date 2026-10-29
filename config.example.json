@@ -15,6 +15,7 @@
     "followSpeed": 1.2,
     "rumble": true,
     "aimHeight": 0.38,
+    "lockRange": 25,
     "jumpToItems": true,
     "calibration": {
       "leftCenterX": 0.0,
@@ -45,7 +46,8 @@
       "Start": "back",
       "LT+DPadUp": "panel:Vendor",
       "LT+DPadDown": "panel:Stash",
-      "RightStick": "camera:toggle",
+      "RightStick": "lock:toggle",
+      "LT+RightStick": "camera:toggle",
       "Back": "radial:hotbar"
     },
     "Inventory": {

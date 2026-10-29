@@ -78,6 +78,7 @@ public sealed class GDPilotConfigTests
     [InlineData("""{ "bindings": { "Combat": { "A": "panel:Combat" } } }""")]
     [InlineData("""{ "panels": { "Inventory": "Ctrl+I" } }""")]
     [InlineData("""{ "panels": { "Lobby": "L" } }""")]
+    [InlineData("""{ "input": { "lockRange": 0 } }""")]
     public void InvalidValuesAreRejectedAtLoad(string json)
     {
         Assert.Throws<FormatException>(() => GDPilotConfig.Parse(json));
@@ -89,5 +90,7 @@ public sealed class GDPilotConfigTests
         GDPilotConfig config = GDPilotConfig.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "config.example.json")));
 
         Assert.NotEmpty(config.Bindings["Combat"]);
+        Assert.IsType<LockBinding>(config.ButtonsFor("Combat").BindingFor(GamepadButtons.RightStick, 0));
+        Assert.IsType<CameraToggleBinding>(config.ButtonsFor("Combat").BindingFor(GamepadButtons.RightStick, 1));
     }
 }

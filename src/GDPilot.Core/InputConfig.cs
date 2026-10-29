@@ -42,6 +42,12 @@ public sealed class InputConfig
     public double AimHeight { get; init; } = 0.38;
 
     /// <summary>
+    /// How near an enemy must be, in world units, for lock-on to take it. A lock
+    /// breaks a third further out, so it does not flicker at the edge.
+    /// </summary>
+    public double LockRange { get; init; } = 25;
+
+    /// <summary>
     /// Whether grid presses read the screen and jump between items. Off, they
     /// step one cell at a time, which never depends on what the screen shows.
     /// </summary>

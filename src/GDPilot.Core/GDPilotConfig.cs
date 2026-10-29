@@ -78,6 +78,12 @@ public sealed class GDPilotConfig
         return new RadialMenu(Input.RadialSlots.Select(name => BindingAction.Key(name, "input.radialSlots")).ToList());
     }
 
+    /// <summary>Lock-on, reaching as far as the configuration says.</summary>
+    public LockOn LockOn()
+    {
+        return new LockOn(new LockSettings(Input.LockRange, Input.LockRange * 4 / 3));
+    }
+
     public ButtonLayers ButtonsFor(string mode)
     {
         Dictionary<string, string>? section;
@@ -119,6 +125,7 @@ public sealed class GDPilotConfig
         Require(Input.ChordTrigger is > 0 and <= 1, "input.chordTrigger must be above 0 and at most 1.");
         Require(Input.Cursor.BaseSpeed > 0 && Input.Cursor.Exponent > 0 && Input.Cursor.MaxSpeed > 0, "Cursor speeds and exponent must be positive.");
         Wheel();
+        Require(Input.LockRange > 0, $"input.lockRange must be above zero, not {Input.LockRange}.");
 
         foreach (string mode in Bindings.Keys)
         {
