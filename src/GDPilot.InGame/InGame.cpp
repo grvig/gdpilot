@@ -1682,6 +1682,77 @@ bool MeasureYaw(void* camera, const float back[3], float elapsed)
     return true;
 }
 
+// Recentring: the camera swings round behind the character, as action games
+// answer a lock-on press with nothing to lock. The character's own turn is the
+// rotation in its world coordinates, three axes of three floats from 0xf0 in
+// the character; its forward axis is the third, read live on 2026-10-30.
+constexpr std::size_t CharacterAxes = 0xf0;
+constexpr int ForwardAxis = 2;
+std::atomic<bool> recenterRequested{false};
+bool recentering = false;
+float recenterHeading = 0;
+float recenterClock = 0;
+
+// Where the character faces across the ground, or false when it cannot be read.
+bool Facing(float& heading)
+{
+    __try
+    {
+        const unsigned char* player = static_cast<const unsigned char*>(mainPlayer(*engineSlot));
+
+        if (player == nullptr)
+        {
+            return false;
+        }
+
+        const float* axes = reinterpret_cast<const float*>(player + CharacterAxes);
+        const float* forward = axes + ForwardAxis * 3;
+        heading = Heading(forward);
+        return std::isfinite(heading) && std::fabs(forward[1]) < 0.9f;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+// Where the camera should look across the ground: past the character at the
+// locked enemy, or the way the character faces while recentring. False when it should hold still.
+bool Wanted(unsigned int id, float& heading, float elapsed)
+{
+    if (id != 0)
+    {
+        recentering = false;
+        float toward[3]{};
+
+        // Right on top of the player the heading swings wildly, so the camera holds still.
+        if (!Bearing(id, toward) || std::hypot(toward[0], toward[2]) < 1)
+        {
+            return false;
+        }
+
+        heading = Heading(toward);
+        return true;
+    }
+
+    if (recenterRequested.exchange(false) && Facing(recenterHeading))
+    {
+        recentering = true;
+        recenterClock = 0;
+    }
+
+    recenterClock += elapsed;
+
+    // The stick takes over at once, and a swing never lasts more than a second and a half.
+    if (yawPerSecond.load() != 0 || recenterClock > 1.5f)
+    {
+        recentering = false;
+    }
+
+    heading = recenterHeading;
+    return recentering;
+}
+
 void Steer(void* camera, float elapsed)
 {
     unsigned int id = lockedId.load();
@@ -1716,18 +1787,22 @@ void Steer(void* camera, float elapsed)
         return;
     }
 
-    float toward[3]{};
+    if (yawSign == 2)
+    {
+        return;
+    }
 
-    // Right on top of the player the heading swings wildly, so the camera holds still.
-    if (yawSign == 2 || id == 0 || !Bearing(id, toward) || std::hypot(toward[0], toward[2]) < 1)
+    float wanted = 0;
+
+    if (!Wanted(id, wanted, elapsed))
     {
         return;
     }
 
     // The camera looks the opposite way to its offset from the character. What
     // has been asked of the game but not yet shown is counted as done, so the
-    // view glides onto the target instead of swinging past it.
-    float error = Wrap(Heading(toward) - Heading(back) - Pi) - turnOnItsWay;
+    // view glides onto its mark instead of swinging past it.
+    float error = Wrap(wanted - Heading(back) - Pi) - turnOnItsWay;
     float turn = error * std::fmin(1.0f, lockTurn * elapsed);
     float most = 6 * elapsed;
     turn = std::fmax(-most, std::fmin(most, turn));
@@ -1736,6 +1811,10 @@ void Steer(void* camera, float elapsed)
     {
         reinterpret_cast<AdjustYaw>(required[2].address)(camera, turn * yawSign);
         turnOnItsWay += turn;
+    }
+    else
+    {
+        recentering = false;
     }
 }
 
@@ -1889,6 +1968,11 @@ void Obey(const std::string& line)
     {
         yawPerSecond = NumberAfter(line, "\"yaw\":");
         zoomPerSecond = NumberAfter(line, "\"zoom\":");
+    }
+
+    if (line.find("\"type\":\"recenter\"") != std::string::npos)
+    {
+        recenterRequested = true;
     }
 
     if (line.find("\"type\":\"lock\"") != std::string::npos)
