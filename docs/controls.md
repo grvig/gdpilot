@@ -49,8 +49,13 @@ cursor stays on it, so attacks and skills land on it wherever it runs.
 
 - **One flick, one switch.** The stick has to come back toward the middle
   before the next flick counts, so holding it over never skips past anyone.
-- **In third person the camera turns to face the lock**, smoothly, keeping the
-  enemy ahead of your character.
+- **In third person the camera turns to face the lock**, smoothly, framing
+  the enemy a little to the right of your character so it is never hidden
+  behind you. `lock_offset` in `camera.ini` sets how far, in degrees.
+- **The ring sits on the enemy's chest**, whatever its size, and glides with it
+  between the game's reports.
+- **With nothing to lock onto, the click swings the camera round behind your
+  character**, the way action games do.
 - **When the enemy falls, the lock moves on** to the enemy nearest where it
   stood, so a fight flows from one to the next.
 - **Walls block it.** An enemy behind a wall or a building is never offered.
@@ -60,6 +65,14 @@ cursor stays on it, so attacks and skills land on it wherever it runs.
 
 The pad ticks lightly as a lock is taken or switched, and a little more firmly
 as one is lost.
+
+### Soft aim
+
+Without a lock, in third person, the cursor drifts from the aim point onto an
+enemy close to where the camera points, and back when it moves away, so a
+swing aimed roughly at an enemy lands on it. It only takes enemies near your
+character and near the middle of the view, and keeps the one it has until it
+moves well away. `softAim` under `input` turns it off.
 
 ## Third person
 
