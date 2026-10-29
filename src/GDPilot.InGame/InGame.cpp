@@ -1852,11 +1852,51 @@ float SecondsSinceLastFrame()
     return seconds;
 }
 
+// What the in-game part's own work costs the game each frame, logged every
+// half minute as an average and a worst frame, so a dip in the game's frame
+// rate can be told apart from anything done here.
+double costTotal = 0;
+double costWorst = 0;
+int costFrames = 0;
+float sinceCostReport = 0;
+
+void Account(LONGLONG ticks, float elapsed)
+{
+    double microseconds = static_cast<double>(ticks) * 1000000.0 / static_cast<double>(ticksPerSecond.QuadPart);
+    costTotal += microseconds;
+    costWorst = std::fmax(costWorst, microseconds);
+    costFrames++;
+    sinceCostReport += elapsed;
+
+    if (sinceCostReport < 30)
+    {
+        return;
+    }
+
+    Say("Cost: %.0f us a frame on average, %.0f us at worst, over %d frames.", costTotal / costFrames, costWorst, costFrames);
+    costTotal = 0;
+    costWorst = 0;
+    costFrames = 0;
+    sinceCostReport = 0;
+}
+
+void Work(void* camera, float elapsed);
+
 // Runs on the game's own thread, once per camera update, after the game's code.
 void UpdatedCamera(void* camera)
 {
     originalUpdate(camera);
     float elapsed = SecondsSinceLastFrame();
+    LARGE_INTEGER started{};
+    QueryPerformanceCounter(&started);
+    Work(camera, elapsed);
+    LARGE_INTEGER ended{};
+    QueryPerformanceCounter(&ended);
+    Account(ended.QuadPart - started.QuadPart, elapsed);
+}
+
+void Work(void* camera, float elapsed)
+{
     CheckPanels(elapsed);
     CheckLayouts(elapsed);
     CheckHealth(elapsed);
