@@ -144,11 +144,20 @@ rotation the game keeps for it, and gives way at once to the right stick.
 
 ## What it costs the game
 
-Every half minute the log records how long the in-game part's own work took
-per frame, as an average and a worst frame. Measured live on 2026-10-30 with
-enemies around, it averaged about 30 microseconds, a fiftieth of a 60 fps
-frame, with the worst frame near a third of a millisecond. Switching third
-person on reads `camera.ini` and costs a couple of milliseconds, once.
+Every five minutes the log records how long the in-game part's own work took
+per frame, as an average and a worst frame, and it says at once if any single
+frame of its own work passes two milliseconds. Measured live with enemies
+around, it averaged about 30 microseconds, a fiftieth of a 60 fps frame, with
+the worst frame near a third of a millisecond. Switching third person on reads
+`camera.ini` whole in one go, which costs well under half a millisecond.
+
+## The ground round the character
+
+With the targets, the in-game part reports where the character's feet fall on
+the screen and eight points of ground six units out, every eighth of a turn
+from the way the camera looks. GDPilot aims the dodge through them, so a
+dodge to the right lands to the right however the camera is turned or
+tilted.
 
 ## Not yet
 
