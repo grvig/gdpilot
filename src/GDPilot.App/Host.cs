@@ -208,7 +208,7 @@ internal static class Host
                         Wheel = view,
                         Marker = LockMarker.For(locked, mapper.LockPoint),
                     };
-                    overlay.Update(state, gameBounds, config.Overlay.Corner);
+                    overlay.Update(state.Floating(), gameBounds, config.Overlay.Corner);
                     wheelShown = wheelOpen;
                     markerShown = locked is not null;
                 }

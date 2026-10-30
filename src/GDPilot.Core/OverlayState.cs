@@ -12,6 +12,21 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     /// <summary>The marker over the locked enemy, or null with nothing locked or the enemy out of view.</summary>
     public LockMarker? Marker { get; init; }
 
+    /// <summary>
+    /// The state with nothing drawn over the game's middle while input is
+    /// suspended: alt-tabbed away, the wheel and the marker would otherwise float
+    /// over whatever window is in front.
+    /// </summary>
+    public OverlayState Floating()
+    {
+        if (Suspended is null)
+        {
+            return this;
+        }
+
+        return this with { Wheel = null, Marker = null };
+    }
+
     /// <param name="gridFellBack">Whether grid presses are stepping because the screen could not be read, said first so it is noticed.</param>
     /// <param name="thirdPerson">Whether the third-person camera is on, which changes what the right stick does.</param>
     /// <param name="locked">The enemy held by lock-on, which changes it again.</param>

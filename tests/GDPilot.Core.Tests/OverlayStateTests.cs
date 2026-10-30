@@ -70,4 +70,26 @@ public sealed class OverlayStateTests
         Assert.Null(LockMarker.For(new SeenTarget(5, 0.5, 0.25, 6, 64, true), null));
         Assert.Null(LockMarker.For(null, (1060, 320)));
     }
+
+    [Fact]
+    public void AwayFromTheGameNeitherTheMarkerNorTheWheelIsDrawn()
+    {
+        OverlayState drawn = OverlayState.Build(Mode.Combat, SuspendReason.FocusLost, Combat) with
+        {
+            Marker = new LockMarker(960, 400, 80),
+            Wheel = new WheelView(new[] { "1" }, null),
+        };
+
+        Assert.Null(drawn.Floating().Marker);
+        Assert.Null(drawn.Floating().Wheel);
+        Assert.NotNull(OverlayState.Build(Mode.Combat, SuspendReason.None, Combat).Floating());
+    }
+
+    [Fact]
+    public void InTheGameTheMarkerStays()
+    {
+        OverlayState drawn = OverlayState.Build(Mode.Combat, SuspendReason.None, Combat) with { Marker = new LockMarker(960, 400, 80) };
+
+        Assert.NotNull(drawn.Floating().Marker);
+    }
 }
