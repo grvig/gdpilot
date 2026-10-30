@@ -240,17 +240,42 @@ float lockTurn = 8;
 // frames it to the right; six degrees clears the character's shoulder.
 float lockOffset = 0.105f;
 
+// camera.ini's [camera] section, read whole in one go when third person turns
+// on, since asking Windows for each key opens the file again every time and a
+// dozen of those cost the game a couple of milliseconds in one frame.
+std::wstring settingsSection;
+
+void LoadSettings()
+{
+    std::vector<wchar_t> text(8192);
+    DWORD length = GetPrivateProfileSectionW(L"camera", text.data(), static_cast<DWORD>(text.size()), settingsPath.c_str());
+    settingsSection.assign(text.data(), length);
+}
+
+// A key from the section last loaded: entries are "key=value", each ended by a null.
 float Setting(const wchar_t* key, float fallback)
 {
-    wchar_t text[32]{};
-    GetPrivateProfileStringW(L"camera", key, L"", text, 32, settingsPath.c_str());
+    std::wstring wanted = std::wstring(key) + L"=";
+    std::size_t at = 0;
 
-    if (text[0] == 0)
+    while (at < settingsSection.size())
     {
-        return fallback;
+        std::size_t end = settingsSection.find(L'\0', at);
+
+        if (end == std::wstring::npos)
+        {
+            end = settingsSection.size();
+        }
+
+        if (settingsSection.compare(at, wanted.size(), wanted) == 0 && end > at + wanted.size())
+        {
+            return std::wcstof(settingsSection.c_str() + at + wanted.size(), nullptr);
+        }
+
+        at = end + 1;
     }
 
-    return std::wcstof(text, nullptr);
+    return fallback;
 }
 
 // The third-person camera, read from camera.ini beside the log each time it
@@ -886,6 +911,7 @@ void TurnOn(void* camera)
     Say("Native camera: distance %.1f to %.1f from %.1f, pitch %.1f to %.1f from %.1f, zoom %.3f heading to %.3f between %.1f and %.1f, view %.3f.",
         native[2], native[3], native[0], native[4], native[5], native[1], native[6], native[7], native[8], native[9], native[10]);
     float behind[std::size(Fields)]{};
+    LoadSettings();
     Behind(behind);
 
     if (!Plausible(behind) || behind[2] >= behind[3] || behind[0] < behind[2] || behind[0] > behind[3])
@@ -1214,6 +1240,7 @@ void FindTargets()
     }
 
     // Read here as well as on each switch, since lock-on aims in the game's own camera too.
+    LoadSettings();
     aimHeight = Setting(L"lock_aim_height", 1);
     Say("Found the game's target query; lock-on can see enemies.");
 }
