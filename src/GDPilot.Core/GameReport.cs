@@ -127,21 +127,25 @@ public abstract record GameReport
     {
         List<SeenTarget> targets = new();
 
+        // Thirty of these arrive a second, so one enemy the game described badly is
+        // passed over rather than costing the whole report, and with it the lock.
         foreach (JsonNode? node in root["list"]?.AsArray() ?? new JsonArray())
         {
-            JsonObject target = node?.AsObject() ?? throw new FormatException("An empty target.");
-            uint id = target["id"]?.GetValue<uint>() ?? 0;
-
-            if (id == 0)
+            if (node is not JsonObject target || !Has(target, "id", out uint id) || id == 0 || !Has(target, "x", out double x) || !Has(target, "y", out double y))
             {
-                throw new FormatException("A target needs a non-zero id.");
+                continue;
             }
 
-            double x = target["x"]?.GetValue<double>() ?? throw new FormatException($"Target {id} has no position.");
-            double y = target["y"]?.GetValue<double>() ?? throw new FormatException($"Target {id} has no position.");
-            double distance = target["distance"]?.GetValue<double>() ?? 0;
-            int health = Math.Clamp(target["health"]?.GetValue<int>() ?? 100, 0, 100);
-            targets.Add(new SeenTarget(id, x, y, distance, health, target["seen"]?.GetValue<bool>() ?? false));
+            Has(target, "distance", out double distance);
+            int health = 100;
+
+            if (Has(target, "health", out int reported))
+            {
+                health = Math.Clamp(reported, 0, 100);
+            }
+
+            Has(target, "seen", out bool seen);
+            targets.Add(new SeenTarget(id, x, y, distance, health, seen));
         }
 
         List<ScreenSpot?> ring = new();
@@ -152,6 +156,12 @@ public abstract record GameReport
         }
 
         return new TargetsReport(targets) { Feet = Spot(root["feet"]), Ring = ring };
+    }
+
+    private static bool Has<T>(JsonObject item, string name, out T value)
+    {
+        value = default!;
+        return item[name] is JsonValue found && found.TryGetValue(out value!);
     }
 
     private static ScreenSpot? Spot(JsonNode? node)

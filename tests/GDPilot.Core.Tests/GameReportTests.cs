@@ -67,9 +67,11 @@ public sealed class GameReportTests
     }
 
     [Fact]
-    public void ATargetWithoutAnIdIsRefused()
+    public void ABadlyDescribedTargetIsPassedOverAndTheRestKept()
     {
-        Assert.Throws<FormatException>(() => GameReport.Parse("""{"protocol":1,"type":"targets","list":[{"x":0.5,"y":0.5}]}"""));
+        TargetsReport received = Assert.IsType<TargetsReport>(GameReport.Parse("""{"protocol":1,"type":"targets","list":[{"x":0.5,"y":0.5},{"id":4,"x":"far","y":0.2},7,{"id":9,"x":0.4,"y":0.3,"distance":5,"health":60,"seen":true}]}"""));
+
+        Assert.Equal(new[] { new SeenTarget(9, 0.4, 0.3, 5, 60, true) }, received.Targets);
     }
 
     [Fact]
