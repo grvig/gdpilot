@@ -53,6 +53,8 @@ in the game, with recorded pad traces:
 | `lock-fight.json` | Locking on and holding the attack, near enemies outside a town |
 | `dodge-and-aim.json` | Third person, an attack with soft aim, dodges right, left and ahead on B, then a lock |
 | `analog-walk.json` | Walking thirty degrees right of forward, then back and left, then stopping |
+| `interact-pick-up.json` | A pressed beside a dropped item, after the link is up; the item is picked up |
+| `aim-and-lock.json` | Twin-stick aiming in the game's camera, then a lock among enemies |
 
 Lock-on needs foes near the character and in view. `GDPilot.exe --targets`
 prints what the in-game part sees, which of them are in view, and which one a
@@ -78,6 +80,11 @@ it a few times a second while steering showed each step's direction to two
 decimal places against the stick's. Screenshots show the walk only roughly.
 `--rumble-test` plays every rumble GDPilot makes, the fight's included, for
 someone holding the pad.
+
+To check pick-up, drop a junk item from the bags beside the character and
+press A; pick it back up before restarting the game or leaving the area, since
+an area reset loses whatever lies on the ground. Press A only after the link
+is up, half a second or so after GDPilot starts: before that A is Space.
 
 What each trace sent in the game is pinned by a test, so a change that alters
 it shows up in the suite, not only in the game.
