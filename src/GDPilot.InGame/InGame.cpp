@@ -1999,12 +1999,14 @@ float SecondsSinceLastFrame()
 }
 
 // What the in-game part's own work costs the game each frame, logged every
-// half minute as an average and a worst frame, so a dip in the game's frame
-// rate can be told apart from anything done here.
+// five minutes as an average and a worst frame, and at once for any single
+// frame over two milliseconds, which is where a stutter could be felt; so a dip
+// in the game's frame rate can be told apart from anything done here.
 double costTotal = 0;
 double costWorst = 0;
 int costFrames = 0;
 float sinceCostReport = 0;
+float sinceSlowFrame = 1000;
 
 void Account(LONGLONG ticks, float elapsed)
 {
@@ -2013,8 +2015,16 @@ void Account(LONGLONG ticks, float elapsed)
     costWorst = std::fmax(costWorst, microseconds);
     costFrames++;
     sinceCostReport += elapsed;
+    sinceSlowFrame += elapsed;
 
-    if (sinceCostReport < 30)
+    // At most one a minute, so a run of slow frames cannot fill the log.
+    if (microseconds > 2000 && sinceSlowFrame > 60)
+    {
+        Say("Cost: one frame took %.0f us.", microseconds);
+        sinceSlowFrame = 0;
+    }
+
+    if (sinceCostReport < 300)
     {
         return;
     }
