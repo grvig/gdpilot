@@ -13,7 +13,8 @@ game always shows what each button does in the mode you are in.
 | Right bumper | Left click: attack or interact where the cursor is |
 | Left bumper | Right click |
 | A | Space |
-| X, Y, B | Hotbar slots 2, 3 and 4 |
+| X, Y | Hotbar slots 2 and 3 |
+| B | Dodge: hotbar slot 4, aimed the way the left stick points |
 | Left trigger + A, X, Y, B | Hotbar slots 1, 5, 6 and 7 |
 | Back, held | The skill wheel |
 | Right stick click | Lock on to the enemy in view; again to let go |
@@ -65,6 +66,16 @@ cursor stays on it, so attacks and skills land on it wherever it runs.
 
 The pad ticks lightly as a lock is taken or switched, and a little more firmly
 as one is lost.
+
+### Dodge
+
+B fires whatever skill sits in hotbar slot 4 at the ground a few steps out the
+way the left stick points, so a movement skill such as Blitz, Shadow Strike or
+a dash becomes a dodge in any direction, without aiming the cursor. With the
+stick at rest it goes straight ahead. Put your movement skill in slot 4, or
+bind `dodge:<key>` under `bindings` to another slot. The in-game part reports
+where the ground round your character falls on the screen, so the aim is right
+in either camera; without it the dodge aims out from the middle of the screen.
 
 ### Soft aim
 
