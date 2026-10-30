@@ -291,6 +291,53 @@ public sealed class TraceReplayTests
         Assert.Equal(new uint[] { 2, 3, 2, 0 }, locks);
     }
 
+    [Fact]
+    public void TheDodgeAndAimTraceDodgesRightLeftAndAheadThenLocksOn()
+    {
+        GamepadTrace trace = Load("dodge-and-aim.json");
+        TimeSpan now = TimeSpan.Zero;
+        ReplayGamepadSource source = new(trace, () => now);
+        ButtonLayers combat = BindingTable.Parse(new Dictionary<string, string> { ["B"] = "dodge:4", ["RightBumper"] = "mouse:left", ["RightStick"] = "lock:toggle", ["LT+RightStick"] = "camera:toggle" }, 0.5);
+        TargetsReport near = new(new[] { new SeenTarget(11, 0.53, 0.4, 5, 100, true) })
+        {
+            Feet = new ScreenSpot(0.5, 0.7),
+            Ring = new ScreenSpot?[] { new ScreenSpot(0.5, 0.45), null, new ScreenSpot(0.9, 0.6), null, null, null, new ScreenSpot(0.1, 0.6), null },
+        };
+        Mapper mapper = new(Settings, combat)
+        {
+            Lock = new LockOn(new LockSettings()),
+            SoftAim = new SoftAim(),
+            Near = near,
+            Seen = near.Targets,
+            GameBounds = new ScreenRect(0, 0, 1920, 1080),
+            Looking = true,
+            AimPoint = (960, 410),
+        };
+        List<InputIntent> sent = new();
+
+        while (!source.IsFinished)
+        {
+            sent.AddRange(mapper.Tick(source.Read(), Tick));
+            now += Tick;
+        }
+
+        // Soft aim keeps the cursor on the enemy beside the aim point while the attack is held.
+        Assert.Equal(new PointerMoveTo(1018, 432), sent.First(intent => intent is PointerMoveTo));
+
+        List<PointerMoveTo> aimedDodges = new();
+
+        for (int index = 1; index < sent.Count; index++)
+        {
+            if (sent[index] == new KeyDown(KeyCode.D4))
+            {
+                aimedDodges.Add(Assert.IsType<PointerMoveTo>(sent[index - 1]));
+            }
+        }
+
+        Assert.Equal(new[] { new PointerMoveTo(1728, 648), new PointerMoveTo(192, 648), new PointerMoveTo(960, 486) }, aimedDodges);
+        Assert.Equal(new[] { new LockCommand(11), new LockCommand(0) }, sent.OfType<GameCommandIntent>().Select(intent => intent.Command).OfType<LockCommand>());
+    }
+
     private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600));
 
     private static GamepadTrace Load(string fixture)

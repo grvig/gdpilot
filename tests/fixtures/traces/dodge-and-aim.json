@@ -1,0 +1,22 @@
+{
+  "entries": [
+    { "at": 0 },
+    { "at": 500, "buttons": "RightStick", "leftTrigger": 1.0 },
+    { "at": 600 },
+    { "at": 1500, "buttons": "RightBumper" },
+    { "at": 4000 },
+    { "at": 4500, "buttons": "B", "leftX": 1 },
+    { "at": 4600 },
+    { "at": 5500, "buttons": "B", "leftX": -1 },
+    { "at": 5600 },
+    { "at": 6500, "buttons": "B" },
+    { "at": 6600 },
+    { "at": 7500, "buttons": "RightStick" },
+    { "at": 7600 },
+    { "at": 8000, "buttons": "RightBumper" },
+    { "at": 10000 },
+    { "at": 11000, "buttons": "RightStick" },
+    { "at": 11100 },
+    { "at": 12000 }
+  ]
+}
