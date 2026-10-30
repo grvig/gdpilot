@@ -19,10 +19,10 @@ holds the phases and the rules for the in-game part.
 | 3. Grid navigation by calibration | Done, checked live in the game end to end through `--replay` |
 | 4. Occupancy detection | Done: exact item layouts from the game, checked live; screen reading as the fallback |
 | 5. In-game part and action camera | Done: camera, turning, zoom, collision, following, panel and item reports, all checked live |
-| 6. Lock-on, camera-relative movement, smart interact | Mostly done: lock-on and camera-relative movement checked live; smart interact not started |
+| 6. Lock-on, camera-relative movement, smart interact | Done: all checked live |
 | 7. Radial skills, rumble, snapping in every menu | Started: the skill wheel with icons checked live; rumble built, health checked live; snapping in other menus not started |
 | 8. Shortcuts, profiles, first run, release | Not started |
-| Souls-level feel (PLAN.md section 17) | Mostly done: lock-on parity, soft aim, the dodge, walking in any direction and the fight's rumble; skills without a cursor and the Souls camera left |
+| Souls-level feel (PLAN.md section 17) | Done, but for tuning with the owner at the pad |
 | 9. Hardening | Not started; a bug pass closes each phase meanwhile |
 
 ## What exists
@@ -262,7 +262,12 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   through; with it turned, the character walked at the stick's exact angle in
   both directions tried.
 
-432 core tests and 69 integration tests, all passing.
+- **2026-10-31, live, unattended:** A picked up an item dropped beside the
+  character, talked to Kerrick and travelled through the rift gate, each with
+  its prompt; twin-stick aiming, tilting and a framed lock all worked among
+  the Burial Hill dead.
+
+470 core tests and 71 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -301,7 +306,7 @@ Nothing.
 | HT-2 Capture calibration fixtures | 3 | Done: bags and vendor 2026-10-20, stash 2026-10-24, unattended |
 | HT-3 Feel tuning | 8 | Not yet raised |
 
-## Combat checkpoint, 2026-10-31 (paused at the owner's request)
+## Combat checkpoint, 2026-10-31: complete
 
 | Piece | Status |
 | --- | --- |
@@ -309,19 +314,18 @@ Nothing.
 | Tilt on the right stick, LT to zoom | Done: checked live up and down after the second approach |
 | Lock framing from the camera | Done: close enemies framed beside the character, live |
 | Lock point every frame | Done, live |
-| Smart interact | Talk and use work live (Kerrick, the rift gate); **pick-up misses**: the click lands about a unit from the item |
+| Smart interact | Done: talk, travel and pick-up all worked live from A, with the prompt |
 
 ## Next session starts here
 
-Finish the combat checkpoint, PLAN.md section 17.
+The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
 
-1. **Make pick-up land.** Aim at the item's bounding box rather than its
-   origin: the entity's region box sits at 0x44 or 0x5c in it, six floats,
-   per `Entity::GetRegionBoundingBox`; log it beside the position for an item
-   dropped in town, and check against the label. Drop only junk to test, and
-   pick it back up before any restart: area resets lose dropped items.
-2. A bug pass over everything since the last, then the remaining docs.
-3. Then Phase 7: the stash from the game and snapping in every menu.
+1. **A tuning session with the owner at the pad**: flick strength, turn and
+   tilt speeds, twin-stick reach, rumble strength. Every one is a setting.
+2. **The stash from the game**, so the stash is exact like the bags.
+3. **Snapping in every menu**: skill tree nodes, devotion stars, dialogue
+   choices, the blacksmith's list.
+4. A bug pass at the end of the phase, as always.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
 done.
