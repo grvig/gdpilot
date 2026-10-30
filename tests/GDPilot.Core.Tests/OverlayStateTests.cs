@@ -99,4 +99,10 @@ public sealed class OverlayStateTests
         Assert.Contains("Left stick: walks in any direction", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat, steering: true).Legend);
         Assert.DoesNotContain("Left stick: walks in any direction", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat).Legend);
     }
+
+    [Fact]
+    public void WithTiltingTheCameraLineSaysTheTriggerZooms()
+    {
+        Assert.Equal("Camera: third person; right stick turns and tilts, LT zooms", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat, thirdPerson: true, tilting: true).Legend[0]);
+    }
 }

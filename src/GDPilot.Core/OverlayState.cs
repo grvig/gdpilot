@@ -53,13 +53,18 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     /// <param name="thirdPerson">Whether the third-person camera is on, which changes what the right stick does.</param>
     /// <param name="locked">The enemy held by lock-on, which changes it again.</param>
     /// <param name="steering">Whether the left stick walks in any direction through the game, rather than in eight.</param>
-    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false, SeenTarget? locked = null, bool steering = false)
+    /// <param name="tilting">Whether the right stick's up and down tilts the view, with the left trigger to zoom.</param>
+    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false, SeenTarget? locked = null, bool steering = false, bool tilting = false)
     {
         List<string> legend = new();
 
         if (locked is not null)
         {
             legend.Add($"Locked on: {locked.Health}% life; flick the right stick to switch");
+        }
+        else if (thirdPerson && tilting)
+        {
+            legend.Add("Camera: third person; right stick turns and tilts, LT zooms");
         }
         else if (thirdPerson)
         {
