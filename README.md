@@ -108,11 +108,15 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 **Working today:**
 
 - **Lock-on.** Click the right stick to lock onto the enemy you face. A ring
-  marks it with a bar of its life, the cursor stays on it so every attack and
-  skill lands on it, and in third person the camera glides round to keep it in
-  view. Flick the stick to switch to the next enemy that way; when one falls,
-  the lock moves to the next. Enemies behind walls are never offered. See
-  [docs/controls.md](docs/controls.md).
+  marks its chest with a bar of its life, the cursor stays on it so every
+  attack and skill lands on it, and in third person the camera glides round to
+  frame it just right of your character. Flick the stick to switch to the next
+  enemy that way; when one falls, the lock moves to the next. Enemies behind
+  walls are never offered, and a click with nothing to lock swings the camera
+  back behind you. See [docs/controls.md](docs/controls.md).
+- **Soft aim and a dodge.** Without a lock, swings drift onto the enemy you
+  roughly face. B fires your movement skill as a dodge the way the left stick
+  points, no cursor needed.
 - **The third-person camera.** Hold the left trigger and click the right stick
   and the camera drops behind your character. The right stick turns and zooms it, walking turns
   with it, it swings round as you walk sideways, and it stays in front of
