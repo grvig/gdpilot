@@ -22,6 +22,8 @@ holds the phases and the rules for the in-game part.
 | 6. Lock-on, camera-relative movement, smart interact | Mostly done: lock-on and camera-relative movement checked live; smart interact not started |
 | 7. Radial skills, rumble, snapping in every menu | Started: the skill wheel with icons checked live; rumble built, health checked live; snapping in other menus not started |
 | 8. Shortcuts, profiles, first run, release | Not started |
+| Souls-level feel (PLAN.md section 17) | Started: lock-on parity, soft aim and the dodge done; analog movement waits for the owner's yes |
+| 9. Hardening | Not started; a bug pass closes each phase meanwhile |
 
 ## What exists
 
@@ -133,6 +135,19 @@ Safety:
 | Rumble ticks | Built and tested in Core; not yet felt |
 | `--check-game` | 49 functions, all present |
 
+## Souls-level feel, 2026-10-30
+
+| Piece | Status |
+| --- | --- |
+| Chest aiming | Done: three fifths of each enemy's own height, read live as 2.0 to 2.2 for the Walking Dead |
+| Framing off the shoulder | Done: settles the locked enemy at 0.55 of the width, live |
+| Recentring on an empty press | Done: swung the camera back behind the character, live |
+| Gliding cursor and marker | Done, in Core, tested |
+| Soft aim | Done, in Core, tested; not yet seen live, as the enemies nearby had died |
+| Dodge on B | Done: right, left and ahead aimed through the game's ring of ground, live |
+| Cost of the in-game part | Measured live: about 30 microseconds a frame; the switch's hitch cut from 1.8 to 0.4 ms |
+| Overlay | Windows moved only when they move; kept on top once a second |
+
 ## Live check in the game, 2026-10-19
 
 Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
@@ -229,7 +244,12 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   locked onto a Walking Dead, the marker and the cursor sat on it, the held
   attack killed it, and the lock moved on to the next.
 
-383 core tests and 66 integration tests, all passing.
+- **2026-10-30, live, unattended:** recentring brought the camera back behind
+  the character; a locked enemy settled just right of the character; the dodge
+  aimed right, left and ahead through the reported ground; and the in-game
+  part's cost was measured at about 30 microseconds a frame.
+
+415 core tests and 67 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -241,6 +261,8 @@ Not yet verified:
 - **Rumble felt in the hand.** `--rumble-test` ran without error, but nobody
   was holding the pad; the same goes for lock-on's ticks.
 - **Lock-on from the real pad.** Every lock so far came from recorded traces.
+- **Soft aim among living enemies**, and a dodge with a movement skill in
+  slot 4: the test character has none there.
 - **The pad-driven wizard in the game.** Its steps run live through `--at`;
   the stick-and-button loop around them needs someone at the pad.
 
@@ -268,17 +290,19 @@ Nothing.
 
 ## Next session starts here
 
-Phases 6 and 7, PLAN.md section 17.
+PLAN.md section 17: the Souls-level feel list, then Phases 6 to 8.
 
-1. **Smart interact.** A nearby list like lock-on's, with loot, characters
-   and chests: one button to pick up, talk or open the nearest.
-2. **The stash from the game.** Find the stash's sacks, so the stash is exact
-   too.
-3. **Snapping in every menu**: skill tree nodes, devotion stars, dialogue
-   choices, the blacksmith's list.
-4. **Lock-on polish**, if play shows the need: a camera that recentres behind
-   the character when there is nothing to lock, and pitch that frames tall
-   enemies.
+1. **Ask the owner about analog movement.** It writes the game's controller
+   direction, beyond the camera; it waits for a yes.
+2. **Skills that need no cursor**, and **rumble from the fight**.
+3. **Smart interact.** A nearby list like lock-on's, with loot, characters and
+   chests: one button to pick up, talk or open the nearest.
+4. **The stash from the game**, then **snapping in every menu**.
+5. **A bug pass at the end of each phase**; Phase 9 hardens everything before
+   release.
+
+Only start Grim Dawn for a live check, and close it as soon as the check is
+done.
 
 Workflow: `src\GDPilot.InGame\build.cmd`, `dotnet build`, restart the game,
 enter the world, `GDPilot.exe --load-in-game`, then replay a trace. A new
