@@ -51,6 +51,7 @@ in the game, with recorded pad traces:
 | `stash-tour.json` | Stash cells, tabs, every grid, and a split |
 | `lock-on.json` | Locking on, flicking right then left, letting go; the log names each lock |
 | `lock-fight.json` | Locking on and holding the attack, near enemies outside a town |
+| `dodge-and-aim.json` | Third person, an attack with soft aim, dodges right, left and ahead on B, then a lock |
 
 Lock-on needs foes near the character and in view. `GDPilot.exe --targets`
 prints what the in-game part sees, which of them are in view, and which one a
@@ -59,12 +60,17 @@ reports none in view, which is correct. The low-level cemetery by the Lower
 Crossing riftgate has enemies a few steps from the gate. The log records the
 camera's measured turn as third person first starts each session.
 
-Every half minute the log also records what the in-game part cost the game
-per frame, as an average and a worst frame. A figure much above a tenth of a
+Every five minutes the log also records what the in-game part cost the game
+per frame, as an average and a worst frame, and it says at once if one of its
+frames passes two milliseconds. A figure much above a tenth of a
 millisecond on average is worth chasing before anything else; about 30
 microseconds was measured with enemies around. When judging the game's own
 frame rate, take no screenshots while watching it: copying the whole screen
 stalls the game for a moment on its own.
+
+A dodge only lasts one tap, so a screenshot will not catch where it aimed;
+read the cursor's position a few dozen times a second while the trace runs
+instead. `--targets` prints the ring of ground the dodge aims through.
 
 What each trace sent in the game is pinned by a test, so a change that alters
 it shows up in the suite, not only in the game.
