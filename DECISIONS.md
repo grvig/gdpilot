@@ -657,3 +657,24 @@ made the desktop recompose fifty times a second while the marker was up; now
 a window is moved only when its spot changes, and kept on top once a second.
 The in-game part was measured at the same time at about 30 microseconds a
 frame, so it was never the cause of the dips the owner saw.
+
+## 2026-10-30 — The dodge, and a bug pass
+
+**A dodge is a movement skill aimed by the stick.** Grim Dawn has no dodge of
+its own, and its movement skills go toward the cursor. B puts the cursor on
+the ground the left stick points at, a few steps out, taps the skill, and
+gives the cursor back once the key is up; nothing else moves the cursor in
+between, or the skill would follow it. Slot 4 by default, so it is the owner's
+choice which skill dodges.
+
+**The ground comes from the game.** A point straight up the screen is the sky
+in a low third-person camera, so the in-game part reports where the feet and
+eight points of ground round them fall on the screen, and the dodge takes the
+point lying the stick's way from the feet. Live, right, left and ahead landed
+at the screen's right edge, its left edge and just ahead of the character.
+
+**The bug pass found three.** A dodge did nothing before the game's window was
+found; the marker and the wheel stayed drawn over other windows when the game
+was not in front; and a lock outlived the character's death. Each is fixed,
+the first two with tests. Switching third person on also read `camera.ini` a
+dozen times over, a 1.8 ms frame; it reads the file once now, 0.4 ms.
