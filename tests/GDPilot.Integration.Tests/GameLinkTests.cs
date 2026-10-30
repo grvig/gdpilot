@@ -97,13 +97,15 @@ public sealed class GameLinkTests
         {
             game.Connect(2000);
             using StreamWriter writer = new(game) { AutoFlush = true };
-            writer.WriteLine(new TargetsReport(new[] { new SeenTarget(7, 0.5, 0.4, 6, 90, true) }).Write());
+            writer.WriteLine(new TargetsReport(new[] { new SeenTarget(7, 0.5, 0.4, 6, 90, true) }) { Feet = new ScreenSpot(0.5, 0.6) }.Write());
 
             Assert.True(SpinWait.SpinUntil(() => link.Targets.Count == 1, 2000));
             Assert.Equal(7u, link.Targets[0].Id);
+            Assert.Equal(new ScreenSpot(0.5, 0.6), link.Near.Feet);
         }
 
         Assert.True(SpinWait.SpinUntil(() => link.Targets.Count == 0, 2000));
+        Assert.Null(link.Near.Feet);
     }
 
     [Fact]

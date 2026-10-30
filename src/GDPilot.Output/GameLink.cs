@@ -23,7 +23,7 @@ public sealed class GameLink : IDisposable
     private readonly Thread listener;
     private readonly object sending = new();
     private PanelsReport? panels;
-    private IReadOnlyList<SeenTarget> targets = Array.Empty<SeenTarget>();
+    private TargetsReport near = new(Array.Empty<SeenTarget>());
     private StreamWriter? writer;
     private volatile bool thirdPerson;
     private volatile int health = -1;
@@ -46,7 +46,10 @@ public sealed class GameLink : IDisposable
     public int Health => health;
 
     /// <summary>The enemies near the player as last reported, or none once the game has gone.</summary>
-    public IReadOnlyList<SeenTarget> Targets => Volatile.Read(ref targets);
+    public IReadOnlyList<SeenTarget> Targets => Volatile.Read(ref near).Targets;
+
+    /// <summary>The last targets report whole, with where the character and the ground round it fall on the screen.</summary>
+    public TargetsReport Near => Volatile.Read(ref near);
 
     /// <summary>Whether the game last said it was showing the third-person camera; false once it has gone.</summary>
     public bool ThirdPerson => thirdPerson;
@@ -127,7 +130,7 @@ public sealed class GameLink : IDisposable
                 thirdPerson = false;
                 health = -1;
                 Volatile.Write(ref panels, null);
-                Volatile.Write(ref targets, Array.Empty<SeenTarget>());
+                Volatile.Write(ref near, new TargetsReport(Array.Empty<SeenTarget>()));
                 layouts.Forget();
             }
         }
@@ -179,8 +182,8 @@ public sealed class GameLink : IDisposable
             case HealthReport life:
                 health = life.Percent;
                 break;
-            case TargetsReport near:
-                Volatile.Write(ref targets, near.Targets);
+            case TargetsReport around:
+                Volatile.Write(ref near, around);
                 break;
         }
     }
