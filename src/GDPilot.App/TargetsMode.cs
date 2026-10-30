@@ -6,7 +6,8 @@ namespace GDPilot.App;
 /// <summary>
 /// --targets: prints the enemies the in-game part reports, once a second, and
 /// which one a press of lock-on would take, so a lock that will not come can
-/// be told apart from an enemy the game does not offer.
+/// be told apart from an enemy the game does not offer; and where the ground a
+/// dodge aims through falls on the screen.
 /// </summary>
 internal static class TargetsMode
 {
@@ -34,9 +35,33 @@ internal static class TargetsMode
         {
             Thread.Sleep(1000);
             Print(link.Targets, config.LockOn());
+            PrintGround(link.Near);
         }
 
         return 0;
+    }
+
+    /// <summary>Where the character's feet and the ring of ground a dodge aims through fall on the screen.</summary>
+    private static void PrintGround(TargetsReport near)
+    {
+        if (near.Feet is not ScreenSpot feet)
+        {
+            Console.WriteLine("  The game has not said where the character stands.");
+            return;
+        }
+
+        string ring = string.Join(" ", near.Ring.Select(Describe));
+        Console.WriteLine($"  Feet at {feet.X:F2}, {feet.Y:F2}; the ground round them, ahead first: {ring}");
+    }
+
+    private static string Describe(ScreenSpot? spot)
+    {
+        if (spot is null)
+        {
+            return "(behind the camera)";
+        }
+
+        return $"({spot.X:F2}, {spot.Y:F2})";
     }
 
     private static void Print(IReadOnlyList<SeenTarget> targets, LockOn lockOn)
