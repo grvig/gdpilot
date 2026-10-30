@@ -22,7 +22,7 @@ holds the phases and the rules for the in-game part.
 | 6. Lock-on, camera-relative movement, smart interact | Mostly done: lock-on and camera-relative movement checked live; smart interact not started |
 | 7. Radial skills, rumble, snapping in every menu | Started: the skill wheel with icons checked live; rumble built, health checked live; snapping in other menus not started |
 | 8. Shortcuts, profiles, first run, release | Not started |
-| Souls-level feel (PLAN.md section 17) | Started: lock-on parity, soft aim and the dodge done; analog movement waits for the owner's yes |
+| Souls-level feel (PLAN.md section 17) | Started: lock-on parity, soft aim and the dodge done; analog movement approved, next |
 | 9. Hardening | Not started; a bug pass closes each phase meanwhile |
 
 ## What exists
@@ -292,8 +292,11 @@ Nothing.
 
 PLAN.md section 17: the Souls-level feel list, then Phases 6 to 8.
 
-1. **Ask the owner about analog movement.** It writes the game's controller
-   direction, beyond the camera; it waits for a yes.
+1. **Analog movement**, approved by the owner on 2026-10-30. Hand the game the
+   left stick's direction through its own controller movement
+   (`ControllerPlayer::SetControllerDirection`, already in
+   `game-functions.txt`, mapped by GrimAction), relative to the camera, with
+   the WASD keys kept as the fallback when the in-game part is not loaded.
 2. **Skills that need no cursor**, and **rumble from the fight**.
 3. **Smart interact.** A nearby list like lock-on's, with loot, characters and
    chests: one button to pick up, talk or open the nearest.

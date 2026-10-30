@@ -678,3 +678,12 @@ found; the marker and the wheel stayed drawn over other windows when the game
 was not in front; and a lock outlived the character's death. Each is fixed,
 the first two with tests. Switching third person on also read `camera.ini` a
 dozen times over, a 1.8 ms frame; it reads the file once now, 0.4 ms.
+
+**Analog movement is approved.** On 2026-10-30 the owner agreed that the
+in-game part may hand the game the direction the left stick asks the
+character to move, as the game's own gamepad mode does, for smooth movement in
+any direction instead of eight keys. It is the player's own input, not a
+change to how the game plays out, so the rule "write only the camera" now
+reads "write only the camera and the player's own input". Nothing that touches
+damage, drops, stats or progression is ever written. Without the in-game
+part, movement stays on WASD.

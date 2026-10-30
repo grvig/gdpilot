@@ -618,8 +618,11 @@ skills, menus that snap to items, and controls that adapt to what is on screen.
 2. **Fail closed.** Anything missing or unexpected at load means the in-game
    part stays off and says why. The controller side carries on with screen
    reading and the classic camera.
-3. **Write only the camera.** Camera position, angle and zoom. Nothing that
-   changes damage, drops, stats or progression, ever.
+3. **Write only the camera, and the player's own input.** Camera position,
+   angle and zoom; and, since the owner's yes on 2026-10-30, the direction the
+   left stick asks the character to move, handed to the game the way its own
+   gamepad mode hands it. Nothing that changes damage, drops, stats or
+   progression, ever.
 4. **Never read the pad inside the game.** GrimAction found that polling the
    pad from inside broke the game's own input. The controller side reads it.
 5. **The kill switch outranks everything.** It lives in the controller side,
@@ -672,8 +675,8 @@ animation; everything else about feel is in scope:
   recentring on an empty press, gliding between reports. Done.
 - **Soft aim** without a lock. Done.
 - **Analog movement in any direction**, through the game's own controller
-  direction rather than eight keys. This writes more than the camera, so it
-  waits for the owner's yes, and rule 3 above is amended when it comes.
+  direction rather than eight keys. Approved by the owner on 2026-10-30; rule
+  3 above is amended to allow it.
 - **A dodge in the left stick's direction** on one button.
 - **Skills that need no cursor:** cast where the character faces, or at the
   lock.
