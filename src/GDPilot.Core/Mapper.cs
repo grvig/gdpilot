@@ -62,6 +62,13 @@ public sealed class Mapper
     public RadialMenu? Wheel { get; set; }
     private bool wasLocked;
 
+    /// <summary>The game's last targets report, for where the character's feet and the ground round it fall on the screen.</summary>
+    public TargetsReport? Near { get; set; }
+
+    private bool dodgeHeld;
+    private KeyCode? dodging;
+    private TimeSpan dodgeHeldFor;
+
     /// <summary>Soft aim, drawing the cursor onto an enemy near the aim point in third person; null when turned off.</summary>
     public SoftAim? SoftAim { get; set; }
 
@@ -106,6 +113,10 @@ public sealed class Mapper
         // A wheel open when input stopped must not cast when it resumes.
         Wheel?.Close();
         casting = null;
+
+        // A dodge cut off by the suspension has had its key let go with everything else.
+        dodging = null;
+        dodgeHeld = false;
 
         // The next tick tells the game the lock has gone.
         Lock?.Release();
@@ -193,6 +204,54 @@ public sealed class Mapper
         }
 
         return (0.5, 0.5);
+    }
+
+    /// <summary>
+    /// On a dodge press, puts the cursor on the ground the left stick points at
+    /// and taps the skill's key there; once the key is up, the cursor goes back to
+    /// wherever it belongs. Returns whether a dodge holds the cursor this tick.
+    /// </summary>
+    private bool TickDodge(GamepadSnapshot snapshot, StickPosition left, TimeSpan elapsed, List<InputIntent> intents)
+    {
+        KeyCode? pressedKey = null;
+
+        foreach ((GamepadButtons button, ButtonBinding _, bool _) in Buttons.Entries)
+        {
+            if (snapshot.IsPressed(button) && Buttons.BindingFor(button, snapshot.LeftTrigger) is DodgeBinding dodge)
+            {
+                pressedKey = dodge.Key;
+            }
+        }
+
+        bool pressed = pressedKey is not null;
+
+        if (pressed && !dodgeHeld && dodging is null && GameBounds is ScreenRect bounds)
+        {
+            ScreenSpot spot = DodgeAim.Spot(Near, left, settings.WalkThreshold, Aspect());
+            intents.Add(new PointerMoveTo((int)Math.Round(bounds.X + spot.X * bounds.Width), (int)Math.Round(bounds.Y + spot.Y * bounds.Height)));
+            intents.Add(new KeyDown(pressedKey!.Value));
+            dodging = pressedKey;
+            dodgeHeldFor = TimeSpan.Zero;
+        }
+
+        dodgeHeld = pressed;
+
+        if (dodging is not KeyCode key)
+        {
+            return false;
+        }
+
+        dodgeHeldFor += elapsed;
+
+        if (dodgeHeldFor < ModeController.TapLength)
+        {
+            return true;
+        }
+
+        intents.Add(new KeyUp(key));
+        dodging = null;
+        cursorAt = null;
+        return true;
     }
 
     /// <summary>
@@ -364,6 +423,12 @@ public sealed class Mapper
 
         List<InputIntent> intents = differ.Update(keys, pointerButtons);
         TickLock(snapshot, right, elapsed, wheelOpen, intents);
+
+        // While a dodge's key is down the cursor stays on its spot, or the skill would go elsewhere.
+        if (TickDodge(snapshot, left, elapsed, intents))
+        {
+            return intents;
+        }
 
         // Locked, the right stick only flicks between enemies, the game turns the
         // camera, and the cursor stays on the enemy so attacks and skills land on it.
