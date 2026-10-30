@@ -1438,6 +1438,118 @@ std::string Fixed(float value, int decimals)
     return text;
 }
 
+// Where the ground round the character falls on the screen: its feet, and
+// eight points a few steps out, every eighth of a turn from the way the camera
+// looks. GDPilot aims a dodge through these, so a dodge goes where the stick
+// points in either camera, perspective and all.
+constexpr int RingPoints = 8;
+constexpr float RingReach = 6;
+
+struct Ring
+{
+    float feet[2];
+    bool feetShown;
+    float points[RingPoints][2];
+    bool shown[RingPoints];
+};
+
+Ring ring{};
+
+float Heading(const float vector[3]);
+
+bool ReadRing(void* camera, const int viewport[4], Ring& out)
+{
+    __try
+    {
+        const void* player = mainPlayer(*engineSlot);
+
+        if (player == nullptr)
+        {
+            return false;
+        }
+
+        WorldPoint centre{};
+        pathPosition(player, &centre);
+        WorldPoint zero{cameraRegion(camera), 0, 0, 0};
+        WorldPoint offset{};
+        viewOffset(camera, &offset, &zero);
+        float back[3] = {offset.x, offset.y, offset.z};
+        float facing = Heading(back) + 3.14159265f;
+
+        for (int index = -1; index < RingPoints; index++)
+        {
+            float relative[3]{};
+
+            if (index >= 0)
+            {
+                float angle = facing + index * 2 * 3.14159265f / RingPoints;
+                relative[0] = std::cos(angle) * RingReach;
+                relative[2] = std::sin(angle) * RingReach;
+            }
+
+            float ahead = 0;
+
+            for (int axis = 0; axis < 3; axis++)
+            {
+                ahead -= (relative[axis] - back[axis]) * back[axis];
+            }
+
+            WorldPoint point{centre.region, centre.x + relative[0], centre.y, centre.z + relative[2]};
+            float screen[2]{};
+            projectPoint(camera, screen, &point, viewport);
+            float x = screen[0] / static_cast<float>(viewport[2]);
+            float y = screen[1] / static_cast<float>(viewport[3]);
+            bool shown = ahead > 0 && std::isfinite(x) && std::isfinite(y);
+
+            if (index < 0)
+            {
+                out.feet[0] = x;
+                out.feet[1] = y;
+                out.feetShown = shown;
+            }
+            else
+            {
+                out.points[index][0] = x;
+                out.points[index][1] = y;
+                out.shown[index] = shown;
+            }
+        }
+
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+std::string Point(float x, float y, bool shown)
+{
+    if (!shown)
+    {
+        return "null";
+    }
+
+    return "[" + Fixed(x, 4) + "," + Fixed(y, 4) + "]";
+}
+
+std::string RingText(const Ring& around)
+{
+    std::string text = ",\"feet\":" + Point(around.feet[0], around.feet[1], around.feetShown) + ",\"ring\":[";
+
+    for (int index = 0; index < RingPoints; index++)
+    {
+        if (index > 0)
+        {
+            text += ",";
+        }
+
+        text += Point(around.points[index][0], around.points[index][1], around.shown[index]);
+    }
+
+    return text + "]";
+}
+
 // Thirty times a second, enough for the cursor to stay on a running enemy, and
 // sent only when something moved.
 void CheckTargets(void* camera, float elapsed)
@@ -1493,7 +1605,14 @@ void CheckTargets(void* camera, float elapsed)
         }
     }
 
-    line += "]}\n";
+    line += "]";
+
+    if (ReadRing(camera, viewport, ring))
+    {
+        line += RingText(ring);
+    }
+
+    line += "}\n";
 
     if (targetsWanted.exchange(false))
     {
