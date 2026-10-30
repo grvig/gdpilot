@@ -142,7 +142,9 @@ internal static class Host
                 }
 
                 mapper.Looking = link.ThirdPerson;
-                mapper.Seen = link.Targets;
+                TargetsReport near = link.Near;
+                mapper.Seen = near.Targets;
+                mapper.Near = near;
                 mapper.InWorld = loop.Mode == Mode.Combat;
 
                 // Lock-on places the cursor by the game window, so its bounds are kept fresh whether or not the overlay draws.
