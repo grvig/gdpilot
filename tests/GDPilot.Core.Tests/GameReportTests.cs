@@ -43,6 +43,30 @@ public sealed class GameReportTests
     }
 
     [Fact]
+    public void TheCharactersFeetAndTheGroundRoundThemTravelWithTheTargets()
+    {
+        TargetsReport sent = new(Array.Empty<SeenTarget>())
+        {
+            Feet = new ScreenSpot(0.5, 0.62),
+            Ring = new ScreenSpot?[] { new ScreenSpot(0.5, 0.4), null, new ScreenSpot(0.7, 0.6) },
+        };
+
+        TargetsReport received = Assert.IsType<TargetsReport>(GameReport.Parse(sent.Write()));
+
+        Assert.Equal(sent, received);
+        Assert.Null(received.Ring[1]);
+    }
+
+    [Fact]
+    public void AReportWithoutTheGroundStillReads()
+    {
+        TargetsReport received = Assert.IsType<TargetsReport>(GameReport.Parse("""{"protocol":1,"type":"targets","list":[]}"""));
+
+        Assert.Null(received.Feet);
+        Assert.Empty(received.Ring);
+    }
+
+    [Fact]
     public void ATargetWithoutAnIdIsRefused()
     {
         Assert.Throws<FormatException>(() => GameReport.Parse("""{"protocol":1,"type":"targets","list":[{"x":0.5,"y":0.5}]}"""));

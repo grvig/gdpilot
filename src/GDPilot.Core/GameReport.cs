@@ -81,6 +81,13 @@ public abstract record GameReport
             case TargetsReport targets:
                 root["type"] = "targets";
                 root["list"] = new JsonArray(targets.Targets.Select(Target).ToArray());
+
+                if (targets.Feet is not null)
+                {
+                    root["feet"] = Spot(targets.Feet);
+                    root["ring"] = new JsonArray(targets.Ring.Select(Spot).ToArray());
+                }
+
                 break;
         }
 
@@ -137,7 +144,34 @@ public abstract record GameReport
             targets.Add(new SeenTarget(id, x, y, distance, health, target["seen"]?.GetValue<bool>() ?? false));
         }
 
-        return new TargetsReport(targets);
+        List<ScreenSpot?> ring = new();
+
+        foreach (JsonNode? node in root["ring"]?.AsArray() ?? new JsonArray())
+        {
+            ring.Add(Spot(node));
+        }
+
+        return new TargetsReport(targets) { Feet = Spot(root["feet"]), Ring = ring };
+    }
+
+    private static ScreenSpot? Spot(JsonNode? node)
+    {
+        if (node is not JsonArray pair || pair.Count != 2)
+        {
+            return null;
+        }
+
+        return new ScreenSpot(pair[0]!.GetValue<double>(), pair[1]!.GetValue<double>());
+    }
+
+    private static JsonNode? Spot(ScreenSpot? spot)
+    {
+        if (spot is null)
+        {
+            return null;
+        }
+
+        return new JsonArray(spot.X, spot.Y);
     }
 
     private static JsonNode Target(SeenTarget target)
@@ -199,5 +233,29 @@ public sealed record LayoutReport(string Grid, int Columns, int Rows, IReadOnlyL
 /// </summary>
 public sealed record SeenTarget(uint Id, double X, double Y, double Distance, int Health, bool OnScreen);
 
-/// <summary>Every enemy the game would let a skill hit within reach of the player, sent whenever one moves.</summary>
-public sealed record TargetsReport(IReadOnlyList<SeenTarget> Targets) : GameReport;
+/// <summary>
+/// Every enemy the game would let a skill hit within reach of the player, sent
+/// whenever one moves, with where the ground round the character falls on the
+/// screen: its feet, and a ring of points a few steps out, every eighth of a
+/// turn from the way the camera looks. A point behind the camera is null.
+/// </summary>
+public sealed record TargetsReport(IReadOnlyList<SeenTarget> Targets) : GameReport
+{
+    public ScreenSpot? Feet { get; init; }
+
+    public IReadOnlyList<ScreenSpot?> Ring { get; init; } = Array.Empty<ScreenSpot?>();
+
+    // Records compare lists by reference, so equality is spelt out for the reports read back in tests.
+    public bool Equals(TargetsReport? other)
+    {
+        return other is not null && Targets.SequenceEqual(other.Targets) && Feet == other.Feet && Ring.SequenceEqual(other.Ring);
+    }
+
+    public override int GetHashCode()
+    {
+        return Targets.Count;
+    }
+}
+
+/// <summary>A point on the game's screen, as fractions of its window from the top left.</summary>
+public sealed record ScreenSpot(double X, double Y);
