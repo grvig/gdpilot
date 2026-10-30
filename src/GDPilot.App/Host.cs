@@ -145,7 +145,8 @@ internal static class Host
                 TargetsReport near = link.Near;
                 mapper.Seen = near.Targets;
                 mapper.Near = near;
-                mapper.InWorld = loop.Mode == Mode.Combat;
+                // A panel over the world, or the character lying dead, lets go of any lock.
+                mapper.InWorld = loop.Mode == Mode.Combat && link.Health != 0;
 
                 // Lock-on places the cursor by the game window, so its bounds are kept fresh whether or not the overlay draws.
                 if (ticks % overlayInterval == 0)
