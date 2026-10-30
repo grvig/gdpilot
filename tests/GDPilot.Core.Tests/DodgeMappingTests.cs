@@ -87,4 +87,16 @@ public sealed class DodgeMappingTests
 
         Assert.Single(sent, intent => intent == new KeyDown(KeyCode.D4));
     }
+
+    [Fact]
+    public void WithoutTheGameWindowTheDodgeStillFires()
+    {
+        Mapper mapper = Dodging();
+        mapper.GameBounds = null;
+
+        List<InputIntent> sent = mapper.Tick(Dodge(1), Tick);
+
+        Assert.Contains(new KeyDown(KeyCode.D4), sent);
+        Assert.DoesNotContain(sent, intent => intent is PointerMoveTo);
+    }
 }

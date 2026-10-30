@@ -225,10 +225,15 @@ public sealed class Mapper
 
         bool pressed = pressedKey is not null;
 
-        if (pressed && !dodgeHeld && dodging is null && GameBounds is ScreenRect bounds)
+        if (pressed && !dodgeHeld && dodging is null)
         {
-            ScreenSpot spot = DodgeAim.Spot(Near, left, settings.WalkThreshold, Aspect());
-            intents.Add(new PointerMoveTo((int)Math.Round(bounds.X + spot.X * bounds.Width), (int)Math.Round(bounds.Y + spot.Y * bounds.Height)));
+            // Without the game's window the cursor cannot be placed, but the skill still fires.
+            if (GameBounds is ScreenRect bounds)
+            {
+                ScreenSpot spot = DodgeAim.Spot(Near, left, settings.WalkThreshold, Aspect());
+                intents.Add(new PointerMoveTo((int)Math.Round(bounds.X + spot.X * bounds.Width), (int)Math.Round(bounds.Y + spot.Y * bounds.Height)));
+            }
+
             intents.Add(new KeyDown(pressedKey!.Value));
             dodging = pressedKey;
             dodgeHeldFor = TimeSpan.Zero;
