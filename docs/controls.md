@@ -9,10 +9,10 @@ game always shows what each button does in the mode you are in.
 | Button | Does |
 | --- | --- |
 | Left stick | Walk, in any direction with the in-game part loaded, else in eight |
-| Right stick | Move the cursor, faster the further it is pushed |
+| Right stick | Aim at the ground round your character the way it points (in panels, a free cursor) |
 | Right bumper | Left click: attack or interact where the cursor is |
 | Left bumper | Right click |
-| A | Space |
+| A | Interact with what is in reach: talk, use, pick up; else Space |
 | X, Y | Hotbar slots 2 and 3 |
 | B | Dodge: hotbar slot 4, aimed the way the left stick points |
 | Left trigger + A, X, Y, B | Hotbar slots 1, 5, 6 and 7 |
@@ -93,7 +93,7 @@ stick drops the camera behind your character. Then:
 | Stick | Does |
 | --- | --- |
 | Right stick left and right | Turn the camera; walking turns with it |
-| Right stick up and down | Zoom in and out; the camera levels out as it comes closer |
+| Right stick up and down | Tilt the view; with the left trigger held, zoom instead |
 | Left stick sideways, right stick still | The camera swings round toward where you walk |
 
 Attacks go where the camera faces: the cursor waits a little ahead of the
@@ -113,6 +113,22 @@ character. [camera.md](camera.md) has the details and the settings.
 At the stash the bumpers switch tabs instead, and Back moves between the stash
 and the bags. An item larger than one cell is a single stop when the in-game
 part is loaded, since the game then says exactly where each item sits.
+
+## Aiming in the game's own camera
+
+Out in the world, the right stick points the cursor at the ground round your
+character, further out the further it leans, so skills go where the stick
+points; let go, the aim follows your walk. An enemy near the aim draws it.
+In panels the stick moves a free cursor as before. `twinStick` under `input`
+turns this off.
+
+## Interacting
+
+A talks to the townsfolk, uses rift gates, shrines, chests and doors, and
+picks up loot, whichever is nearest within six units, without aiming at it. A
+prompt low on the screen says what A would do. With nothing in reach, A is
+Space as before. Picking up loot is not reliable yet: the point clicked can
+miss the item.
 
 ## Walking
 
