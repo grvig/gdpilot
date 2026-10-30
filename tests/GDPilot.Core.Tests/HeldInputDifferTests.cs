@@ -53,6 +53,29 @@ public sealed class HeldInputDifferTests
         Assert.Equal(new InputIntent[] { new KeyUp(KeyCode.D), new KeyUp(KeyCode.S) }, intents);
     }
 
+    [Fact]
+    public void ForgettingOneButtonPressesItAgainIfStillWantedAndLeavesTheRestAlone()
+    {
+        HeldInputDiffer differ = new();
+        HashSet<PointerButton> both = new() { PointerButton.Left, PointerButton.Right };
+        differ.Update(Keys(KeyCode.W), both);
+
+        differ.Forget(PointerButton.Left);
+
+        Assert.Equal(new InputIntent[] { new PointerDown(PointerButton.Left) }, differ.Update(Keys(KeyCode.W), both));
+    }
+
+    [Fact]
+    public void AForgottenButtonNoLongerWantedIsNotLetGoTwice()
+    {
+        HeldInputDiffer differ = new();
+        differ.Update(Keys(), new HashSet<PointerButton> { PointerButton.Left });
+
+        differ.Forget(PointerButton.Left);
+
+        Assert.Empty(differ.Update(Keys(), new HashSet<PointerButton>()));
+    }
+
     private static HashSet<KeyCode> Keys(params KeyCode[] keys)
     {
         return new HashSet<KeyCode>(keys);
