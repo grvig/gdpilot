@@ -55,4 +55,13 @@ public sealed class DodgeAimTests
     {
         Assert.Equal(new ScreenSpot(0.5, 0.3), DodgeAim.Spot(null, StickPosition.Centre, 0.25, Aspect));
     }
+
+    [Fact]
+    public void ADodgeBindingNamesItsKeyAndReadsPlainly()
+    {
+        ButtonLayers combat = BindingTable.Parse(new Dictionary<string, string> { ["B"] = "dodge:4" }, 0.5);
+
+        Assert.Equal(new DodgeBinding(KeyCode.D4), combat.BindingFor(GamepadButtons.B, 0));
+        Assert.Contains("B: Dodge (4)", OverlayState.Build(Mode.Combat, SuspendReason.None, combat).Legend);
+    }
 }

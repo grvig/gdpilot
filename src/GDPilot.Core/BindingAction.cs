@@ -35,6 +35,8 @@ internal static class BindingAction
                 return new RadialBinding();
             case "lock" when string.Equals(parts[1], "toggle", StringComparison.OrdinalIgnoreCase):
                 return new LockBinding();
+            case "dodge":
+                return new DodgeBinding(Key(parts[1], trigger));
             default:
                 throw new FormatException($"\"{trigger}\": \"{parts[0]}\" bindings are not supported.");
         }
