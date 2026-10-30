@@ -309,13 +309,10 @@ std::atomic<bool> toggleRequested{false};
 std::atomic<float> yawPerSecond{0};
 std::atomic<float> zoomPerSecond{0};
 
-// Tilting, in degrees a second, positive to look up. The game tilts its camera
-// between a pitch at the nearest zoom and one at the farthest, so both are
-// shifted together by the same offset, and the zoom's own tilt carries on.
+// Tilting, in degrees a second, positive to look up, and how far the view is
+// tilted from the game's own pitch, in degrees, positive to look down.
 std::atomic<float> tiltPerSecond{0};
 float tiltOffset = 0;
-float pitchNear = 12;
-float pitchFar = 40;
 std::atomic<bool> linked{false};
 HANDLE reportWanted = nullptr;
 
@@ -929,8 +926,6 @@ void TurnOn(void* camera)
     }
 
     Apply(camera, behind);
-    pitchNear = behind[4];
-    pitchFar = behind[5];
     tiltOffset = 0;
     arm = behind[0];
     refusals = 0;
@@ -2568,43 +2563,39 @@ void KeepForward(void* camera)
     forwardZ = -back[2] / length;
 }
 
-// Shifts both pitches by the stick's tilt, never further than looking five
-// degrees above level at the nearest zoom or straight down at the farthest, and
-// eases the tilt away while recentring, as an action game's camera levels out.
+// Tilting is laid over the game's own pitch, which it works out afresh into
+// the camera at 0x10, in radians, every frame of the update this runs after;
+// so the offset is added again each frame, after collision, and there is
+// nothing to restore. GrimAction found the field and the way to use it.
+// Shifting the two zoom pitches instead was tried live and moved nothing.
+constexpr std::size_t LivePitch = 0x10;
+
 void Tilt(void* camera, float elapsed)
 {
     float tilt = tiltPerSecond.load();
-    float wanted = tiltOffset;
 
     if (tilt != 0)
     {
-        wanted -= tilt * elapsed;
+        tiltOffset -= tilt * elapsed;
     }
     else if (recentering && tiltOffset != 0)
     {
         float step = 60 * elapsed;
-        wanted = std::fmax(-step, std::fmin(step, -tiltOffset)) + tiltOffset;
+        tiltOffset += std::fmax(-step, std::fmin(step, -tiltOffset));
     }
 
-    wanted = std::fmax(-5 - pitchNear, std::fmin(85 - pitchFar, wanted));
+    // The tilt itself is held between six degrees down and eighty, so the stick
+    // answers at once when it turns back; live, looking up to level took the
+    // camera down into the ground.
+    float gamePitch = Read(camera, LivePitch) * 180 / Pi;
+    tiltOffset = std::fmax(6 - gamePitch, std::fmin(80 - gamePitch, tiltOffset));
 
-    if (wanted == tiltOffset)
+    if (tiltOffset == 0)
     {
         return;
     }
 
-    tiltOffset = wanted;
-    Write(camera, PitchMinimum, pitchNear + tiltOffset);
-    Write(camera, PitchMaximum, pitchFar + tiltOffset);
-
-    // The game works the pitch out from the two only in its own SetZoom, as
-    // live showed; it is asked to at the zoom the camera stands at, and the
-    // player's chosen zoom is given back, as collision does.
-    float nearest = Read(camera, ZoomNear);
-    float farthest = Read(camera, ZoomFar);
-    float chosen = Read(camera, ZoomTarget);
-    reinterpret_cast<SetZoom>(required[1].address)(camera, nearest + (farthest - nearest) * Read(camera, ZoomLive));
-    Write(camera, ZoomTarget, chosen);
+    Write(camera, LivePitch, (gamePitch + tiltOffset) * Pi / 180);
 }
 
 void Work(void* camera, float elapsed)
