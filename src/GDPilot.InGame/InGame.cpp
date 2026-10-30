@@ -1438,6 +1438,13 @@ int ScanTargets(void* camera, const int viewport[4], Seen seen[], int most)
             entry.y = screen[1] / static_cast<float>(viewport[3]);
             entry.distance = std::sqrt(relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2]);
             entry.health = static_cast<int>(std::lround(std::fmin(1.0, life / limit) * 100));
+            // A point the projection cannot place would write "nan" into the report, which is not JSON.
+            if (!std::isfinite(entry.x) || !std::isfinite(entry.y))
+            {
+                entry.x = -1;
+                entry.y = -1;
+            }
+
             entry.onScreen = ahead > 0 && entry.x >= 0 && entry.x <= 1 && entry.y >= 0 && entry.y <= 1 && InSight(centre, relative, player);
             count++;
         }
