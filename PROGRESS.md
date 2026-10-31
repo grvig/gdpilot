@@ -22,7 +22,7 @@ holds the phases and the rules for the in-game part.
 | 6. Lock-on, camera-relative movement, smart interact | Mostly done: lock-on and camera-relative movement checked live; smart interact not started |
 | 7. Radial skills, rumble, snapping in every menu | Started: the skill wheel with icons checked live; rumble built, health checked live; snapping in other menus not started |
 | 8. Shortcuts, profiles, first run, release | Not started |
-| Souls-level feel (PLAN.md section 17) | Started: lock-on parity, soft aim and the dodge done; analog movement approved, next |
+| Souls-level feel (PLAN.md section 17) | Mostly done: lock-on parity, soft aim, the dodge, walking in any direction and the fight's rumble; skills without a cursor and the Souls camera left |
 | 9. Hardening | Not started; a bug pass closes each phase meanwhile |
 
 ## What exists
@@ -148,6 +148,15 @@ Safety:
 | Cost of the in-game part | Measured live: about 30 microseconds a frame; the switch's hitch cut from 1.8 to 0.4 ms |
 | Overlay | Windows moved only when they move; kept on top once a second |
 
+## Walking in any direction, 2026-10-31
+
+| Piece | Status |
+| --- | --- |
+| Steering the game's walk | Done: thirty degrees right of forward walked at exactly that angle, live; back and left too |
+| Keys kept as the trigger and the fallback | Done; without the in-game part, eight directions as before |
+| Steering lapses without GDPilot | Done: half a second after the last direction |
+| Fight rumble | Done in Core and tested; `--rumble-test` played it on the pad without error, not yet felt |
+
 ## Live check in the game, 2026-10-19
 
 Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
@@ -249,7 +258,11 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   aimed right, left and ahead through the reported ground; and the in-game
   part's cost was measured at about 30 microseconds a frame.
 
-415 core tests and 67 integration tests, all passing.
+- **2026-10-31, live, unattended:** a probe found the call the game walks
+  through; with it turned, the character walked at the stick's exact angle in
+  both directions tried.
+
+432 core tests and 69 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -292,12 +305,8 @@ Nothing.
 
 PLAN.md section 17: the Souls-level feel list, then Phases 6 to 8.
 
-1. **Analog movement**, approved by the owner on 2026-10-30. Hand the game the
-   left stick's direction through its own controller movement
-   (`ControllerPlayer::SetControllerDirection`, already in
-   `game-functions.txt`, mapped by GrimAction), relative to the camera, with
-   the WASD keys kept as the fallback when the in-game part is not loaded.
-2. **Skills that need no cursor**, and **rumble from the fight**.
+1. **Skills that need no cursor**, and **the Souls camera**: the right stick's
+   up and down tilting, and the camera settling behind a running character.
 3. **Smart interact.** A nearby list like lock-on's, with loot, characters and
    chests: one button to pick up, talk or open the nearest.
 4. **The stash from the game**, then **snapping in every menu**.
