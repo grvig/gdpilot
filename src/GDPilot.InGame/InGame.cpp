@@ -1848,6 +1848,11 @@ int ScanThings(void* camera, const int viewport[4], Thing seenThings[], int most
 }
 
 float sinceThingCheck = 0;
+
+// Set when the enemy scan ran this frame, so the scan of nearby things waits a
+// frame rather than doubling one frame's work; logged costs showed the two
+// together made the in-game part's slowest frames.
+bool targetsScannedThisFrame = false;
 std::string lastThings;
 std::atomic<bool> thingsWanted{false};
 constexpr const char* KindNames[] = {"", "loot", "talk", "use", "travel"};
@@ -1857,7 +1862,7 @@ void CheckThings(void* camera, float elapsed)
 {
     sinceThingCheck += elapsed;
 
-    if (entitiesInSphere == nullptr || !linked || sinceThingCheck < 0.1f)
+    if (entitiesInSphere == nullptr || !linked || sinceThingCheck < 0.1f || targetsScannedThisFrame)
     {
         return;
     }
@@ -1924,6 +1929,7 @@ void CheckTargets(void* camera, float elapsed)
         return;
     }
 
+    targetsScannedThisFrame = true;
     int count = ScanTargets(camera, viewport, seen, MostTargets);
 
     if (count < 0)
@@ -2669,6 +2675,7 @@ void Tilt(void* camera, float elapsed)
 
 void Work(void* camera, float elapsed)
 {
+    targetsScannedThisFrame = false;
     KeepForward(camera);
     CheckPanels(elapsed);
     CheckLayouts(elapsed);
