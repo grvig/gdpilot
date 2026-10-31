@@ -676,11 +676,13 @@ animation; everything else about feel is in scope:
 - **Soft aim** without a lock. Done.
 - **Analog movement in any direction**, through the game's own controller
   direction rather than eight keys. Approved by the owner on 2026-10-30; rule
-  3 above is amended to allow it.
-- **A dodge in the left stick's direction** on one button.
+  3 above is amended to allow it. Done: the game's own walking step is turned
+  to the stick's angle.
+- **A dodge in the left stick's direction** on one button. Done.
 - **Skills that need no cursor:** cast where the character faces, or at the
   lock.
-- **Rumble from the fight itself:** hits landed, criticals, kills.
+- **Rumble from the fight itself:** wounds, heavy blows, kills. Done, read
+  from the targets reports.
 - **A Souls camera:** the stick's up and down tilts rather than zooms, and the
   camera settles behind a running character.
 
