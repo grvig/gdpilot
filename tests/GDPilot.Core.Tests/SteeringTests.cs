@@ -21,13 +21,14 @@ public sealed class SteeringTests
     }
 
     [Fact]
-    public void SteeringSendsTheSticksDirectionInsteadOfHoldingKeys()
+    public void SteeringSendsTheSticksDirectionAlongsideTheKeysThatWalk()
     {
         Mapper mapper = new(Settings, NoButtons) { Steering = true };
 
         List<InputIntent> sent = mapper.Tick(Left(0.5, 0.5), Tick);
 
-        Assert.DoesNotContain(sent, intent => intent is KeyDown);
+        Assert.Contains(new KeyDown(KeyCode.W), sent);
+        Assert.Contains(new KeyDown(KeyCode.D), sent);
         Assert.Equal(new[] { new MoveCommand(0.707, 0.707) }, Moves(sent));
     }
 
@@ -83,7 +84,7 @@ public sealed class SteeringTests
     }
 
     [Fact]
-    public void LosingTheGameMidStepHandsBackToTheKeys()
+    public void LosingTheGameMidStepLeavesTheKeysWalking()
     {
         Mapper mapper = new(Settings, NoButtons) { Steering = true };
         mapper.Tick(Left(0, 1), Tick);
@@ -91,7 +92,7 @@ public sealed class SteeringTests
 
         List<InputIntent> sent = mapper.Tick(Left(0, 1), Tick);
 
-        Assert.Contains(new KeyDown(KeyCode.W), sent);
+        Assert.DoesNotContain(new KeyUp(KeyCode.W), sent);
         Assert.Equal(new[] { new MoveCommand(0, 0) }, Moves(sent));
     }
 }

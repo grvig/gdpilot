@@ -70,9 +70,9 @@ public sealed class Mapper
     private TimeSpan dodgeHeldFor;
 
     /// <summary>
-    /// True while the in-game part can steer the character: the left stick then
-    /// moves it in any direction through the game, instead of holding the eight
-    /// directions of WASD.
+    /// True while the in-game part can steer the character: the nearest of WASD's
+    /// eight directions is still held, and the stick's exact direction is sent
+    /// with it, for the in-game part to turn the walk to any angle.
     /// </summary>
     public bool Steering { get; set; }
 
@@ -473,10 +473,9 @@ public sealed class Mapper
         StickPosition right = StickShaping.ApplyRadialDeadzone(snapshot.RightStick, RightCentre, settings.RightDeadzone);
 
         (HashSet<KeyCode> keys, HashSet<PointerButton> pointerButtons) = Buttons.Resolve(snapshot);
-        if (!Steering)
-        {
-            keys.UnionWith(StickDirections.KeysFor(left, settings.WalkThreshold, settings.Movement));
-        }
+        // The keys walk even while steering: the game only walks while one is down, and
+        // the in-game part turns that walk to the stick's exact angle.
+        keys.UnionWith(StickDirections.KeysFor(left, settings.WalkThreshold, settings.Movement));
         bool wheelOpen = TickWheel(snapshot, right, elapsed, keys);
 
         List<InputIntent> intents = differ.Update(keys, pointerButtons);
