@@ -128,6 +128,7 @@ internal static class Host
             bool wheelShown = false;
             bool markerShown = false;
             RumblePolicy rumble = new();
+            CombatRumble fight = new();
             IReadOnlyList<Picture?>? wheelPictures = null;
             ScreenRect? gameBounds = null;
             replayClock.Start();
@@ -172,6 +173,11 @@ internal static class Host
                 if (sdl is not null && config.Input.Rumble && RumblePolicy.ForLock(mapper.LockChanged) is Rumble tick)
                 {
                     sdl.Rumble(tick.Heavy, tick.Light, tick.Length);
+                }
+
+                if (sdl is not null && config.Input.Rumble && fight.Update(mapper.Seen, mapper.Lock?.Target?.Id, now - last) is Rumble blow)
+                {
+                    sdl.Rumble(blow.Heavy, blow.Light, blow.Length);
                 }
 
                 last = now;
