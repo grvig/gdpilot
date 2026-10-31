@@ -27,6 +27,7 @@ public sealed class GameLink : IDisposable
     private StreamWriter? writer;
     private volatile bool thirdPerson;
     private volatile int health = -1;
+    private volatile bool analogMovement;
 
     public GameLink(ReportedOccupancy layouts, Action<string> say, string pipeName = PipeName)
     {
@@ -50,6 +51,9 @@ public sealed class GameLink : IDisposable
 
     /// <summary>The last targets report whole, with where the character and the ground round it fall on the screen.</summary>
     public TargetsReport Near => Volatile.Read(ref near);
+
+    /// <summary>Whether the in-game part can steer the character from the stick; false once it has gone.</summary>
+    public bool AnalogMovement => analogMovement;
 
     /// <summary>Whether the game last said it was showing the third-person camera; false once it has gone.</summary>
     public bool ThirdPerson => thirdPerson;
@@ -128,6 +132,7 @@ public sealed class GameLink : IDisposable
                 }
 
                 thirdPerson = false;
+                analogMovement = false;
                 health = -1;
                 Volatile.Write(ref panels, null);
                 Volatile.Write(ref near, new TargetsReport(Array.Empty<SeenTarget>()));
@@ -181,6 +186,9 @@ public sealed class GameLink : IDisposable
                 break;
             case HealthReport life:
                 health = life.Percent;
+                break;
+            case AbilitiesReport abilities:
+                analogMovement = abilities.AnalogMovement;
                 break;
             case TargetsReport around:
                 Volatile.Write(ref near, around);

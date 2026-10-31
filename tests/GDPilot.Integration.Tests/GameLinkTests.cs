@@ -109,6 +109,27 @@ public sealed class GameLinkTests
     }
 
     [Fact]
+    public void SteeringIsOfferedByTheGameAndWithdrawnWhenItGoes()
+    {
+        string name = "GDPilot.Test." + Guid.NewGuid().ToString("N");
+        ConcurrentQueue<string> said = new();
+
+        using GameLink link = new(new ReportedOccupancy(null), said.Enqueue, name);
+        Assert.False(link.AnalogMovement);
+
+        using (NamedPipeClientStream game = new(".", name, PipeDirection.InOut))
+        {
+            game.Connect(2000);
+            using StreamWriter writer = new(game) { AutoFlush = true };
+            writer.WriteLine(new AbilitiesReport(true).Write());
+
+            Assert.True(SpinWait.SpinUntil(() => link.AnalogMovement, 2000));
+        }
+
+        Assert.True(SpinWait.SpinUntil(() => !link.AnalogMovement, 2000));
+    }
+
+    [Fact]
     public void HealthReachesTheHostAndIsForgottenWhenTheGameGoes()
     {
         string name = "GDPilot.Test." + Guid.NewGuid().ToString("N");
