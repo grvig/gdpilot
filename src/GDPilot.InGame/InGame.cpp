@@ -2143,6 +2143,9 @@ void SteeredDirection(void* controller, const float* direction)
     originalSetDirection(controller, direction);
 }
 
+// The longest step the game was seen to take is 1.2 units; anything beyond this is not a step.
+constexpr float MostStep = 3;
+
 // The game's point, turned round the character to the stick's angle at the same distance.
 bool Turned(const WorldPoint& point, const float steered[3], WorldPoint& turned)
 {
@@ -2159,7 +2162,8 @@ bool Turned(const WorldPoint& point, const float steered[3], WorldPoint& turned)
 
         float reach = std::hypot(point.x - from.x, point.z - from.z);
 
-        if (!(reach > 0.01f))
+        // Only a walking step is turned; a point further off is some other action the game aims, and stands.
+        if (!(reach > 0.01f) || reach > MostStep)
         {
             return false;
         }
