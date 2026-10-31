@@ -714,3 +714,35 @@ units or the locked one tick lightly, at most every 120 ms; fifteen points in
 one report knock harder; an enemy within twelve units at 30% or less that
 leaves the reports thumps as a kill. The reports do not say who struck, and
 that is accepted: it is rhythm in the hands, not a score.
+
+## 2026-10-31 — Twin-stick aiming, tilting and smart interact
+
+**Twin-stick aiming in the game's own camera.** Out in the world the right
+stick points the cursor at the ground round the character through the game's
+ring of ground, between two and a half and seven units out; a full push to
+nine reached the screen's edge live, too far for any swing. Panels keep the
+free cursor.
+
+**Tilting lays an offset over the game's live pitch.** Shifting the two zoom
+pitches moved nothing live; the game rewrites its pitch at 0x10 in the camera
+each frame, as GrimAction found, so the offset is written over it each frame,
+held between six and eighty degrees. Looking up to level took the camera into
+the ground, hence six.
+
+**A lock is framed from the camera.** Aiming the camera's heading past the
+character at a close enemy left it behind the character; taking the heading
+from where the camera stands fixed that, checked live with a pack round the
+character.
+
+**The lock point is sent every frame.** The thirty-a-second report left the
+marker trailing a moving camera; the in-game part now sends the locked
+enemy's point each frame it moves.
+
+**Smart interact sorts by class.** The game's entity query, on the world the
+target query reaches through the engine at 0x50, gives everything nearby;
+items and one-shots are loot, `Npc` is talk, fixed items, levers and the two
+kinds of teleporter are use. Rift gates are `StaticTeleporter`, found live.
+Talking to Kerrick and using the rift gate both worked from A live. Picking up
+loot did not: the entity's position lies about a unit from the item drawn, so
+the click lands beside it. Two items dropped for testing were lost to area
+resets before that was understood.
