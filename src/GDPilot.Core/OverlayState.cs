@@ -30,7 +30,8 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     /// <param name="gridFellBack">Whether grid presses are stepping because the screen could not be read, said first so it is noticed.</param>
     /// <param name="thirdPerson">Whether the third-person camera is on, which changes what the right stick does.</param>
     /// <param name="locked">The enemy held by lock-on, which changes it again.</param>
-    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false, SeenTarget? locked = null)
+    /// <param name="steering">Whether the left stick walks in any direction through the game, rather than in eight.</param>
+    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false, SeenTarget? locked = null, bool steering = false)
     {
         List<string> legend = new();
 
@@ -41,6 +42,11 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
         else if (thirdPerson)
         {
             legend.Add("Camera: third person; right stick turns and zooms");
+        }
+
+        if (steering)
+        {
+            legend.Add("Left stick: walks in any direction");
         }
 
         if (gridFellBack)

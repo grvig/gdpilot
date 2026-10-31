@@ -92,4 +92,11 @@ public sealed class OverlayStateTests
 
         Assert.NotNull(drawn.Floating().Marker);
     }
+
+    [Fact]
+    public void SteeringIsSaidSoTheEightWayFallbackIsNoticed()
+    {
+        Assert.Contains("Left stick: walks in any direction", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat, steering: true).Legend);
+        Assert.DoesNotContain("Left stick: walks in any direction", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat).Legend);
+    }
 }

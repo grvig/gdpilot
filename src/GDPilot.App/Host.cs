@@ -205,7 +205,7 @@ internal static class Host
                         view = view with { Pictures = wheelPictures };
                     }
 
-                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson, locked) with
+                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson, locked, mapper.Steering) with
                     {
                         Wheel = view,
                         Marker = LockMarker.For(locked, mapper.LockPoint),
