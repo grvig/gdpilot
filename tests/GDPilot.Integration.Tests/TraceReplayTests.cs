@@ -338,6 +338,30 @@ public sealed class TraceReplayTests
         Assert.Equal(new[] { new LockCommand(11), new LockCommand(0) }, sent.OfType<GameCommandIntent>().Select(intent => intent.Command).OfType<LockCommand>());
     }
 
+    [Fact]
+    public void TheAnalogWalkSteersAtThirtyDegreesThenBackLeftAndStops()
+    {
+        GamepadTrace trace = Load("analog-walk.json");
+        TimeSpan now = TimeSpan.Zero;
+        ReplayGamepadSource source = new(trace, () => now);
+        Mapper mapper = new(Settings, BindingTable.Parse(new Dictionary<string, string>(), 0.5)) { Steering = true };
+        List<InputIntent> sent = new();
+
+        while (!source.IsFinished)
+        {
+            sent.AddRange(mapper.Tick(source.Read(), Tick));
+            now += Tick;
+        }
+
+        List<MoveCommand> moves = sent.OfType<GameCommandIntent>().Select(intent => intent.Command).OfType<MoveCommand>().ToList();
+
+        // Measured live: these two steered the character to (-0.34, -0.94) and (-0.34, 0.94) across the ground.
+        Assert.Equal(new MoveCommand(0.5, 0.866), moves[0]);
+        Assert.Contains(new MoveCommand(-0.94, -0.342), moves);
+        Assert.Equal(new MoveCommand(0, 0), moves[^1]);
+        Assert.Contains(new KeyDown(KeyCode.W), sent);
+    }
+
     private static readonly MappingSettings Settings = new(0.2, 0.2, 0.25, DirectionKeys.Wasd, new CursorSettings(900, 2.0, 2600));
 
     private static GamepadTrace Load(string fixture)
