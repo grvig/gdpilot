@@ -69,6 +69,19 @@ public sealed class Mapper
     private KeyCode? dodging;
     private TimeSpan dodgeHeldFor;
 
+    /// <summary>
+    /// True while the in-game part can steer the character: the left stick then
+    /// moves it in any direction through the game, instead of holding the eight
+    /// directions of WASD.
+    /// </summary>
+    public bool Steering { get; set; }
+
+    /// <summary>How often a held direction is sent again; the in-game part stops steering after half a second without one.</summary>
+    public static readonly TimeSpan MoveRepeat = TimeSpan.FromMilliseconds(150);
+
+    private (double X, double Y) sentMove;
+    private TimeSpan sinceMove;
+
     /// <summary>Soft aim, drawing the cursor onto an enemy near the aim point in third person; null when turned off.</summary>
     public SoftAim? SoftAim { get; set; }
 
@@ -108,6 +121,9 @@ public sealed class Mapper
 
         // The host stops the camera turning when a suspension begins.
         sentYaw = 0;
+
+        // A stick still held on resume steers again at once.
+        sentMove = (0, 0);
         sentZoom = 0;
 
         // A wheel open when input stopped must not cast when it resumes.
@@ -204,6 +220,40 @@ public sealed class Mapper
         }
 
         return (0.5, 0.5);
+    }
+
+    /// <summary>
+    /// Sends the stick's direction to steer by, at full length once it leans past
+    /// the walk threshold, since the game has one walking speed. Sent when the
+    /// direction moves by a degree or so, and again every so often while held,
+    /// so the in-game part knows GDPilot is still there.
+    /// </summary>
+    private void Steer(StickPosition left, TimeSpan elapsed, List<InputIntent> intents)
+    {
+        (double X, double Y) wanted = (0, 0);
+
+        if (Steering && left.Magnitude >= settings.WalkThreshold)
+        {
+            wanted = (left.X / left.Magnitude, left.Y / left.Magnitude);
+        }
+
+        sinceMove += elapsed;
+        bool still = wanted == (0, 0);
+        bool wasStill = sentMove == (0, 0);
+
+        if (still && wasStill)
+        {
+            return;
+        }
+
+        double turned = Math.Abs(Math.IEEERemainder(Math.Atan2(wanted.Y, wanted.X) - Math.Atan2(sentMove.Y, sentMove.X), 2 * Math.PI));
+
+        if (still != wasStill || turned > 0.02 || sinceMove >= MoveRepeat)
+        {
+            sentMove = wanted;
+            sinceMove = TimeSpan.Zero;
+            intents.Add(new GameCommandIntent(new MoveCommand(Math.Round(wanted.X, 3), Math.Round(wanted.Y, 3))));
+        }
     }
 
     /// <summary>
@@ -423,10 +473,14 @@ public sealed class Mapper
         StickPosition right = StickShaping.ApplyRadialDeadzone(snapshot.RightStick, RightCentre, settings.RightDeadzone);
 
         (HashSet<KeyCode> keys, HashSet<PointerButton> pointerButtons) = Buttons.Resolve(snapshot);
-        keys.UnionWith(StickDirections.KeysFor(left, settings.WalkThreshold, settings.Movement));
+        if (!Steering)
+        {
+            keys.UnionWith(StickDirections.KeysFor(left, settings.WalkThreshold, settings.Movement));
+        }
         bool wheelOpen = TickWheel(snapshot, right, elapsed, keys);
 
         List<InputIntent> intents = differ.Update(keys, pointerButtons);
+        Steer(left, elapsed, intents);
         TickLock(snapshot, right, elapsed, wheelOpen, intents);
 
         // While a dodge's key is down the cursor stays on its spot, or the skill would go elsewhere.
