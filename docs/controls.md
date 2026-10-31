@@ -8,7 +8,7 @@ game always shows what each button does in the mode you are in.
 
 | Button | Does |
 | --- | --- |
-| Left stick | Walk, in eight directions |
+| Left stick | Walk, in any direction with the in-game part loaded, else in eight |
 | Right stick | Move the cursor, faster the further it is pushed |
 | Right bumper | Left click: attack or interact where the cursor is |
 | Left bumper | Right click |
@@ -114,11 +114,27 @@ At the stash the bumpers switch tabs instead, and Back moves between the stash
 and the bags. An item larger than one cell is a single stop when the in-game
 part is loaded, since the game then says exactly where each item sits.
 
+## Walking
+
+With the in-game part loaded, the left stick walks your character at the exact
+angle it points, relative to the camera, not just the eight directions of
+WASD. GDPilot still holds the nearest of the eight keys, since the game only
+walks while one is down, and the in-game part turns that walk to the stick's
+angle. If the in-game part is not loaded, or a game update has moved what it
+needs, walking carries on in eight directions. The overlay says "Left stick:
+walks in any direction" while the full range is on. `analogMovement` under
+`input` turns it off.
+
 ## Rumble
 
-With the in-game part loaded the pad gives a short jolt when a heavy blow lands,
-a heartbeat when life is low that quickens as it runs out, and a light tick as
-lock-on takes, switches or loses an enemy. `rumble` under
+With the in-game part loaded the pad gives a short jolt when a heavy blow lands
+on you, a heartbeat when life is low that quickens as it runs out, and a light
+tick as lock-on takes, switches or loses an enemy.
+
+The fight is felt too: a light tick as an enemy close by, or the one locked,
+is wounded, a firmer knock when one blow takes a big piece of its life, and a
+thump as one dies. These come from the same reports lock-on reads, so a
+companion's blows are felt as well. `--rumble-test` plays all of them. `rumble` under
 `input` turns it off. `GDPilot.exe --rumble-test` buzzes each motor in turn, to
 check the pad has rumble at all.
 
