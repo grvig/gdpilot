@@ -43,6 +43,22 @@ public sealed class GameCommandTests
     }
 
     [Fact]
+    public void AMoveCarriesTheStickRounded()
+    {
+        string line = new MoveCommand(0.70712, -0.5).Write();
+
+        Assert.Equal("""{"protocol":1,"type":"move","x":0.707,"y":-0.5}""", line);
+        Assert.Equal(new MoveCommand(0.707, -0.5), GameCommands.Parse(line));
+    }
+
+    [Fact]
+    public void TheGameSaysWhetherItCanBeSteered()
+    {
+        Assert.Equal(new AbilitiesReport(true), GameReport.Parse(new AbilitiesReport(true).Write()));
+        Assert.Equal(new AbilitiesReport(false), GameReport.Parse("""{"protocol":1,"type":"abilities"}"""));
+    }
+
+    [Fact]
     public void TheGameReportsWhichCameraItShows()
     {
         CameraReport report = Assert.IsType<CameraReport>(GameReport.Parse("""{"protocol":1,"type":"camera","third":true}"""));

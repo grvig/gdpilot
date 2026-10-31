@@ -48,6 +48,8 @@ public abstract record GameReport
                 return new HealthReport(Math.Clamp(root["percent"]?.GetValue<int>() ?? 100, 0, 100));
             case "targets":
                 return Targets(root);
+            case "abilities":
+                return new AbilitiesReport(root["analog"]?.GetValue<bool>() ?? false);
             default:
                 return null;
         }
@@ -77,6 +79,10 @@ public abstract record GameReport
             case HealthReport health:
                 root["type"] = "health";
                 root["percent"] = health.Percent;
+                break;
+            case AbilitiesReport abilities:
+                root["type"] = "abilities";
+                root["analog"] = abilities.AnalogMovement;
                 break;
             case TargetsReport targets:
                 root["type"] = "targets";
@@ -266,6 +272,9 @@ public sealed record TargetsReport(IReadOnlyList<SeenTarget> Targets) : GameRepo
         return Targets.Count;
     }
 }
+
+/// <summary>What the in-game part found it can do, said once as it connects: whether it can steer the character from the stick.</summary>
+public sealed record AbilitiesReport(bool AnalogMovement) : GameReport;
 
 /// <summary>A point on the game's screen, as fractions of its window from the top left.</summary>
 public sealed record ScreenSpot(double X, double Y);

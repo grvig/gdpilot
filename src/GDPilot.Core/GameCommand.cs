@@ -70,6 +70,24 @@ public sealed record RecenterCommand : GameCommand
     }
 }
 
+/// <summary>
+/// The left stick, for the in-game part to steer the character with in any
+/// direction: up is the camera's forward, each axis from -1 to 1. Zero lets the
+/// game's own keys steer again. A held stick is sent again several times a
+/// second, since the in-game part stops steering on its own after half a second
+/// of silence, so a stalled GDPilot can never leave the character walking.
+/// </summary>
+public sealed record MoveCommand(double X, double Y) : GameCommand
+{
+    public override string Write()
+    {
+        JsonObject root = Start("move");
+        root["x"] = Math.Round(X, 3);
+        root["y"] = Math.Round(Y, 3);
+        return root.ToJsonString();
+    }
+}
+
 /// <summary>Which camera the game is showing, reported whenever it changes.</summary>
 public sealed record CameraReport(bool ThirdPerson) : GameReport;
 
@@ -90,6 +108,8 @@ public static class GameCommands
                 return new LockCommand(root["id"]?.GetValue<uint>() ?? 0);
             case "recenter":
                 return new RecenterCommand();
+            case "move":
+                return new MoveCommand(root["x"]?.GetValue<double>() ?? 0, root["y"]?.GetValue<double>() ?? 0);
             default:
                 return null;
         }
