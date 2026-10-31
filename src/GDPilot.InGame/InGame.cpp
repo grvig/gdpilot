@@ -2058,8 +2058,144 @@ void UpdatedCamera(void* camera)
     Account(ended.QuadPart - started.QuadPart, elapsed);
 }
 
+// Analog movement. Every frame the game turns the movement keys it reads into
+// a direction across the ground and a length, through the player controller's
+// own SetControllerDirection and SetControllerMovementLength, the same pair its
+// gamepad mode feeds; read live on 2026-10-31, W gave the camera's forward at
+// length 1. While GDPilot steers, both are replaced with the left stick's: its
+// direction turned to the camera, at full length. Only the player's own input
+// is replaced, as the owner agreed that day; nothing else about moving changes.
+using SetDirection = void (*)(void* controller, const float* direction);
+using SetLength = void (*)(void* controller, float length);
+SetDirection originalSetDirection = nullptr;
+SetLength originalSetLength = nullptr;
+
+// The stick as GDPilot last sent it, with up as the camera's forward, and when.
+std::atomic<float> moveX{0};
+std::atomic<float> moveY{0};
+std::atomic<long long> moveStamp{0};
+
+// Where the camera faces across the ground, kept each frame for the hooks.
+std::atomic<float> forwardX{0};
+std::atomic<float> forwardZ{0};
+
+// Steering lapses if GDPilot goes quiet, so a stalled or crashed GDPilot can
+// never leave the character walking; GDPilot repeats a held direction often.
+constexpr double MoveLapse = 0.5;
+
+bool Steering(float& x, float& y)
+{
+    long long stamp = moveStamp.load();
+
+    if (stamp == 0)
+    {
+        return false;
+    }
+
+    LARGE_INTEGER now{};
+    QueryPerformanceCounter(&now);
+
+    if (static_cast<double>(now.QuadPart - stamp) / static_cast<double>(ticksPerSecond.QuadPart) > MoveLapse)
+    {
+        return false;
+    }
+
+    x = moveX.load();
+    y = moveY.load();
+    return x != 0 || y != 0;
+}
+
+void SteeredDirection(void* controller, const float* direction)
+{
+    float x = 0;
+    float y = 0;
+    float fx = forwardX.load();
+    float fz = forwardZ.load();
+
+    if (!Steering(x, y) || (fx == 0 && fz == 0))
+    {
+        originalSetDirection(controller, direction);
+        return;
+    }
+
+    // The camera's right is its forward turned a quarter, as D showed against W.
+    float steered[3] = {fx * y - fz * x, 0, fz * y + fx * x};
+    float length = std::sqrt(steered[0] * steered[0] + steered[2] * steered[2]);
+    steered[0] /= length;
+    steered[2] /= length;
+    originalSetDirection(controller, steered);
+}
+
+void SteeredLength(void* controller, float length)
+{
+    float x = 0;
+    float y = 0;
+
+    if (Steering(x, y))
+    {
+        length = 1;
+    }
+
+    originalSetLength(controller, length);
+}
+
+bool analogMovement = false;
+
+void FindMovement()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    void* direction = reinterpret_cast<void*>(GetProcAddress(game, "?SetControllerDirection@ControllerPlayer@GAME@@QEAAXAEBVVec3@2@@Z"));
+    void* length = reinterpret_cast<void*>(GetProcAddress(game, "?SetControllerMovementLength@ControllerPlayer@GAME@@QEAAXM@Z"));
+
+    // The bytes carry the offsets the direction and length are kept at, as with the camera's.
+    if (direction == nullptr || length == nullptr || !StartsWith(direction, "f20f1002f20f1181580400008b4208898160040000c3") || !StartsWith(length, "f30f118964040000c3"))
+    {
+        Say("Analog movement off: the game's movement setters are missing or have changed; movement stays on the keys.");
+        return;
+    }
+
+    originalSetDirection = reinterpret_cast<SetDirection>(direction);
+    originalSetLength = reinterpret_cast<SetLength>(length);
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(reinterpret_cast<PVOID*>(&originalSetDirection), reinterpret_cast<PVOID>(SteeredDirection));
+    DetourAttach(reinterpret_cast<PVOID*>(&originalSetLength), reinterpret_cast<PVOID>(SteeredLength));
+    LONG result = DetourTransactionCommit();
+
+    if (result != NO_ERROR)
+    {
+        Say("Analog movement off: attaching to the movement setters failed with error %ld.", result);
+        return;
+    }
+
+    analogMovement = true;
+    Say("Attached to the game's movement; the left stick can steer in any direction.");
+}
+
+// Keeps the camera's forward for the movement hooks, which run outside the camera update.
+void KeepForward(void* camera)
+{
+    float back[3]{};
+
+    if (!analogMovement || !CameraBack(camera, back))
+    {
+        return;
+    }
+
+    float length = std::sqrt(back[0] * back[0] + back[2] * back[2]);
+
+    if (length < 0.0001f)
+    {
+        return;
+    }
+
+    forwardX = -back[0] / length;
+    forwardZ = -back[2] / length;
+}
+
 void Work(void* camera, float elapsed)
 {
+    KeepForward(camera);
     CheckPanels(elapsed);
     CheckLayouts(elapsed);
     CheckHealth(elapsed);
@@ -2182,6 +2318,15 @@ void Obey(const std::string& line)
         zoomPerSecond = NumberAfter(line, "\"zoom\":");
     }
 
+    if (line.find("\"type\":\"move\"") != std::string::npos)
+    {
+        LARGE_INTEGER now{};
+        QueryPerformanceCounter(&now);
+        moveX = NumberAfter(line, "\"x\":");
+        moveY = NumberAfter(line, "\"y\":");
+        moveStamp = now.QuadPart;
+    }
+
     if (line.find("\"type\":\"recenter\"") != std::string::npos)
     {
         recenterRequested = true;
@@ -2209,6 +2354,11 @@ void Converse(HANDLE pipe)
     char buffer[512];
     std::string pending;
     bool healthy = WriteLine(pipe, writeDone, CameraLine());
+
+    if (analogMovement)
+    {
+        healthy = healthy && WriteLine(pipe, writeDone, "{\"protocol\":1,\"type\":\"abilities\",\"analog\":true}\n");
+    }
     panelsWanted = true;
     layoutsWanted = true;
     targetsWanted = true;
@@ -2297,6 +2447,7 @@ DWORD WINAPI Link(LPVOID)
         yawPerSecond = 0;
         zoomPerSecond = 0;
         lockedId = 0;
+        moveStamp = 0;
         Say("GDPilot went away; listening for it again.");
     }
 }
@@ -2321,6 +2472,7 @@ DWORD WINAPI Start(LPVOID)
             FindCollision();
             FindHealth();
             FindTargets();
+            FindMovement();
         }
 
         HANDLE thread = CreateThread(nullptr, 0, Link, nullptr, 0, nullptr);
