@@ -301,17 +301,27 @@ Nothing.
 | HT-2 Capture calibration fixtures | 3 | Done: bags and vendor 2026-10-20, stash 2026-10-24, unattended |
 | HT-3 Feel tuning | 8 | Not yet raised |
 
+## Combat checkpoint, 2026-10-31 (paused at the owner's request)
+
+| Piece | Status |
+| --- | --- |
+| Twin-stick aiming | Done, tested; live, the reach was pulled in after it hit the screen's edge |
+| Tilt on the right stick, LT to zoom | Done: checked live up and down after the second approach |
+| Lock framing from the camera | Done: close enemies framed beside the character, live |
+| Lock point every frame | Done, live |
+| Smart interact | Talk and use work live (Kerrick, the rift gate); **pick-up misses**: the click lands about a unit from the item |
+
 ## Next session starts here
 
-PLAN.md section 17: the Souls-level feel list, then Phases 6 to 8.
+Finish the combat checkpoint, PLAN.md section 17.
 
-1. **Skills that need no cursor**, and **the Souls camera**: the right stick's
-   up and down tilting, and the camera settling behind a running character.
-3. **Smart interact.** A nearby list like lock-on's, with loot, characters and
-   chests: one button to pick up, talk or open the nearest.
-4. **The stash from the game**, then **snapping in every menu**.
-5. **A bug pass at the end of each phase**; Phase 9 hardens everything before
-   release.
+1. **Make pick-up land.** Aim at the item's bounding box rather than its
+   origin: the entity's region box sits at 0x44 or 0x5c in it, six floats,
+   per `Entity::GetRegionBoundingBox`; log it beside the position for an item
+   dropped in town, and check against the label. Drop only junk to test, and
+   pick it back up before any restart: area resets lose dropped items.
+2. A bug pass over everything since the last, then the remaining docs.
+3. Then Phase 7: the stash from the game and snapping in every menu.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
 done.
