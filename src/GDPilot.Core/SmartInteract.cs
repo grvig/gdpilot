@@ -13,21 +13,21 @@ public sealed record InteractBinding(KeyCode Fallback) : ButtonBinding;
 /// </summary>
 public static class SmartInteract
 {
-    /// <summary>How near a thing must be, in world units, to be offered; the in-game part reports out to ten.</summary>
+    /// <summary>How near a thing must be, by default, in world units, to be offered; the in-game part reports out to ten.</summary>
     public const double Reach = 6;
 
     /// <summary>
     /// The thing to offer: the nearest within reach. Loot wins a near tie, since
     /// picking up is what a fight leaves to do.
     /// </summary>
-    public static NearbyThing? Offer(IReadOnlyList<NearbyThing> things)
+    public static NearbyThing? Offer(IReadOnlyList<NearbyThing> things, double reach = Reach)
     {
         NearbyThing? best = null;
         double bestScore = double.MaxValue;
 
         foreach (NearbyThing thing in things)
         {
-            if (thing.Distance > Reach)
+            if (thing.Distance > reach)
             {
                 continue;
             }

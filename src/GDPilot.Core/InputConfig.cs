@@ -74,6 +74,9 @@ public sealed class InputConfig
     /// </summary>
     public bool TwinStick { get; init; } = true;
 
+    /// <summary>How near, in world units, something must be for A to pick it up, talk to it or use it; up to ten.</summary>
+    public double InteractReach { get; init; } = SmartInteract.Reach;
+
     /// <summary>
     /// Whether grid presses read the screen and jump between items. Off, they
     /// step one cell at a time, which never depends on what the screen shows.

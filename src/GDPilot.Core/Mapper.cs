@@ -67,6 +67,9 @@ public sealed class Mapper
     /// <summary>Where the game last drew the locked enemy, every frame it moves; preferred to the glide when it is the enemy held.</summary>
     public LockPointReport? LockSpot { get; set; }
 
+    /// <summary>How near, in world units, a thing must be for an interact press to take it.</summary>
+    public double InteractReach { get; set; } = SmartInteract.Reach;
+
     /// <summary>What lies close by to pick up, talk to or use, as the game last reported it.</summary>
     public IReadOnlyList<NearbyThing> Things { get; set; } = Array.Empty<NearbyThing>();
 
@@ -302,7 +305,7 @@ public sealed class Mapper
 
         if (InWorld)
         {
-            Offered = SmartInteract.Offer(Things);
+            Offered = SmartInteract.Offer(Things, InteractReach);
         }
 
         KeyCode? fallback = null;

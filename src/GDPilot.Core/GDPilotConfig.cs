@@ -138,6 +138,7 @@ public sealed class GDPilotConfig
         Wheel();
         Require(Input.LockRange > 0, $"input.lockRange must be above zero, not {Input.LockRange}.");
         Require(Input.TiltSpeed >= 0, $"input.tiltSpeed cannot be negative, not {Input.TiltSpeed}.");
+        Require(Input.InteractReach is > 0 and <= 10, $"input.interactReach must be above 0 and at most 10, the in-game part's reach, not {Input.InteractReach}.");
 
         foreach (string mode in Bindings.Keys)
         {

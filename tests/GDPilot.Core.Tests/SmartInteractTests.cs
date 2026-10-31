@@ -55,4 +55,13 @@ public sealed class SmartInteractTests
         Assert.Equal("Travel", SmartInteract.Verb(ThingKind.Travel));
         Assert.Equal(near, GameReport.Parse(near.Write()));
     }
+
+    [Fact]
+    public void ALongerReachOffersWhatTheDefaultWouldNot()
+    {
+        NearbyThing[] things = { new(1, ThingKind.Talk, 0.2, 0.5, 7) };
+
+        Assert.Null(SmartInteract.Offer(things));
+        Assert.Equal(1u, SmartInteract.Offer(things, 8)!.Id);
+    }
 }

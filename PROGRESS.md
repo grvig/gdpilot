@@ -267,7 +267,7 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   its prompt; twin-stick aiming, tilting and a framed lock all worked among
   the Burial Hill dead.
 
-470 core tests and 71 integration tests, all passing.
+472 core tests and 71 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware

@@ -80,6 +80,7 @@ public sealed class GDPilotConfigTests
     [InlineData("""{ "panels": { "Lobby": "L" } }""")]
     [InlineData("""{ "input": { "lockRange": 0 } }""")]
     [InlineData("""{ "input": { "tiltSpeed": -1 } }""")]
+    [InlineData("""{ "input": { "interactReach": 12 } }""")]
     public void InvalidValuesAreRejectedAtLoad(string json)
     {
         Assert.Throws<FormatException>(() => GDPilotConfig.Parse(json));
