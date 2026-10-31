@@ -17,6 +17,7 @@
     "aimHeight": 0.38,
     "lockRange": 25,
     "softAim": true,
+    "analogMovement": true,
     "jumpToItems": true,
     "calibration": {
       "leftCenterX": 0.0,

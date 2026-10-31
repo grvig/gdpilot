@@ -54,6 +54,13 @@ public sealed class InputConfig
     public bool SoftAim { get; init; } = true;
 
     /// <summary>
+    /// Whether the left stick steers the character in any direction through the
+    /// in-game part, rather than in WASD's eight. Without the in-game part the
+    /// keys are used either way.
+    /// </summary>
+    public bool AnalogMovement { get; init; } = true;
+
+    /// <summary>
     /// Whether grid presses read the screen and jump between items. Off, they
     /// step one cell at a time, which never depends on what the screen shows.
     /// </summary>

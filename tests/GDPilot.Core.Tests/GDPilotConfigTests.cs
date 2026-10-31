@@ -85,6 +85,13 @@ public sealed class GDPilotConfigTests
     }
 
     [Fact]
+    public void AnalogMovementIsOnUnlessTurnedOff()
+    {
+        Assert.True(GDPilotConfig.Parse("{}").Input.AnalogMovement);
+        Assert.False(GDPilotConfig.Parse("""{ "input": { "analogMovement": false } }""").Input.AnalogMovement);
+    }
+
+    [Fact]
     public void SoftAimIsOnUnlessTurnedOff()
     {
         Assert.NotNull(GDPilotConfig.Parse("{}").SoftAim());

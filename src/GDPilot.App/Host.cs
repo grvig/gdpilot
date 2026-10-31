@@ -142,6 +142,7 @@ internal static class Host
                 }
 
                 mapper.Looking = link.ThirdPerson;
+                mapper.Steering = config.Input.AnalogMovement && link.AnalogMovement;
                 TargetsReport near = link.Near;
                 mapper.Seen = near.Targets;
                 mapper.Near = near;
@@ -312,6 +313,7 @@ internal static class Host
         {
             link.Send(new LookCommand(0, 0));
             link.Send(new LockCommand(0));
+            link.Send(new MoveCommand(0, 0));
         }
 
         wasSuspended = suspended;
