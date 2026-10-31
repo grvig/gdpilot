@@ -96,9 +96,10 @@ and pitch 38 to 52.
   the bytes it was mapped from. Those bytes contain the camera field offsets
   it writes, so a match is what makes the writes safe. Any difference and it
   stays off, saying why in `%LOCALAPPDATA%\GDPilot\in-game.log`.
-- **Camera only.** It writes the camera's distance, tilt, zoom and field of
-  view, and turns it through the game's own `AdjustYaw`. Beyond the camera it
-  only reads: which panels are open, so GDPilot's mode always matches the
+- **Camera and the player's own input only.** It writes the camera's
+  distance, tilt, zoom and field of view, and turns it through the game's own
+  `AdjustYaw`. While the left stick steers, it turns the game's own walking
+  step to the stick's angle. Beyond that it only reads: which panels are open, so GDPilot's mode always matches the
   game's, where each item sits in your bags, so a large item is one stop, and
   where the enemies near you stand, for lock-on.
 - **On the game's thread.** It attaches to the game's camera update and does
@@ -150,6 +151,21 @@ frame of its own work passes two milliseconds. Measured live with enemies
 around, it averaged about 30 microseconds, a fiftieth of a 60 fps frame, with
 the worst frame near a third of a millisecond. Switching third person on reads
 `camera.ini` whole in one go, which costs well under half a millisecond.
+
+## Walking in any direction
+
+While a movement key is down, the game walks the character every frame toward
+a point a step ahead, through its own `HandleActionFromJoystick`, the call its
+gamepad mode uses, and records the way through `SetControllerDirection`. GDPilot
+holds the nearest of the eight keys and sends the stick's exact direction; the
+in-game part turns the game's point round the character to that angle, at the
+game's own distance, and the direction with it. Checked live on 2026-10-31:
+thirty degrees right of forward walked at exactly that angle.
+
+Steering lapses on its own if GDPilot sends nothing for half a second, so a
+stalled GDPilot can never steer the character anywhere; GDPilot repeats a held
+direction several times a second. Across a region border, for the frame or two
+it takes, the game's own point stands.
 
 ## The ground round the character
 
