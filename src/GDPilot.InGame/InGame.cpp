@@ -2058,17 +2058,19 @@ void UpdatedCamera(void* camera)
     Account(ended.QuadPart - started.QuadPart, elapsed);
 }
 
-// Analog movement. Every frame the game turns the movement keys it reads into
-// a direction across the ground and a length, through the player controller's
-// own SetControllerDirection and SetControllerMovementLength, the same pair its
-// gamepad mode feeds; read live on 2026-10-31, W gave the camera's forward at
-// length 1. While GDPilot steers, both are replaced with the left stick's: its
-// direction turned to the camera, at full length. Only the player's own input
-// is replaced, as the owner agreed that day; nothing else about moving changes.
+// Analog movement. While a movement key is down the game walks the character,
+// every frame, toward a point a step ahead of it, through the player
+// controller's own HandleActionFromJoystick, and records the direction through
+// SetControllerDirection; read live on 2026-10-31, W gave a point 1.2 units
+// along the camera's forward. GDPilot keeps holding the nearest of the eight
+// keys, so the game walks as it always has, and while it steers both the point
+// and the direction are turned round the character to the stick's exact angle,
+// at the game's own distance. If anything here is missing, the eight keys
+// still walk. Only the player's own input is changed, as the owner agreed.
 using SetDirection = void (*)(void* controller, const float* direction);
-using SetLength = void (*)(void* controller, float length);
+using JoystickAction = bool (*)(void* controller, const WorldPoint* point, bool run);
 SetDirection originalSetDirection = nullptr;
-SetLength originalSetLength = nullptr;
+JoystickAction originalAction = nullptr;
 
 // The stick as GDPilot last sent it, with up as the camera's forward, and when.
 std::atomic<float> moveX{0};
@@ -2105,7 +2107,8 @@ bool Steering(float& x, float& y)
     return x != 0 || y != 0;
 }
 
-void SteeredDirection(void* controller, const float* direction)
+// The stick's direction across the ground, or false when not steering.
+bool SteerDirection(float steered[3])
 {
     float x = 0;
     float y = 0;
@@ -2114,29 +2117,75 @@ void SteeredDirection(void* controller, const float* direction)
 
     if (!Steering(x, y) || (fx == 0 && fz == 0))
     {
-        originalSetDirection(controller, direction);
-        return;
+        return false;
     }
 
     // The camera's right is its forward turned a quarter, as D showed against W.
-    float steered[3] = {fx * y - fz * x, 0, fz * y + fx * x};
+    steered[0] = fx * y - fz * x;
+    steered[1] = 0;
+    steered[2] = fz * y + fx * x;
     float length = std::sqrt(steered[0] * steered[0] + steered[2] * steered[2]);
     steered[0] /= length;
     steered[2] /= length;
-    originalSetDirection(controller, steered);
+    return true;
 }
 
-void SteeredLength(void* controller, float length)
+void SteeredDirection(void* controller, const float* direction)
 {
-    float x = 0;
-    float y = 0;
+    float steered[3]{};
 
-    if (Steering(x, y))
+    if (SteerDirection(steered))
     {
-        length = 1;
+        originalSetDirection(controller, steered);
+        return;
     }
 
-    originalSetLength(controller, length);
+    originalSetDirection(controller, direction);
+}
+
+// The game's point, turned round the character to the stick's angle at the same distance.
+bool Turned(const WorldPoint& point, const float steered[3], WorldPoint& turned)
+{
+    __try
+    {
+        WorldPoint from{};
+        pathPosition(mainPlayer(*engineSlot), &from);
+
+        // Only within one region, where both points share their coordinates; across a border the game's own point stands.
+        if (from.region != point.region)
+        {
+            return false;
+        }
+
+        float reach = std::hypot(point.x - from.x, point.z - from.z);
+
+        if (!(reach > 0.01f))
+        {
+            return false;
+        }
+
+        turned = point;
+        turned.x = from.x + steered[0] * reach;
+        turned.z = from.z + steered[2] * reach;
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+bool SteeredAction(void* controller, const WorldPoint* point, bool run)
+{
+    float steered[3]{};
+    WorldPoint turned{};
+
+    if (SteerDirection(steered) && Turned(*point, steered, turned))
+    {
+        return originalAction(controller, &turned, run);
+    }
+
+    return originalAction(controller, point, run);
 }
 
 bool analogMovement = false;
@@ -2145,21 +2194,21 @@ void FindMovement()
 {
     HMODULE game = GetModuleHandleW(L"Game.dll");
     void* direction = reinterpret_cast<void*>(GetProcAddress(game, "?SetControllerDirection@ControllerPlayer@GAME@@QEAAXAEBVVec3@2@@Z"));
-    void* length = reinterpret_cast<void*>(GetProcAddress(game, "?SetControllerMovementLength@ControllerPlayer@GAME@@QEAAXM@Z"));
+    void* action = reinterpret_cast<void*>(GetProcAddress(game, "?HandleActionFromJoystick@ControllerPlayer@GAME@@QEAA_NAEBVWorldVec3@2@_N@Z"));
 
-    // The bytes carry the offsets the direction and length are kept at, as with the camera's.
-    if (direction == nullptr || length == nullptr || !StartsWith(direction, "f20f1002f20f1181580400008b4208898160040000c3") || !StartsWith(length, "f30f118964040000c3"))
+    // The direction's bytes carry the offsets it is kept at; the action's open by reading the controller it acts for.
+    if (direction == nullptr || action == nullptr || !StartsWith(direction, "f20f1002f20f1181580400008b4208898160040000c3") || !StartsWith(action, "4883b9f002000000"))
     {
-        Say("Analog movement off: the game's movement setters are missing or have changed; movement stays on the keys.");
+        Say("Analog movement off: the game's movement calls are missing or have changed; movement stays on the keys.");
         return;
     }
 
     originalSetDirection = reinterpret_cast<SetDirection>(direction);
-    originalSetLength = reinterpret_cast<SetLength>(length);
+    originalAction = reinterpret_cast<JoystickAction>(action);
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(reinterpret_cast<PVOID*>(&originalSetDirection), reinterpret_cast<PVOID>(SteeredDirection));
-    DetourAttach(reinterpret_cast<PVOID*>(&originalSetLength), reinterpret_cast<PVOID>(SteeredLength));
+    DetourAttach(reinterpret_cast<PVOID*>(&originalAction), reinterpret_cast<PVOID>(SteeredAction));
     LONG result = DetourTransactionCommit();
 
     if (result != NO_ERROR)

@@ -64,6 +64,6 @@ Engine.dll ?GetObjectId@Object@GAME@@QEBAIXZ
 Engine.dll ??0Viewport@GAME@@QEAA@HHHH@Z
 Engine.dll ?GetHeight@Actor@GAME@@QEBAMXZ
 
-# Analog movement: with SetControllerDirection above, the pair the game turns
-# its movement keys into every frame.
-Game.dll ?SetControllerMovementLength@ControllerPlayer@GAME@@QEAAXM@Z
+# Analog movement: with SetControllerDirection above, the call the game walks
+# the character through, toward a point a step ahead, while a key is down.
+Game.dll ?HandleActionFromJoystick@ControllerPlayer@GAME@@QEAA_NAEBVWorldVec3@2@_N@Z
