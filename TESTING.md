@@ -52,6 +52,7 @@ in the game, with recorded pad traces:
 | `lock-on.json` | Locking on, flicking right then left, letting go; the log names each lock |
 | `lock-fight.json` | Locking on and holding the attack, near enemies outside a town |
 | `dodge-and-aim.json` | Third person, an attack with soft aim, dodges right, left and ahead on B, then a lock |
+| `analog-walk.json` | Walking thirty degrees right of forward, then back and left, then stopping |
 
 Lock-on needs foes near the character and in view. `GDPilot.exe --targets`
 prints what the in-game part sees, which of them are in view, and which one a
@@ -71,6 +72,12 @@ stalls the game for a moment on its own.
 A dodge only lasts one tap, so a screenshot will not catch where it aimed;
 read the cursor's position a few dozen times a second while the trace runs
 instead. `--targets` prints the ring of ground the dodge aims through.
+
+Walking's angle is best checked by the character's position: a build that logs
+it a few times a second while steering showed each step's direction to two
+decimal places against the stick's. Screenshots show the walk only roughly.
+`--rumble-test` plays every rumble GDPilot makes, the fight's included, for
+someone holding the pad.
 
 What each trace sent in the game is pinned by a test, so a change that alters
 it shows up in the suite, not only in the game.
