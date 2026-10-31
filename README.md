@@ -21,8 +21,8 @@ stash and trading where the D-pad lands on items instead of pixels.
 - **Lock-on.** Click the right stick to lock onto the enemy you face; flick
   the stick to switch targets. Skills fire at whatever you have locked, the
   camera turns to keep it in view, and when it falls the lock moves on.
-- **Movement that follows the camera.** Push the stick away from you and you
-  walk away from the camera, however it is turned.
+- **Movement in any direction.** The left stick walks at the exact angle it
+  points, not just eight ways, and away from the camera however it is turned.
 - **Every skill within reach.** The four face buttons are instant skills, with
   four more on the left trigger plus face. Everything else on the hotbar sits on
   a radial wheel: hold View, flick the right stick, release to cast, and keep
@@ -31,8 +31,8 @@ stash and trading where the D-pad lands on items instead of pixels.
   slot swaps that skill onto it.
 - **One button for the obvious thing.** Pick up the nearest loot, talk to the
   nearest character or open the nearest chest without aiming at it.
-- **Rumble that means something.** Low health, heavy hits and rare drops each
-  have their own feel.
+- **Rumble that means something.** Low health, heavy hits, kills and lock-on
+  each have their own feel.
 
 ### Menus
 
@@ -117,6 +117,10 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 - **Soft aim and a dodge.** Without a lock, swings drift onto the enemy you
   roughly face. B fires your movement skill as a dodge the way the left stick
   points, no cursor needed.
+- **Walking in any direction.** The left stick steers your character at its
+  exact angle through the game's own walking, instead of WASD's eight ways.
+- **Rumble from the fight**: ticks as enemies near you are wounded, a knock for
+  heavy blows, a thump as they die.
 - **The third-person camera.** Hold the left trigger and click the right stick
   and the camera drops behind your character. The right stick turns and zooms it, walking turns
   with it, it swings round as you walk sideways, and it stays in front of
