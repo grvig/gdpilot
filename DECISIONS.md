@@ -687,3 +687,30 @@ change to how the game plays out, so the rule "write only the camera" now
 reads "write only the camera and the player's own input". Nothing that touches
 damage, drops, stats or progression is ever written. Without the in-game
 part, movement stays on WASD.
+
+## 2026-10-31 — Walking in any direction, and the fight's rumble
+
+**The game walks toward a step-ahead point, and that point is turned.** A probe
+showed the game calls `SetControllerDirection` and
+`SetControllerMovementLength` about ninety times a second from the movement
+keys, W giving the camera's forward at length 1. Replacing both moved nothing:
+the walk itself goes through `HandleActionFromJoystick`, called each frame
+while a key is down with a point 1.2 units ahead. The in-game part turns that
+point round the character to the stick's angle at the game's own distance, and
+the direction with it. Checked live: a stick thirty degrees right of forward
+walked at exactly that angle, and one back and left at its angle too.
+
+**The keys still walk.** The game only walks while a key is down, so GDPilot
+keeps holding the nearest of the eight and adds the stick's direction. If the
+in-game part cannot steer, nothing breaks: the eight keys walk as before. The
+setters for movement length were left alone once they turned out not to steer.
+
+**Steering lapses without GDPilot.** The in-game part stops turning the walk
+half a second after the last direction, and GDPilot repeats a held one every
+150 ms, the same idea as the stuck-key watchdog.
+
+**The fight's rumble is read from the targets.** Wounds to enemies within eight
+units or the locked one tick lightly, at most every 120 ms; fifteen points in
+one report knock harder; an enemy within twelve units at 30% or less that
+leaves the reports thumps as a kill. The reports do not say who struck, and
+that is accepted: it is rhythm in the hands, not a score.
