@@ -46,10 +46,10 @@ stash and trading where the D-pad lands on items instead of pixels.
   choices and the blacksmith's recipe list, all reachable with the D-pad.
 - **Shortcuts.** Fast travel to the nearest rift gate, selling a marked group of
   items in one sweep, and town portal and return, each on one button.
-- **An overlay that teaches as you go.** A small card in a corner shows the
-  current mode and what every button does there, with Xbox or PlayStation icons
-  to match your pad.
-
+- **An overlay that looks like part of the game.** A small card drawn like one
+  of Grim Dawn's own panels shows the current mode and what every button does
+  there, then folds away to a line or two. It never covers the minimap, the
+  quests, the hotbar or an open panel, and never floats over other windows.
 ### Setup
 
 - **One install.** One download. GDPilot starts with Windows or by hand and
