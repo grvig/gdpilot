@@ -267,7 +267,11 @@ Grim Dawn v1.3.1.1, borderless 1920×1080, Devil's Crossing.
   its prompt; twin-stick aiming, tilting and a framed lock all worked among
   the Burial Hill dead.
 
-472 core tests and 71 integration tests, all passing.
+- **2026-11-01, live, unattended:** the restyled overlay showed in the
+  game's own panel style, folded after five seconds, and sat clear of the
+  inventory panel; no empty card flashed at startup after the fix.
+
+487 core tests and 72 integration tests, all passing.
 
 Not yet verified:
 - **Live pad movement.** The sticks rest at exactly 0.0000, so a firmware
@@ -320,6 +324,9 @@ Nothing.
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
 
+0. The overlay was redesigned on 2026-11-01 (Grim Dawn styling, clear of the
+   game's interface, folding, stacked with the game). Ask the owner how it
+   looks; the stash and vendor placements were not seen live yet.
 1. **A tuning session with the owner at the pad**: flick strength, turn and
    tilt speeds, twin-stick reach, rumble strength. Every one is a setting.
 2. **The stash from the game**, so the stash is exact like the bags.
