@@ -6,6 +6,32 @@ namespace GDPilot.Core;
 /// </summary>
 public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<string> Legend)
 {
+    /// <summary>The mode the card describes, so it can be placed clear of that mode's panels.</summary>
+    public Mode Showing { get; init; } = Core.Mode.Combat;
+
+    /// <summary>How many of the legend's first lines say what is going on rather than what a button does.</summary>
+    public int Statuses { get; init; }
+
+    /// <summary>
+    /// True once the buttons have been on show for a while: the card then folds
+    /// down to its title and status lines, so it covers as little of the game as
+    /// it can. A change of mode opens it out again.
+    /// </summary>
+    public bool Folded { get; init; }
+
+    /// <summary>The lines the card shows: all of them, or only the status lines while folded.</summary>
+    public IReadOnlyList<string> Shown
+    {
+        get
+        {
+            if (Folded)
+            {
+                return Legend.Take(Statuses).ToList();
+            }
+
+            return Legend;
+        }
+    }
     /// <summary>The skill wheel to draw over the game, or null while it is closed.</summary>
     public WheelView? Wheel { get; init; }
 
@@ -81,6 +107,8 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
             legend.Add("Grid: stepping, screen unclear");
         }
 
+        int statuses = legend.Count;
+
         foreach ((GamepadButtons button, ButtonBinding binding, bool chorded) in layers.Entries)
         {
             string trigger = button.ToString();
@@ -93,7 +121,7 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
             legend.Add($"{trigger}: {Describe(binding)}");
         }
 
-        return new OverlayState(mode.ToString(), SuspendedText(reasons), legend);
+        return new OverlayState(mode.ToString(), SuspendedText(reasons), legend) { Showing = mode, Statuses = statuses };
     }
 
     /// <summary>Null while injecting, otherwise why not. The kill switch is named first because it needs a press to clear.</summary>
