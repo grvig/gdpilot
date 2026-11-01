@@ -12,7 +12,7 @@ namespace GDPilot.Overlay;
 /// </summary>
 public sealed class PromptWindow : Window
 {
-    private readonly TextBlock text = new() { Foreground = Brushes.White, FontSize = 18, FontWeight = FontWeights.SemiBold };
+    private readonly TextBlock text = new() { Foreground = GrimTheme.Parchment, FontFamily = GrimTheme.Serif, FontSize = 17 };
 
     public PromptWindow()
     {
@@ -26,22 +26,26 @@ public sealed class PromptWindow : Window
         ResizeMode = ResizeMode.NoResize;
         SizeToContent = SizeToContent.WidthAndHeight;
         IsHitTestVisible = false;
-        Content = new Border
-        {
-            Background = new SolidColorBrush(Color.FromArgb(200, 16, 16, 16)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(160, 250, 240, 215)),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(14, 6, 14, 6),
-            Child = text,
-        };
+        // As the game labels an item on the ground: a small dark plate with a bronze edge.
+        Content = GrimTheme.Panel(text, new Thickness(12, 3, 12, 4));
         SourceInitialized += (_, _) => ClickThrough.Apply(Handle);
     }
 
     public IntPtr Handle => new WindowInteropHelper(this).Handle;
 
+    /// <summary>The button in gold, then what it would do, as "A  Pick up".</summary>
     public void Display(string prompt)
     {
-        text.Text = prompt;
+        text.Inlines.Clear();
+        int split = prompt.IndexOf("  ", StringComparison.Ordinal);
+
+        if (split < 0)
+        {
+            text.Inlines.Add(new System.Windows.Documents.Run(prompt));
+            return;
+        }
+
+        text.Inlines.Add(new System.Windows.Documents.Run(prompt[..split]) { Foreground = GrimTheme.Gold, FontWeight = FontWeights.Bold });
+        text.Inlines.Add(new System.Windows.Documents.Run("  " + prompt[(split + 2)..]));
     }
 }
