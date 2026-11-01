@@ -131,6 +131,7 @@ internal static class Host
             CombatRumble fight = new();
             IReadOnlyList<Picture?>? wheelPictures = null;
             ScreenRect? gameBounds = null;
+            IntPtr gameHandle = IntPtr.Zero;
             replayClock.Start();
 
             while (!stop.IsCancellationRequested && (duration is null || clock.Elapsed < duration))
@@ -156,6 +157,7 @@ internal static class Host
                 if (ticks % overlayInterval == 0)
                 {
                     gameBounds = GameWindow.ClientBounds(config.GameProcess);
+                    gameHandle = GameWindow.Handle(config.GameProcess);
                     mapper.GameBounds = gameBounds;
                 }
 
@@ -227,7 +229,7 @@ internal static class Host
                         Marker = LockMarker.For(locked, mapper.LockPoint),
                         Prompt = OverlayState.PromptFor(mapper.Offered, layers[loop.Mode]),
                     };
-                    overlay.Update(state.Floating(), gameBounds, config.Overlay.Corner);
+                    overlay.Update(state.Floating(), gameBounds, config.Overlay.Corner, gameHandle);
                     wheelShown = wheelOpen;
                     markerShown = locked is not null;
                 }

@@ -31,7 +31,8 @@ public sealed class WheelWindow : Window
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
-        Topmost = true;
+        // Stacked by the host with the game, not always on top of everything.
+        Topmost = false;
         ShowActivated = false;
         ShowInTaskbar = false;
         ResizeMode = ResizeMode.NoResize;

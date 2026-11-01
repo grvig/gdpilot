@@ -11,8 +11,17 @@ namespace GDPilot.Overlay;
 public sealed class OverlayHost : IDisposable
 {
     private static readonly IntPtr TopmostSlot = new(-1);
+    private static readonly IntPtr NotTopmostSlot = new(-2);
+    private static readonly IntPtr TopSlot = IntPtr.Zero;
     private const uint NoSize = 0x0001;
+    private const uint NoMove = 0x0002;
+    private const uint NoOrder = 0x0004;
     private const uint NoActivate = 0x0010;
+    private const uint WindowAbove = 3;
+    private const int ExtendedStyle = -20;
+    private const long TopmostStyle = 0x8;
+    private const uint ForegroundChanged = 3;
+    private const uint OutOfContext = 0;
 
     private readonly Thread thread;
     private readonly ManualResetEventSlim ready = new();
@@ -22,11 +31,17 @@ public sealed class OverlayHost : IDisposable
     private PromptWindow? prompt;
 
     // Where each window was last put, so one that has not moved costs nothing.
-    // Being topmost is re-asserted once a second, since a borderless game can rise
-    // over a topmost window; doing it on every redraw made the desktop recompose
-    // fifty times a second while the marker was up.
+    // The stacking is re-asserted once a second and whenever another window
+    // comes in front; doing it on every redraw made the desktop recompose fifty
+    // times a second while the marker was up.
     private readonly Dictionary<IntPtr, (int X, int Y)> placed = new();
     private DateTime lastAsserted = DateTime.MinValue;
+    private IntPtr gameWindow;
+    private bool stackedOnTop;
+
+    // Kept in a field, so the delegate Windows calls back is never collected.
+    private WinEventProc? foregroundWatch;
+    private IntPtr foregroundHook;
 
     public OverlayHost()
     {
@@ -40,13 +55,23 @@ public sealed class OverlayHost : IDisposable
     public IntPtr Handle { get; private set; }
 
     /// <summary>Shows the state in the chosen corner of the game, or of the screen when there is no game window.</summary>
-    public void Update(OverlayState state, ScreenRect? game, OverlayCorner corner)
+    /// <param name="gameHandle">The game's window, so the overlay can stack itself with it; zero when unknown.</param>
+    public void Update(OverlayState state, ScreenRect? game, OverlayCorner corner, IntPtr gameHandle)
     {
-        window?.Dispatcher.BeginInvoke(() => Apply(state, game, corner));
+        window?.Dispatcher.BeginInvoke(() =>
+        {
+            gameWindow = gameHandle;
+            Apply(state, game, corner);
+        });
     }
 
     public void Dispose()
     {
+        if (foregroundHook != IntPtr.Zero)
+        {
+            window?.Dispatcher.Invoke(() => UnhookWinEvent(foregroundHook));
+        }
+
         window?.Dispatcher.InvokeShutdown();
         thread.Join(TimeSpan.FromSeconds(2));
         ready.Dispose();
@@ -60,6 +85,11 @@ public sealed class OverlayHost : IDisposable
         wheel = new WheelWindow();
         marker = new MarkerWindow();
         prompt = new PromptWindow();
+
+        // Told the moment another window comes in front, on this thread's own message loop,
+        // so the overlay leaves the top layer before anything is drawn over it.
+        foregroundWatch = (_, _, _, _, _, _, _) => Restack();
+        foregroundHook = SetWinEventHook(ForegroundChanged, ForegroundChanged, IntPtr.Zero, foregroundWatch, 0, 0, OutOfContext);
         ready.Set();
         Dispatcher.Run();
     }
@@ -81,16 +111,63 @@ public sealed class OverlayHost : IDisposable
 
         (int x, int y) = OverlayPlacement.Place(area, own.Right - own.Left, own.Bottom - own.Top, corner);
 
-        if (DateTime.UtcNow - lastAsserted > TimeSpan.FromSeconds(1))
-        {
-            placed.Clear();
-            lastAsserted = DateTime.UtcNow;
-        }
-
         Place(Handle, x, y);
         ShowWheel(state.Wheel, area);
         ShowMarker(state.Marker);
         ShowPrompt(state.Prompt, area);
+
+        // Restacked at once if the game has come in front or gone behind since, and once a second regardless.
+        if (DateTime.UtcNow - lastAsserted > TimeSpan.FromSeconds(1) || GameInFront() != stackedOnTop)
+        {
+            lastAsserted = DateTime.UtcNow;
+            Restack();
+        }
+    }
+
+    /// <summary>
+    /// Stacks the overlay with the game. While the game is in front, the overlay
+    /// is topmost, since a borderless game would otherwise rise over it. Once any
+    /// other window comes in front, the overlay leaves the top layer and sits just
+    /// above the game: over the game, under everything over the game.
+    /// </summary>
+    private void Restack()
+    {
+        IntPtr[] windows = { Handle, wheel!.Handle, marker!.Handle, prompt!.Handle };
+        stackedOnTop = GameInFront();
+
+        if (stackedOnTop)
+        {
+            foreach (IntPtr each in windows)
+            {
+                SetWindowPos(each, TopmostSlot, 0, 0, 0, 0, NoMove | NoSize | NoActivate);
+            }
+
+            return;
+        }
+
+        IntPtr after = TopSlot;
+
+        if (gameWindow != IntPtr.Zero)
+        {
+            IntPtr above = GetWindow(gameWindow, WindowAbove);
+
+            while (above != IntPtr.Zero && windows.Contains(above))
+            {
+                above = GetWindow(above, WindowAbove);
+            }
+
+            // Below a topmost window the game heads the ordinary layer, and the top of it is just above the game.
+            if (above != IntPtr.Zero && (GetWindowLongPtr(above, ExtendedStyle).ToInt64() & TopmostStyle) == 0)
+            {
+                after = above;
+            }
+        }
+
+        foreach (IntPtr each in windows)
+        {
+            SetWindowPos(each, NotTopmostSlot, 0, 0, 0, 0, NoMove | NoSize | NoActivate);
+            SetWindowPos(each, after, 0, 0, 0, 0, NoMove | NoSize | NoActivate);
+        }
     }
 
     /// <summary>The prompt sits low in the middle of the game while something is in reach, and is hidden otherwise.</summary>
@@ -148,7 +225,12 @@ public sealed class OverlayHost : IDisposable
         Place(marker.Handle, x, y);
     }
 
-    /// <summary>Moves a window and keeps it on top, but only when it has moved or the once-a-second check is due.</summary>
+    private bool GameInFront()
+    {
+        return gameWindow != IntPtr.Zero && GetForegroundWindow() == gameWindow;
+    }
+
+    /// <summary>Moves a window, but only when it has moved; a window newly shown is stacked with the game.</summary>
     private void Place(IntPtr window, int x, int y)
     {
         if (placed.TryGetValue(window, out (int X, int Y) at) && at == (x, y))
@@ -156,8 +238,14 @@ public sealed class OverlayHost : IDisposable
             return;
         }
 
+        bool fresh = !placed.ContainsKey(window);
         placed[window] = (x, y);
-        SetWindowPos(window, TopmostSlot, x, y, 0, 0, NoSize | NoActivate);
+        SetWindowPos(window, IntPtr.Zero, x, y, 0, 0, NoSize | NoActivate | NoOrder);
+
+        if (fresh)
+        {
+            Restack();
+        }
     }
 
     /// <summary>The wheel sits over the middle of the game while open, and is hidden otherwise.</summary>
@@ -205,4 +293,21 @@ public sealed class OverlayHost : IDisposable
 
     [DllImport("user32.dll")]
     private static extern bool SetWindowPos(IntPtr window, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
+
+    private delegate void WinEventProc(IntPtr hook, uint eventType, IntPtr window, int objectId, int childId, uint thread, uint time);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr module, WinEventProc callback, uint process, uint thread, uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern bool UnhookWinEvent(IntPtr hook);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetWindow(IntPtr window, uint relation);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetWindowLongPtr(IntPtr window, int index);
 }
