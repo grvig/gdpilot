@@ -21,7 +21,7 @@ public sealed class OverlayStateTests
         OverlayState state = OverlayState.Build(Mode.Combat, SuspendReason.None, Combat);
 
         Assert.Equal(
-            new[] { "A: Space", "RightBumper: Left click", "Start: Back", "DPadUp: Inventory", "LT+A: 1" },
+            new[] { "A: Space", "RB: Left click", "Menu: Back", "D-pad ↑: Inventory", "LT+A: 1" },
             state.Legend);
     }
 

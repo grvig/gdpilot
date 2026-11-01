@@ -19,7 +19,7 @@ public sealed class LockOnTests
 
         Assert.IsType<LockBinding>(combat.BindingFor(GamepadButtons.RightStick, 0));
         Assert.IsType<CameraToggleBinding>(combat.BindingFor(GamepadButtons.RightStick, 1));
-        Assert.Contains("RightStick: Lock on", OverlayState.Build(Mode.Combat, SuspendReason.None, combat).Legend);
+        Assert.Contains("R3: Lock on", OverlayState.Build(Mode.Combat, SuspendReason.None, combat).Legend);
     }
 
     [Fact]

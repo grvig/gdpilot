@@ -96,7 +96,7 @@ public sealed class RadialMenuTests
     [Fact]
     public void TheWheelReadsPlainlyInTheLegendAndTheConfigurationGivesTenSlots()
     {
-        Assert.Contains("Back: Skill wheel", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat).Legend);
+        Assert.Contains("View: Skill wheel", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat).Legend);
         Assert.Equal(KeyCode.D0, GDPilotConfig.Parse("{}").Wheel()!.Slots[9]);
     }
 

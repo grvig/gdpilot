@@ -118,7 +118,7 @@ public sealed class CameraControlTests
         List<InputIntent> sent = modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.RightStick }, Tick);
 
         Assert.Contains(new GameCommandIntent(new ToggleCameraCommand()), sent);
-        Assert.Contains("RightStick: Switch camera", OverlayState.Build(Mode.Combat, SuspendReason.None, combat).Legend);
+        Assert.Contains("R3: Switch camera", OverlayState.Build(Mode.Combat, SuspendReason.None, combat).Legend);
     }
 
     [Fact]

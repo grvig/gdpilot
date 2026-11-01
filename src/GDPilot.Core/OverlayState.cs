@@ -53,7 +53,7 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
         {
             if (binding is InteractBinding && !chorded)
             {
-                return $"{button}  {SmartInteract.Verb(offered.Kind)}";
+                return $"{ButtonName(button)}  {SmartInteract.Verb(offered.Kind)}";
             }
         }
 
@@ -111,7 +111,7 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
 
         foreach ((GamepadButtons button, ButtonBinding binding, bool chorded) in layers.Entries)
         {
-            string trigger = button.ToString();
+            string trigger = ButtonName(button);
 
             if (chorded)
             {
@@ -138,6 +138,36 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
         }
 
         return null;
+    }
+
+    /// <summary>A button as players call it, as short as the card can carry: LB, R3, View, D-pad ↑.</summary>
+    public static string ButtonName(GamepadButtons button)
+    {
+        switch (button)
+        {
+            case GamepadButtons.LeftBumper:
+                return "LB";
+            case GamepadButtons.RightBumper:
+                return "RB";
+            case GamepadButtons.Back:
+                return "View";
+            case GamepadButtons.Start:
+                return "Menu";
+            case GamepadButtons.LeftStick:
+                return "L3";
+            case GamepadButtons.RightStick:
+                return "R3";
+            case GamepadButtons.DPadUp:
+                return "D-pad ↑";
+            case GamepadButtons.DPadDown:
+                return "D-pad ↓";
+            case GamepadButtons.DPadLeft:
+                return "D-pad ←";
+            case GamepadButtons.DPadRight:
+                return "D-pad →";
+            default:
+                return button.ToString();
+        }
     }
 
     private static string ModifierName(KeyCode modifier)
