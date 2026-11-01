@@ -79,9 +79,10 @@ public sealed class OverlayHost : IDisposable
 
     private void Run()
     {
+        // Kept hidden until its first state is drawn and placed, or the empty card
+        // would show for a moment in the middle of the screen, as it did live.
         window = new OverlayWindow();
-        window.Show();
-        Handle = window.Handle;
+        Handle = new System.Windows.Interop.WindowInteropHelper(window).EnsureHandle();
         wheel = new WheelWindow();
         marker = new MarkerWindow();
         prompt = new PromptWindow();
@@ -97,6 +98,13 @@ public sealed class OverlayHost : IDisposable
     private void Apply(OverlayState state, ScreenRect? game, OverlayCorner corner)
     {
         window!.Display(state);
+
+        if (!window.IsVisible)
+        {
+            window.Opacity = 0;
+            window.Show();
+        }
+
         window.UpdateLayout();
 
         // Placed through Windows in physical pixels, because WPF's own Left and
@@ -112,6 +120,7 @@ public sealed class OverlayHost : IDisposable
         (int x, int y) = GameLayout.Place(area, own.Right - own.Left, own.Bottom - own.Top, corner, state.Showing);
 
         Place(Handle, x, y);
+        window.Opacity = 1;
         ShowWheel(state.Wheel, area);
         ShowMarker(state.Marker);
         ShowPrompt(state.Prompt, area);
