@@ -7,6 +7,23 @@ namespace GDPilot.Output;
 /// <summary>Finds where the game is drawing, so the overlay can sit in one of its corners.</summary>
 public static class GameWindow
 {
+    /// <summary>The game's main window, or zero if it is not running.</summary>
+    public static IntPtr Handle(string processName)
+    {
+        foreach (Process process in Process.GetProcessesByName(processName))
+        {
+            using (process)
+            {
+                if (process.MainWindowHandle != IntPtr.Zero)
+                {
+                    return process.MainWindowHandle;
+                }
+            }
+        }
+
+        return IntPtr.Zero;
+    }
+
     /// <summary>The game's client area in physical pixels, or null if it is not running or is minimised.</summary>
     public static ScreenRect? ClientBounds(string processName)
     {
