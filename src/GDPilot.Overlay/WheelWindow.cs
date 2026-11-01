@@ -18,8 +18,9 @@ public sealed class WheelWindow : Window
     private const double Ring = 140;
     private const double Disc = 66;
 
-    private static readonly Brush Idle = new SolidColorBrush(Color.FromArgb(200, 20, 20, 20));
-    private static readonly Brush Lit = new SolidColorBrush(Color.FromArgb(235, 196, 150, 40));
+    // The game's skill slots: dark stone in a bronze ring, gold when chosen.
+    private static readonly Brush Idle = GrimTheme.Stone;
+    private static readonly Brush Lit = GrimTheme.Gold;
 
     private readonly Canvas canvas = new() { Width = Size, Height = Size };
     private readonly List<Border> discs = new();
@@ -93,7 +94,8 @@ public sealed class WheelWindow : Window
             TextBlock text = new()
             {
                 Text = labels[slot],
-                Foreground = Brushes.White,
+                Foreground = GrimTheme.Parchment,
+                FontFamily = GrimTheme.Serif,
                 FontSize = 22,
                 FontWeight = FontWeights.Bold,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -104,7 +106,7 @@ public sealed class WheelWindow : Window
                 Width = Disc,
                 Height = Disc,
                 CornerRadius = new CornerRadius(Disc / 2),
-                BorderBrush = Brushes.Gainsboro,
+                BorderBrush = GrimTheme.Bronze,
                 BorderThickness = new Thickness(2),
                 Background = Idle,
                 Padding = new Thickness(6),
