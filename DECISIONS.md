@@ -765,3 +765,27 @@ the game listed rather than the nearest, which in a big fight could leave out
 the enemy or the item at the character's feet. Each is fixed, the first with a
 test. A frame of 2.4 ms of the in-game part's own work was logged once, just
 after an area loaded; it did not recur.
+
+## 2026-11-01 — The overlay as part of the game
+
+**It never covers the game's own interface.** The owner asked for the card to
+sit only on empty screen. Where the game draws its minimap, quest tracker,
+orbs, hotbar and each panel was measured at 1920 by 1080 and kept as fractions
+of the window; the card takes the configured corner if it is clear, else the
+first clear corner, else the one covering least. Tests check that a card of
+ordinary size covers nothing in any mode.
+
+**It folds away.** The full list of buttons shows for five seconds after a
+change of mode or suspension, then folds to the title and status lines, so
+the card is a small plate most of the time.
+
+**It stays with the game, not over everything.** Always-on-top put the card
+over a browser opened on top of the game. Now it is topmost only while the
+game is in front, and otherwise sits just above the game window, under
+whatever covers it; a foreground-change hook restacks it at once.
+
+**It is drawn like the game's panels.** Dark stone, a bronze edge with a gold
+inner line, a gold serif title over a fading rule, button names in gold and
+their actions in parchment. Book Antiqua stands in for the game's serif, which
+ships only inside its archives. Buttons are named as players say them: LB,
+RB, R3, View, Menu, D-pad arrows.
