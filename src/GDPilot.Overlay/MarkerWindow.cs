@@ -25,7 +25,7 @@ public sealed class MarkerWindow : Window
     public const double CentreX = Across / 2;
     public const double CentreY = 30;
 
-    private readonly Rectangle life = new() { Height = BarHeight, Fill = new SolidColorBrush(Color.FromArgb(230, 200, 40, 40)) };
+    private readonly Rectangle life = new() { Height = BarHeight, Fill = GrimTheme.Blood };
     private int shownHealth = -1;
 
     public MarkerWindow()
@@ -60,10 +60,11 @@ public sealed class MarkerWindow : Window
     private Canvas Draw()
     {
         Canvas canvas = new() { Width = Across, Height = Tall };
-        Brush light = new SolidColorBrush(Color.FromArgb(235, 250, 240, 215));
+        // Gold as the game marks what the cursor is on, the life bar in its blood red on stone.
+        Brush light = GrimTheme.Gold;
         Ellipse ring = new() { Width = Ring, Height = Ring, Stroke = light, StrokeThickness = 2 };
         Ellipse dot = new() { Width = Dot, Height = Dot, Fill = light };
-        Rectangle track = new() { Width = BarWidth, Height = BarHeight, Fill = new SolidColorBrush(Color.FromArgb(170, 15, 15, 15)) };
+        Rectangle track = new() { Width = BarWidth, Height = BarHeight, Fill = GrimTheme.Stone, Stroke = GrimTheme.Bronze, StrokeThickness = 1 };
         Place(canvas, ring, CentreX - Ring / 2, CentreY - Ring / 2);
         Place(canvas, dot, CentreX - Dot / 2, CentreY - Dot / 2);
         Place(canvas, track, CentreX - BarWidth / 2, CentreY + Ring / 2 + 8);
