@@ -155,6 +155,19 @@ companion's blows are felt as well. `--rumble-test` plays all of them. `rumble` 
 `input` turns it off. `GDPilot.exe --rumble-test` buzzes each motor in turn, to
 check the pad has rumble at all.
 
+## The overlay
+
+A small card in the style of the game's own panels names the mode, says what
+is going on (third person, a lock, walking in any direction) and lists what
+every button does there. Five seconds after the mode changes it folds down to
+its title and those status lines, and opens out again at the next change.
+
+It never covers the game's own interface: it knows where the minimap, the
+quest tracker, the orbs and hotbar, and each panel sit, and takes the first
+corner clear of all of them, starting with `corner` under `overlay` (top left
+by default). It stays above the game, but under any other window brought in
+front of it, so it never floats over a browser or a chat.
+
 ## Safety
 
 | Key | Does |
