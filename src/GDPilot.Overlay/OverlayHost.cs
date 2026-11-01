@@ -109,7 +109,7 @@ public sealed class OverlayHost : IDisposable
             area = bounds;
         }
 
-        (int x, int y) = OverlayPlacement.Place(area, own.Right - own.Left, own.Bottom - own.Top, corner);
+        (int x, int y) = GameLayout.Place(area, own.Right - own.Left, own.Bottom - own.Top, corner, state.Showing);
 
         Place(Handle, x, y);
         ShowWheel(state.Wheel, area);

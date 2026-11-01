@@ -129,9 +129,11 @@ internal static class Host
             bool markerShown = false;
             RumblePolicy rumble = new();
             CombatRumble fight = new();
+            LegendFold fold = new();
             IReadOnlyList<Picture?>? wheelPictures = null;
             ScreenRect? gameBounds = null;
             IntPtr gameHandle = IntPtr.Zero;
+            TimeSpan lastDrawn = TimeSpan.Zero;
             replayClock.Start();
 
             while (!stop.IsCancellationRequested && (duration is null || clock.Elapsed < duration))
@@ -229,6 +231,8 @@ internal static class Host
                         Marker = LockMarker.For(locked, mapper.LockPoint),
                         Prompt = OverlayState.PromptFor(mapper.Offered, layers[loop.Mode]),
                     };
+                    state = state with { Folded = fold.Folded(state, now - lastDrawn) };
+                    lastDrawn = now;
                     overlay.Update(state.Floating(), gameBounds, config.Overlay.Corner, gameHandle);
                     wheelShown = wheelOpen;
                     markerShown = locked is not null;
