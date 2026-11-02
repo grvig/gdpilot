@@ -43,6 +43,25 @@ public sealed class GameLinkTests
     }
 
     [Fact]
+    public void TheStashTabTheGameReadsReachesTheStashGrid()
+    {
+        string name = "GDPilot.Test." + Guid.NewGuid().ToString("N");
+        ReportedOccupancy layouts = new(null);
+        GridSpec stash = new(529, 293, 32, 32, 10, 19);
+
+        using GameLink link = new(layouts, _ => { }, name);
+        using NamedPipeClientStream game = new(".", name, PipeDirection.InOut);
+        game.Connect(2000);
+        using StreamWriter writer = new(game) { AutoFlush = true };
+        writer.WriteLine(new LayoutReport("Stash", 10, 19, new[] { new ItemRect(4, 2, 0, 2, 2) }).Write());
+        writer.WriteLine(new PanelsReport(new[] { "Stash" }).Write());
+
+        Assert.True(SpinWait.SpinUntil(() => link.Panels is not null, 2000));
+        Assert.Equal(new[] { "Stash" }, link.Panels!.Open);
+        Assert.Equal(CellState.Occupied, layouts.Read("Stash", stash, null)![new GridCell(3, 1)]);
+    }
+
+    [Fact]
     public void AMismatchedReportIsMentionedOnceAndTheConnectionCarriesOn()
     {
         string name = "GDPilot.Test." + Guid.NewGuid().ToString("N");
