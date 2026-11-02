@@ -76,4 +76,32 @@ public sealed class GridReadinessTests
     {
         Assert.Null(GameSettings.Parse("resolution = 1920 1080\n"));
     }
+
+    [Fact]
+    public void SpotAreasWithAKnownLookAreReadyAlongsideTheGrids()
+    {
+        const string withSpots = """
+            {
+              "activeProfile": "p",
+              "profiles": {
+                "p": {
+                  "resolution": [1920, 1080],
+                  "uiScale": 0.5,
+                  "spots": {
+                    "Skills": { "left": 700, "top": 300, "width": 710, "height": 480, "look": "skillButton", "fixed": [[645, 847]] },
+                    "Devotion": { "left": 0, "top": 0, "width": 1920, "height": 1080, "look": "somethingNew" }
+                  }
+                }
+              }
+            }
+            """;
+
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(withSpots), new LiveDisplay(1920, 1080, 0.5));
+
+        Assert.True(readiness.Ready, readiness.Message);
+        Assert.Equal(new[] { "Skills" }, readiness.Spots.Keys);
+        Assert.Equal(SpotLook.SkillButton, readiness.Spots["Skills"].Look);
+        Assert.Equal(new[] { new ScreenPoint(645, 847) }, readiness.Spots["Skills"].Fixed);
+        Assert.Contains("Snapping ready for Skills", readiness.Message);
+    }
 }

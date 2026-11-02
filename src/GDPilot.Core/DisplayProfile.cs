@@ -8,7 +8,45 @@ public sealed class ProfileConfig
     public int[] Resolution { get; init; } = Array.Empty<int>();
     public double UiScale { get; init; } = 1.0;
     public Dictionary<string, GridConfig> Grids { get; init; } = new();
+    public Dictionary<string, SpotAreaConfig> Spots { get; init; } = new();
 }
+
+/// <summary>
+/// Where a menu's spots are looked for, as the configuration writes it: a
+/// rectangle of the screen, the look of the spots in it, and any fixed places
+/// such as a button the finder cannot see, given as [x, y] pairs.
+/// </summary>
+public sealed class SpotAreaConfig
+{
+    public int Left { get; init; }
+    public int Top { get; init; }
+    public int Width { get; init; }
+    public int Height { get; init; }
+    public string Look { get; init; } = "";
+    public int[][] Fixed { get; init; } = Array.Empty<int[]>();
+
+    /// <summary>The area, or null when it is empty or its look is not one GDPilot knows.</summary>
+    public SpotArea? ToArea()
+    {
+        SpotLook? look = null;
+
+        if (Look == "skillButton")
+        {
+            look = SpotLook.SkillButton;
+        }
+
+        if (look is null || Width <= 0 || Height <= 0)
+        {
+            return null;
+        }
+
+        List<ScreenPoint> places = Fixed.Where(pair => pair.Length == 2).Select(pair => new ScreenPoint(pair[0], pair[1])).ToList();
+        return new SpotArea(Left, Top, Width, Height, look, places);
+    }
+}
+
+/// <summary>A menu's spots: found by look inside the rectangle, plus the fixed places.</summary>
+public sealed record SpotArea(int Left, int Top, int Width, int Height, SpotLook Look, IReadOnlyList<ScreenPoint> Fixed);
 
 /// <summary>A grid as the configuration writes it, zeros meaning not yet calibrated.</summary>
 public sealed class GridConfig
@@ -39,6 +77,9 @@ public readonly record struct LiveDisplay(int Width, int Height, double UiScale)
 /// <summary>The outcome of comparing the live display with the active profile.</summary>
 public sealed record GridReadiness(bool Ready, string Message, IReadOnlyDictionary<string, GridSpec> Grids)
 {
+    /// <summary>The menus whose cursor snaps to spots rather than cells, by mode name.</summary>
+    public IReadOnlyDictionary<string, SpotArea> Spots { get; init; } = new Dictionary<string, SpotArea>();
+
     /// <summary>
     /// Grid navigation runs only when the active profile was calibrated on the
     /// display the game is using now. Anything else would click the wrong pixels
@@ -74,11 +115,28 @@ public sealed record GridReadiness(bool Ready, string Message, IReadOnlyDictiona
             }
         }
 
-        if (grids.Count == 0)
+        Dictionary<string, SpotArea> spots = new();
+
+        foreach ((string name, SpotAreaConfig area) in profile.Spots)
+        {
+            if (area.ToArea() is SpotArea ready)
+            {
+                spots[name] = ready;
+            }
+        }
+
+        if (grids.Count == 0 && spots.Count == 0)
         {
             return new GridReadiness(false, "No grid in the active profile is calibrated yet.", none);
         }
 
-        return new GridReadiness(true, $"Grid navigation ready for {string.Join(", ", grids.Keys.Order())}.", grids);
+        string message = $"Grid navigation ready for {string.Join(", ", grids.Keys.Order())}.";
+
+        if (spots.Count > 0)
+        {
+            message += $" Snapping ready for {string.Join(", ", spots.Keys.Order())}.";
+        }
+
+        return new GridReadiness(true, message, grids) { Spots = spots };
     }
 }
