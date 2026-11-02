@@ -8,7 +8,7 @@ public sealed class FollowGameTests
     private static readonly TimeSpan Tick = TimeSpan.FromMilliseconds(10);
 
     private static readonly ButtonLayers Layers = BindingTable.Parse(
-        new Dictionary<string, string> { ["DPadUp"] = "panel:Inventory", ["LT+DPadDown"] = "panel:Stash" },
+        new Dictionary<string, string> { ["DPadUp"] = "panel:Inventory", ["LT+DPadDown"] = "panel:Stash", ["LT+DPadUp"] = "panel:Vendor" },
         0.5);
 
     private static ModeController Controller()
@@ -81,6 +81,19 @@ public sealed class FollowGameTests
         modes.Follow(new[] { "Stash" });
 
         Assert.Equal(Mode.Stash, modes.Current);
+    }
+
+    [Fact]
+    public void ATraderChosenFromTheBagsKeepsItsMode()
+    {
+        ModeController modes = Controller();
+        modes.Follow(new[] { "Inventory" });
+        modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.DPadUp, LeftTrigger = 1 }, Tick);
+        Wait(modes, TimeSpan.FromMilliseconds(400));
+
+        modes.Follow(new[] { "Inventory" });
+
+        Assert.Equal(Mode.Vendor, modes.Current);
     }
 
     [Fact]

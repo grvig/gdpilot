@@ -62,6 +62,7 @@
       "DPadLeft": "grid:left",
       "DPadRight": "grid:right",
       "LeftBumper": "grid:next",
+      "LT+DPadUp": "panel:Vendor",
       "A": "mouse:left",
       "X": "mouse:right",
       "Y": "panel:Inventory",
