@@ -789,3 +789,24 @@ inner line, a gold serif title over a fading rule, button names in gold and
 their actions in parchment. Book Antiqua stands in for the game's serif, which
 ships only inside its archives. Buttons are named as players say them: LB,
 RB, R3, View, Menu, D-pad arrows.
+
+## 2026-11-02 — The stash from the game
+
+**The stash is read from the player, not the screen.** The player holds a list
+of stash sacks, one per tab, and the number of the tab showing; each sack
+keeps its items like the bags do. Only the tab showing is reported, under the
+grid name the profiles already calibrate, so nothing else had to change.
+
+**The stash is told from the bags by the caravan.** The game raises the same
+panel flag for the stash as for the bags alone, and flag bytes elsewhere in
+the interface stay set after a window closes, so they cannot be trusted. The
+engine instead records the id of the caravan whose stash is showing, set when
+the window opens and cleared when it closes. The in-game part checks that
+field's offset in the function that writes it before reading it, and reports
+"Stash" in place of "Inventory" while it is set.
+
+**A trader still takes one press.** The game keeps every trader's market in
+the level whether its window is open or not, and nothing found so far changes
+when a trader's window opens. Rather than guess, LT and D-pad up in the bags
+tells GDPilot a trader is open, and the mode holds while the game reports the
+inventory.
