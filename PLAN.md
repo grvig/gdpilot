@@ -653,6 +653,10 @@ skills, menus that snap to items, and controls that adapt to what is on screen.
   copied from the on-screen hotbar. Pressing a face button while pointing at a
   slot swaps that skill onto it.
 - **Rumble.** Low health, heavy hits, rare drops.
+- **The stash from the game.** The tab showing is read from the player, and
+  the stash is told from the bags by the caravan the engine records, so its
+  buttons come up by themselves. Done 2026-11-02. A trader's window still
+  takes LT and D-pad up, since nothing in the game marks it open.
 - **Snapping in every menu.** Skill tree nodes, devotion stars, dialogue
   choices, the blacksmith's recipe list.
 - **Button icons** matching the connected pad.
