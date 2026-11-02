@@ -72,6 +72,18 @@ public sealed class FollowGameTests
     }
 
     [Fact]
+    public void TheStashTheGameNamesIsFollowedFromTheBags()
+    {
+        ModeController modes = Controller();
+        modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.DPadUp }, Tick);
+        Wait(modes, TimeSpan.FromMilliseconds(400));
+
+        modes.Follow(new[] { "Stash" });
+
+        Assert.Equal(Mode.Stash, modes.Current);
+    }
+
+    [Fact]
     public void TheMenuOverEverythingElseIsWhatTheButtonsDrive()
     {
         ModeController modes = Controller();
