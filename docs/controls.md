@@ -20,7 +20,7 @@ game always shows what each button does in the mode you are in.
 | Right stick click | Lock on to the enemy in view; again to let go |
 | Left trigger + right stick click | Switch between the game's camera and third person |
 | D-pad up, left, right, down | Inventory, devotion, skills, map |
-| Left trigger + D-pad up, down | Tell GDPilot a trader's or the stash's window is open |
+| Left trigger + D-pad up, down | Tell GDPilot a trader's or the stash's window is open (only needed without the in-game part) |
 | Start | Back out of the top panel, or open the game's menu |
 | Start and Back, held | Resynchronise: close everything back to combat |
 
@@ -108,11 +108,18 @@ character. [camera.md](camera.md) has the details and the settings.
 | A | Left click: pick up or put down |
 | X | Right click: use or equip |
 | Left trigger + A | Ctrl+click: split a stack |
+| Left trigger + D-pad up | In the bags: a trader's window is open |
 | B or Start | Close the panel |
 
 At the stash the bumpers switch tabs instead, and Back moves between the stash
 and the bags. An item larger than one cell is a single stop when the in-game
 part is loaded, since the game then says exactly where each item sits.
+
+With the in-game part loaded, GDPilot sees the stash open by itself and reads
+the tab showing from the game, so its items are exact too. A trader's window
+looks to the game like the bags alone, so after talking to a trader press the
+left trigger and D-pad up once to bring the trader's goods into the D-pad's
+reach.
 
 ## Aiming in the game's own camera
 
