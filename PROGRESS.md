@@ -291,8 +291,8 @@ Not yet verified:
 ## Known issues
 
 - Without the in-game part, an item larger than one cell takes one press per
-  cell, as the screen reading cannot tell items apart reliably. The stash is
-  always read off the screen; its sacks are not yet reached from the game.
+  cell, as the screen reading cannot tell items apart reliably. A trader's
+  goods are always read off the screen; the stash now comes from the game.
 - Collision does not stop for trees and some props; the game fades those itself.
 - With the panel closed but the tool still in a panel mode, the reading sees
   the world, which reads as all items, so presses step as they did in Phase 3.
@@ -329,10 +329,16 @@ The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
    looks; the stash and vendor placements were not seen live yet.
 1. **A tuning session with the owner at the pad**: flick strength, turn and
    tilt speeds, twin-stick reach, rumble strength. Every one is a setting.
-2. **The stash from the game**, so the stash is exact like the bags.
-3. **Snapping in every menu**: skill tree nodes, devotion stars, dialogue
+2. **Snapping in every menu**: skill tree nodes, devotion stars, dialogue
    choices, the blacksmith's list.
+3. **A trader's goods from the game**, if a way to see the window open turns
+   up; until then LT and D-pad up in the bags.
 4. A bug pass at the end of the phase, as always.
+
+The stash from the game was finished on 2026-11-02: the tab showing is read
+item by item, the stash is reported as its own window, and GDPilot switched to
+the stash's buttons by itself and stepped between its items live. The trader's
+binding was checked live at Kerrick's.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
 done.
