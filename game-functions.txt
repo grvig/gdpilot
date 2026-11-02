@@ -79,3 +79,10 @@ Game.dll ?classInfo@FixedItem@GAME@@1VRTTI_ClassInfo@2@B
 Game.dll ?classInfo@FixedLever@GAME@@1VRTTI_ClassInfo@2@B
 Game.dll ?classInfo@StaticTeleporter@GAME@@1VRTTI_ClassInfo@2@B
 Game.dll ?classInfo@DynamicTeleporter@GAME@@1VRTTI_ClassInfo@2@B
+
+# The stash: the player's private sacks, the tab showing, and each sack's cell size
+# (its items come through GetInventory above).
+Game.dll ?GetPrivateStash@Player@GAME@@QEAAAEAV?$vector@PEAVInventorySack@GAME@@@mem@@XZ
+Game.dll ?GetSelectedStashSackNumber@Player@GAME@@QEBAIXZ
+Game.dll ?GetCellWidth@InventorySack@GAME@@QEBAIXZ
+Game.dll ?GetCellHeight@InventorySack@GAME@@QEBAIXZ

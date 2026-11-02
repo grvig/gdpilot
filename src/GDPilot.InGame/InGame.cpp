@@ -662,6 +662,126 @@ std::string LayoutLine(const char* grid, const SackReading& bag)
     return line + "]}\n";
 }
 
+// The stash: the player's private stash is a list of sacks, one per tab, and
+// the player records which tab is showing. Each sack keeps its items in the
+// same ordered tree as the bags, read through the sack's own GetInventory, in
+// units of the sack's own cell size. Read live on 2026-11-02 at Carlile's: two
+// tabs of 10 by 19, the first holding the three items it showed, and the
+// selected number following a click on the second tab. Only the tab showing is
+// reported, as the "Stash" grid the profiles calibrate.
+using PrivateStash = void* const* (*)(void* player);
+using SelectedNumber = unsigned int (*)(const void* player);
+using SackMap = const void* (*)(const void* sack);
+using CellSide = unsigned int (*)(const void* sack);
+
+PrivateStash privateStash = nullptr;
+SelectedNumber selectedStash = nullptr;
+SackMap sackMap = nullptr;
+CellSide sackCellWidth = nullptr;
+CellSide sackCellHeight = nullptr;
+std::string sentStash;
+
+struct StashEntry
+{
+    const char* name;
+    const char* prefix;
+    void** slot;
+};
+
+void FindStash()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    StashEntry entries[] = {
+        {"?GetPrivateStash@Player@GAME@@QEAAAEAV?$vector@PEAVInventorySack@GAME@@@mem@@XZ", "488d8120480000c3", reinterpret_cast<void**>(&privateStash)},
+        {"?GetSelectedStashSackNumber@Player@GAME@@QEBAIXZ", "8b8118480000c3", reinterpret_cast<void**>(&selectedStash)},
+        {"?GetInventory@InventorySack@GAME@@QEBAAEBV?$map@IVRect@GAME@@@mem@@XZ", "488d4120c3", reinterpret_cast<void**>(&sackMap)},
+        {"?GetCellWidth@InventorySack@GAME@@QEBAIXZ", "f3480f2c410cc3", reinterpret_cast<void**>(&sackCellWidth)},
+        {"?GetCellHeight@InventorySack@GAME@@QEBAIXZ", "f3480f2c4110c3", reinterpret_cast<void**>(&sackCellHeight)},
+    };
+
+    for (StashEntry& entry : entries)
+    {
+        void* address = reinterpret_cast<void*>(GetProcAddress(game, entry.name));
+
+        if (address == nullptr || !StartsWith(address, entry.prefix) || sackObject == nullptr)
+        {
+            privateStash = nullptr;
+            Say("Stash reports off: %s is missing or has changed; the stash is read off the screen.", entry.name);
+            return;
+        }
+
+        *entry.slot = address;
+    }
+
+    Say("Found the player's stash; the stash is exact too.");
+}
+
+// Reads the stash tab showing, whole, or returns false. Guarded like the bags.
+bool ReadStash(SackReading& reading)
+{
+    __try
+    {
+        void* player = mainPlayer(*engineSlot);
+
+        if (player == nullptr)
+        {
+            return false;
+        }
+
+        void* const* sacks = privateStash(player);
+        void* const* first = static_cast<void* const*>(sacks[0]);
+        void* const* last = static_cast<void* const*>(sacks[1]);
+        unsigned int selected = selectedStash(player);
+
+        if (first == nullptr || selected >= static_cast<unsigned int>(last - first))
+        {
+            return false;
+        }
+
+        const void* sack = first[selected];
+        const void* map = sackMap(sack);
+        reading.columns = gridWidth(sack);
+        reading.rows = gridHeight(sack);
+        reading.cellWidth = static_cast<float>(sackCellWidth(sack));
+        reading.cellHeight = static_cast<float>(sackCellHeight(sack));
+        const unsigned char* head = *static_cast<const unsigned char* const*>(map);
+        const unsigned char* node = Link(head, NodeLeft);
+        reading.count = 0;
+
+        while (node[NodeIsHead] == 0 && reading.count < MostItems)
+        {
+            RawItem& item = reading.items[reading.count];
+            item.id = *reinterpret_cast<const unsigned int*>(node + NodeId);
+            std::memcpy(&item.x, node + NodeRect, sizeof(float) * 4);
+            reading.count++;
+            node = Next(node);
+        }
+
+        return reading.cellWidth > 0 && reading.cellHeight > 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+void CheckStash()
+{
+    if (privateStash == nullptr || !ReadStash(bagReading))
+    {
+        return;
+    }
+
+    std::string line = LayoutLine("Stash", bagReading);
+
+    if (line != sentStash)
+    {
+        sentStash = line;
+        Say("Stash tab: %d items in %u by %u cells.", bagReading.count, bagReading.columns, bagReading.rows);
+        Post(line);
+    }
+}
+
 // Four times a second while the inventory is open, each bag is read and sent
 // again only if anything in it moved.
 void CheckLayouts(float elapsed)
@@ -687,7 +807,12 @@ void CheckLayouts(float elapsed)
         {
             sent.clear();
         }
+
+        sentStash.clear();
     }
+
+    // The game raises the inventory's flag for the stash as well, so the stash is read whenever the bags are.
+    CheckStash();
 
     for (std::size_t bag = 0; bag < std::size(Bags); bag++)
     {
@@ -2959,6 +3084,7 @@ DWORD WINAPI Start(LPVOID)
         else
         {
             FindInventoryRoute();
+            FindStash();
             FindCollision();
             FindHealth();
             FindTargets();
