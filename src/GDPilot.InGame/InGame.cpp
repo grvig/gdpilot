@@ -372,6 +372,37 @@ constexpr std::size_t UiOffset = 0x19b0;
 constexpr std::size_t MenuFlag = 0x17a9;
 constexpr std::size_t MenuConfirmFlag = 0x9c5a;
 
+// The stash raises the same inventory flag as the bags alone, but the game
+// records whose stash is showing: DisplayCaravanWindow stores the caravan's id
+// in the engine at 0x373a8, and the id goes back to zero as the stash closes,
+// as read live on 2026-11-02. The offset is checked in that function's first
+// bytes before it is trusted.
+constexpr std::size_t CaravanShown = 0x373a8;
+bool caravanKnown = false;
+
+void FindCaravan()
+{
+    void* display = reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"Game.dll"), "?DisplayCaravanWindow@GameEngine@GAME@@QEAA_NI@Z"));
+    caravanKnown = display != nullptr && StartsWith(display, "8991a8730300");
+
+    if (!caravanKnown)
+    {
+        Say("The stash cannot be told from the bags: DisplayCaravanWindow has changed. Press LT and D-pad down at the stash.");
+    }
+}
+
+bool CaravanOpen()
+{
+    __try
+    {
+        return caravanKnown && *reinterpret_cast<const unsigned int*>(static_cast<const unsigned char*>(*engineSlot) + CaravanShown) != 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
 // Guarded, because a UI object that is being rebuilt during a load can briefly
 // point nowhere; a fault then means "unknown", never a crash.
 bool ReadPanelBytes(unsigned char bytes[], std::size_t count)
@@ -788,7 +819,7 @@ void CheckLayouts(float elapsed)
 {
     sinceLayoutCheck += elapsed;
 
-    if (sackObject == nullptr || sinceLayoutCheck < 0.25f || lastPanels.find("Inventory") == std::string::npos)
+    if (sackObject == nullptr || sinceLayoutCheck < 0.25f || (lastPanels.find("Inventory") == std::string::npos && lastPanels.find("Stash") == std::string::npos))
     {
         return;
     }
@@ -960,7 +991,14 @@ void CheckPanels(float elapsed)
                 open += ",";
             }
 
-            open += std::string("\"") + Panels[index].mode + "\"";
+            const char* mode = Panels[index].mode;
+
+            if (std::strcmp(mode, "Inventory") == 0 && CaravanOpen())
+            {
+                mode = "Stash";
+            }
+
+            open += std::string("\"") + mode + "\"";
         }
     }
 
@@ -3085,6 +3123,7 @@ DWORD WINAPI Start(LPVOID)
         {
             FindInventoryRoute();
             FindStash();
+            FindCaravan();
             FindCollision();
             FindHealth();
             FindTargets();

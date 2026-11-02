@@ -86,3 +86,6 @@ Game.dll ?GetPrivateStash@Player@GAME@@QEAAAEAV?$vector@PEAVInventorySack@GAME@@
 Game.dll ?GetSelectedStashSackNumber@Player@GAME@@QEBAIXZ
 Game.dll ?GetCellWidth@InventorySack@GAME@@QEBAIXZ
 Game.dll ?GetCellHeight@InventorySack@GAME@@QEBAIXZ
+
+# Telling the stash from the bags alone: the caravan id this writes into the engine.
+Game.dll ?DisplayCaravanWindow@GameEngine@GAME@@QEAA_NI@Z
