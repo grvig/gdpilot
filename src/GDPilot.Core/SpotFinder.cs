@@ -1,0 +1,183 @@
+namespace GDPilot.Core;
+
+/// <summary>
+/// How one kind of spot looks: a bright disc of DiscRadius pixels standing out
+/// by at least MinimumContrast from a ring RingRadius out, with no two spots
+/// closer than Spacing.
+/// </summary>
+public sealed record SpotLook(int DiscRadius, int RingRadius, double MinimumContrast, int Spacing)
+{
+    /// <summary>A skill button at 1920 by 1080, UI scale 0.5: an icon about 36 pixels across in a dark tree.</summary>
+    public static SpotLook SkillButton { get; } = new(12, 26, 55, 32);
+}
+
+/// <summary>
+/// Finds spots on screen by their look alone. The game does not say where its
+/// menu buttons are, but a skill button is a bright icon in a darker tree, so
+/// a bright disc with a dark surround is a button. The surround is judged by
+/// its brighter quarter, so a connecting line or a label below the button does
+/// not count against it, while plain text, thin and broken, never fills a disc.
+/// </summary>
+public static class SpotFinder
+{
+    private const int Stride = 2;
+    private const int RingPoints = 32;
+
+    public static List<ScreenPoint> Find(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, SpotLook look)
+    {
+        int margin = look.RingRadius + 1;
+        int spanX = width + margin * 2;
+        int spanY = height + margin * 2;
+        double[,] brightness = new double[spanX, spanY];
+
+        for (int x = 0; x < spanX; x++)
+        {
+            for (int y = 0; y < spanY; y++)
+            {
+                (byte red, byte green, byte blue) = pixel(left - margin + x, top - margin + y);
+                brightness[x, y] = (red + green + blue) / 3.0;
+            }
+        }
+
+        List<(int X, int Y)> disc = DiscOffsets(look.DiscRadius);
+        List<(int X, int Y)> ring = RingOffsets(look.RingRadius);
+        List<(double Score, int X, int Y)> candidates = new();
+        double[] around = new double[ring.Count];
+
+        for (int y = 0; y < height; y += Stride)
+        {
+            for (int x = 0; x < width; x += Stride)
+            {
+                int centreX = x + margin;
+                int centreY = y + margin;
+                double inside = 0;
+
+                foreach ((int dx, int dy) in disc)
+                {
+                    inside += brightness[centreX + dx, centreY + dy];
+                }
+
+                inside /= disc.Count;
+
+                for (int index = 0; index < ring.Count; index++)
+                {
+                    around[index] = brightness[centreX + ring[index].X, centreY + ring[index].Y];
+                }
+
+                Array.Sort(around);
+                double score = inside - around[around.Length * 3 / 4];
+
+                if (score >= look.MinimumContrast)
+                {
+                    candidates.Add((score, left + x, top + y));
+                }
+            }
+        }
+
+        // Strongest first, so each spot is seeded by its best-placed centre and its weaker neighbours join it.
+        candidates.Sort((first, second) => second.Score.CompareTo(first.Score));
+        List<Plateau> plateaus = new();
+        int apart = look.Spacing * look.Spacing;
+
+        foreach ((double score, int x, int y) in candidates)
+        {
+            Plateau? owner = null;
+
+            foreach (Plateau plateau in plateaus)
+            {
+                int dx = plateau.SeedX - x;
+                int dy = plateau.SeedY - y;
+
+                if (dx * dx + dy * dy <= apart)
+                {
+                    owner = plateau;
+                    break;
+                }
+            }
+
+            if (owner is null)
+            {
+                plateaus.Add(new Plateau(score, x, y));
+            }
+            else
+            {
+                owner.Join(score, x, y);
+            }
+        }
+
+        return plateaus.Select(plateau => plateau.Centre).ToList();
+    }
+
+    /// <summary>
+    /// The positions scoring nearly as well as a spot's best. A flat button
+    /// scores the same over a small area, so its centre is the middle of that
+    /// area, not whichever position happened to be read first.
+    /// </summary>
+    private sealed class Plateau
+    {
+        private const double NearlyAsGood = 0.9;
+        private readonly double best;
+        private long sumX;
+        private long sumY;
+        private int count;
+
+        public Plateau(double best, int x, int y)
+        {
+            this.best = best;
+            SeedX = x;
+            SeedY = y;
+            sumX = x;
+            sumY = y;
+            count = 1;
+        }
+
+        public int SeedX { get; }
+
+        public int SeedY { get; }
+
+        public ScreenPoint Centre => new((int)Math.Round((double)sumX / count), (int)Math.Round((double)sumY / count));
+
+        public void Join(double score, int x, int y)
+        {
+            if (score < best * NearlyAsGood)
+            {
+                return;
+            }
+
+            sumX += x;
+            sumY += y;
+            count++;
+        }
+    }
+
+    private static List<(int X, int Y)> DiscOffsets(int radius)
+    {
+        List<(int X, int Y)> offsets = new();
+
+        for (int dx = -radius; dx <= radius; dx += 3)
+        {
+            for (int dy = -radius; dy <= radius; dy += 3)
+            {
+                if (dx * dx + dy * dy <= radius * radius)
+                {
+                    offsets.Add((dx, dy));
+                }
+            }
+        }
+
+        return offsets;
+    }
+
+    private static List<(int X, int Y)> RingOffsets(int radius)
+    {
+        List<(int X, int Y)> offsets = new();
+
+        for (int index = 0; index < RingPoints; index++)
+        {
+            double angle = index * Math.PI * 2 / RingPoints;
+            offsets.Add(((int)Math.Round(radius * Math.Cos(angle)), (int)Math.Round(radius * Math.Sin(angle))));
+        }
+
+        return offsets;
+    }
+}
