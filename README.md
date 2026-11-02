@@ -143,8 +143,9 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
   is configurable, with a second layer on the left trigger.
 - The D-pad opens panels in combat, and each panel switches to its own buttons.
 - In the bags, the stash and while trading, the D-pad jumps from item to item
-  over empty cells, the bumpers switch stash tabs, and LT+A splits stacks. This
-  is calibrated for 1920×1080 at UI scale 0.5; see
+  over empty cells, the bumpers switch stash tabs, and LT+A splits stacks. With
+  the in-game part, the stash opens its own buttons by itself and its items
+  come from the game; at a trader, LT and D-pad up once. This is calibrated for 1920×1080 at UI scale 0.5; see
   [docs/calibration.md](docs/calibration.md), and `--calibrate` for any other
   display.
 - The overlay, the kill switch, the focus pause and the stuck-key watchdog.
