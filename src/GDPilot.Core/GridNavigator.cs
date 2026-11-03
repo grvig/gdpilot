@@ -31,6 +31,7 @@ public sealed class GridNavigator
     private GridCell cell;
     private bool placed;
     private ScreenPoint spot;
+    private readonly List<ScreenPoint> seen = new();
 
     public GridNavigator(GridReadiness readiness, IOccupancySource? occupancy = null, ISpotSource? spotSource = null)
     {
@@ -70,6 +71,7 @@ public sealed class GridNavigator
                 .ToList();
             surface = 0;
             placed = false;
+            seen.Clear();
         }
 
         if (spotSource is not null && readiness.Spots.TryGetValue(current.ToString(), out SpotArea? area))
@@ -168,16 +170,18 @@ public sealed class GridNavigator
             return null;
         }
 
-        found.AddRange(area.Fixed);
+        Remember(found, area.Look.Spacing);
+        List<ScreenPoint> spots = new(seen);
+        spots.AddRange(area.Fixed);
         ScreenPoint? target;
 
         if (action == "next" || !placed)
         {
-            target = SpotNavigator.First(found);
+            target = SpotNavigator.First(spots);
         }
         else
         {
-            target = SpotNavigator.Next(found, spot, Direction(action));
+            target = SpotNavigator.Next(spots, spot, Direction(action));
 
             if (target is null)
             {
@@ -196,6 +200,24 @@ public sealed class GridNavigator
         Jumping = true;
         Notice = null;
         return new PointerMoveTo(spot.X, spot.Y);
+    }
+
+    /// <summary>
+    /// Keeps every spot seen since the menu or its tab last changed. The tooltip
+    /// of the button under the cursor covers its neighbours, which must not
+    /// vanish from reach because of it.
+    /// </summary>
+    private void Remember(List<ScreenPoint> found, int spacing)
+    {
+        foreach (ScreenPoint point in found)
+        {
+            bool known = seen.Any(old => (old.X - point.X) * (old.X - point.X) + (old.Y - point.Y) * (old.Y - point.Y) <= spacing * spacing);
+
+            if (!known)
+            {
+                seen.Add(point);
+            }
+        }
     }
 
     /// <summary>A fresh, trusted reading of a surface, or null to step instead.</summary>

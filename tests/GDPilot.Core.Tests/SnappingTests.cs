@@ -78,10 +78,36 @@ public sealed class SnappingTests
         GridNavigator navigator = new(Ready, null, spots);
         navigator.Act(Mode.Skills, "down");
 
-        spots.Showing = new List<ScreenPoint> { new(734, 326), new(1100, 330) };
+        spots.Showing = new List<ScreenPoint> { new(734, 326), new(860, 330) };
 
-        Assert.Equal(new PointerMoveTo(1100, 330), navigator.Act(Mode.Skills, "right"));
+        Assert.Equal(new PointerMoveTo(860, 330), navigator.Act(Mode.Skills, "right"));
         Assert.Equal(2, spots.Reads);
+    }
+
+    [Fact]
+    public void AButtonHiddenByATooltipStaysWithinReach()
+    {
+        FakeSpots spots = new();
+        GridNavigator navigator = new(Ready, null, spots);
+        navigator.Act(Mode.Skills, "down");
+
+        // The tooltip of the button under the cursor now covers its right-hand neighbour.
+        spots.Showing = new List<ScreenPoint> { new(734, 326), new(814, 392) };
+
+        Assert.Equal(new PointerMoveTo(896, 320), navigator.Act(Mode.Skills, "right"));
+    }
+
+    [Fact]
+    public void LeavingTheMenuForgetsItsButtons()
+    {
+        FakeSpots spots = new();
+        GridNavigator navigator = new(Ready, null, spots);
+        navigator.Act(Mode.Skills, "down");
+        navigator.Act(Mode.Inventory, "down");
+
+        spots.Showing = new List<ScreenPoint> { new(1000, 400) };
+
+        Assert.Equal(new PointerMoveTo(1000, 400), navigator.Act(Mode.Skills, "down"));
     }
 
     [Fact]
