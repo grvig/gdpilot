@@ -414,10 +414,14 @@ OpenMarketCall originalOpenMarket = nullptr;
 constexpr ULONGLONG MarketWindowDelay = 3000;
 ULONGLONG marketOpenedAt = 0;
 bool marketShown = false;
+unsigned int marketId = 0;
+int marketType = 0;
 
 void OpenedMarket(void* engine, unsigned int id, void* type, const void* where)
 {
     marketOpenedAt = GetTickCount64();
+    marketId = id;
+    marketType = *static_cast<const int*>(type);
     originalOpenMarket(engine, id, type, where);
 }
 
@@ -875,6 +879,62 @@ bool ReadStash(SackReading& reading)
     }
 }
 
+// A trader's goods: the market opened last keeps them in a sack of its own,
+// which the engine hands out by the market's id and type, as read live at
+// Kerrick's on 2026-11-04.
+using MarketSack = const void* (*)(const void* engine, unsigned int id, int type);
+MarketSack marketSack = nullptr;
+std::string sentMarket;
+
+void FindMarketSack()
+{
+    void* sack = reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"Game.dll"), "?GetMarketInventorySack@GameEngine@GAME@@QEBAPEBVInventorySack@2@IW4Market_TypeEnum@2@@Z"));
+
+    if (sack == nullptr || !StartsWith(sack, "4c8b91f8400000") || privateStash == nullptr || originalOpenMarket == nullptr)
+    {
+        Say("Trader reports off: the market's sack cannot be reached; a trader's goods are read off the screen.");
+        return;
+    }
+
+    marketSack = reinterpret_cast<MarketSack>(sack);
+}
+
+bool ReadMarket(SackReading& reading)
+{
+    __try
+    {
+        const void* sack = marketSack(*engineSlot, marketId, marketType);
+
+        if (sack == nullptr)
+        {
+            return false;
+        }
+
+        return ReadSackItems(sack, reading);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+void CheckMarket()
+{
+    if (marketSack == nullptr || lastPanels.find("Vendor") == std::string::npos || !ReadMarket(bagReading))
+    {
+        return;
+    }
+
+    std::string line = LayoutLine("Vendor", bagReading);
+
+    if (line != sentMarket)
+    {
+        sentMarket = line;
+        Say("Trader's goods: %d items in %u by %u cells.", bagReading.count, bagReading.columns, bagReading.rows);
+        Post(line);
+    }
+}
+
 void CheckStash()
 {
     if (privateStash == nullptr || !ReadStash(bagReading))
@@ -921,10 +981,12 @@ void CheckLayouts(float elapsed)
         }
 
         sentStash.clear();
+        sentMarket.clear();
     }
 
     // The game raises the inventory's flag for the stash as well, so the stash is read whenever the bags are.
     CheckStash();
+    CheckMarket();
 
     for (std::size_t bag = 0; bag < std::size(Bags); bag++)
     {
@@ -3219,6 +3281,7 @@ DWORD WINAPI Start(LPVOID)
             FindStash();
             FindCaravan();
             FindMarket();
+            FindMarketSack();
             FindCollision();
             FindHealth();
             FindTargets();

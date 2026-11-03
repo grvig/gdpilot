@@ -92,3 +92,4 @@ Game.dll ?DisplayCaravanWindow@GameEngine@GAME@@QEAA_NI@Z
 
 # Telling a trader from the bags alone: the market the game opens just before the window.
 Game.dll ?OpenMarket@GameEngine@GAME@@QEAAXIAEAW4Market_TypeEnum@2@AEBVVec2@2@@Z
+Game.dll ?GetMarketInventorySack@GameEngine@GAME@@QEBAPEBVInventorySack@2@IW4Market_TypeEnum@2@@Z
