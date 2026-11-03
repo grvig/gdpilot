@@ -12,7 +12,18 @@ internal sealed class ScreenSpots : ISpotSource
 {
     public List<ScreenPoint>? Read(SpotArea area)
     {
-        int margin = area.Look.RingRadius + 1;
+        if (area.Kind == SpotKind.Places)
+        {
+            return new List<ScreenPoint>();
+        }
+
+        int margin = 0;
+
+        if (area.Look is not null)
+        {
+            margin = area.Look.RingRadius + 1;
+        }
+
         int left = area.Left - margin;
         int top = area.Top - margin;
         CapturedFrame frame;
@@ -27,7 +38,14 @@ internal sealed class ScreenSpots : ISpotSource
             return null;
         }
 
-        return SpotFinder.Find((x, y) => Pixel(frame, x - left, y - top), area.Left, area.Top, area.Width, area.Height, area.Look);
+        Func<int, int, (byte, byte, byte)> pixel = (x, y) => Pixel(frame, x - left, y - top);
+
+        if (area.Kind == SpotKind.Replies || area.Look is null)
+        {
+            return DialogueReader.Choices(pixel, area.Left, area.Top, area.Width, area.Height);
+        }
+
+        return SpotFinder.Find(pixel, area.Left, area.Top, area.Width, area.Height, area.Look);
     }
 
     private static (byte, byte, byte) Pixel(CapturedFrame frame, int x, int y)

@@ -14,7 +14,11 @@ public sealed class SnappingTests
         ["Stash.Tabs"] = new GridSpec(473, 463, 38, 38, 1, 2),
     })
     {
-        Spots = new Dictionary<string, SpotArea> { ["Skills"] = Tree },
+        Spots = new Dictionary<string, SpotArea>
+        {
+            ["Skills"] = Tree,
+            ["Dialog"] = new SpotArea(773, 300, 477, 635, null, Array.Empty<ScreenPoint>(), SpotKind.Replies),
+        },
     };
 
     private sealed class FakeSpots : ISpotSource
@@ -152,5 +156,19 @@ public sealed class SnappingTests
         List<InputIntent> clicks = navigator.Tab(Mode.Skills, 1);
 
         Assert.Equal(new PointerMoveTo(1125, 247), clicks[0]);
+    }
+
+    [Fact]
+    public void RepliesGoneFromTheConversationAreNotKept()
+    {
+        FakeSpots spots = new() { Showing = new List<ScreenPoint> { new(833, 860), new(833, 886) } };
+        GridNavigator navigator = new(Ready, null, spots);
+        navigator.Act(Mode.Dialog, "down");
+
+        // The next step of the conversation has a single reply, higher up.
+        spots.Showing = new List<ScreenPoint> { new(833, 820) };
+
+        Assert.Equal(new PointerMoveTo(833, 820), navigator.Act(Mode.Dialog, "up"));
+        Assert.Equal(new PointerMoveTo(833, 820), navigator.Act(Mode.Dialog, "down"));
     }
 }

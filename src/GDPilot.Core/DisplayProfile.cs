@@ -28,25 +28,32 @@ public sealed class SpotAreaConfig
     /// <summary>The area, or null when it is empty or its look is not one GDPilot knows.</summary>
     public SpotArea? ToArea()
     {
-        SpotLook? look = null;
-
-        if (Look == "skillButton")
-        {
-            look = SpotLook.SkillButton;
-        }
-
-        if (look is null || Width <= 0 || Height <= 0)
-        {
-            return null;
-        }
-
         List<ScreenPoint> places = Fixed.Where(pair => pair.Length == 2).Select(pair => new ScreenPoint(pair[0], pair[1])).ToList();
-        return new SpotArea(Left, Top, Width, Height, look, places);
+
+        switch (Look)
+        {
+            case "skillButton" when Width > 0 && Height > 0:
+                return new SpotArea(Left, Top, Width, Height, SpotLook.SkillButton, places);
+            case "dialogueChoice" when Width > 0 && Height > 0:
+                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Replies);
+            case "places" when places.Count > 0:
+                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Places);
+            default:
+                return null;
+        }
     }
 }
 
-/// <summary>A menu's spots: found by look inside the rectangle, plus the fixed places.</summary>
-public sealed record SpotArea(int Left, int Top, int Width, int Height, SpotLook Look, IReadOnlyList<ScreenPoint> Fixed);
+/// <summary>What a menu's spots are: buttons found by their look, a conversation's replies, or only the fixed places.</summary>
+public enum SpotKind
+{
+    Buttons,
+    Replies,
+    Places,
+}
+
+/// <summary>A menu's spots: found inside the rectangle as its kind says, plus the fixed places.</summary>
+public sealed record SpotArea(int Left, int Top, int Width, int Height, SpotLook? Look, IReadOnlyList<ScreenPoint> Fixed, SpotKind Kind = SpotKind.Buttons);
 
 /// <summary>A grid as the configuration writes it, zeros meaning not yet calibrated.</summary>
 public sealed class GridConfig

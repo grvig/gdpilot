@@ -174,7 +174,17 @@ public sealed class GridNavigator
             return null;
         }
 
-        Remember(found, area.Look.Spacing);
+        // Buttons stay put while a tooltip hides them; a conversation's replies change with every step.
+        if (area.Kind == SpotKind.Buttons && area.Look is not null)
+        {
+            Remember(found, area.Look.Spacing);
+        }
+        else
+        {
+            seen.Clear();
+            seen.AddRange(found);
+        }
+
         List<ScreenPoint> spots = new(seen);
         spots.AddRange(area.Fixed);
         ScreenPoint? target;

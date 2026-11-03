@@ -104,4 +104,32 @@ public sealed class GridReadinessTests
         Assert.Equal(new[] { new ScreenPoint(645, 847) }, readiness.Spots["Skills"].Fixed);
         Assert.Contains("Snapping ready for Skills", readiness.Message);
     }
+
+    [Fact]
+    public void RepliesAndFixedPlacesAreKindsOfSpotsToo()
+    {
+        const string kinds = """
+            {
+              "activeProfile": "p",
+              "profiles": {
+                "p": {
+                  "resolution": [1920, 1080],
+                  "uiScale": 0.5,
+                  "spots": {
+                    "Dialog": { "left": 773, "top": 300, "width": 477, "height": 635, "look": "dialogueChoice" },
+                    "Menu": { "look": "places", "fixed": [[970, 452], [970, 512]] },
+                    "WorldMap": { "look": "places" }
+                  }
+                }
+              }
+            }
+            """;
+
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(kinds), new LiveDisplay(1920, 1080, 0.5));
+
+        Assert.Equal(SpotKind.Replies, readiness.Spots["Dialog"].Kind);
+        Assert.Equal(SpotKind.Places, readiness.Spots["Menu"].Kind);
+        Assert.Equal(2, readiness.Spots["Menu"].Fixed.Count);
+        Assert.False(readiness.Spots.ContainsKey("WorldMap"));
+    }
 }
