@@ -84,6 +84,27 @@ public sealed class FollowGameTests
     }
 
     [Fact]
+    public void ATraderTheGameNamesIsFollowedFromCombat()
+    {
+        ModeController modes = Controller();
+
+        modes.Follow(new[] { "Vendor" });
+
+        Assert.Equal(Mode.Vendor, modes.Current);
+    }
+
+    [Fact]
+    public void ClosingTheTradersWindowReturnsToCombat()
+    {
+        ModeController modes = Controller();
+        modes.Follow(new[] { "Vendor" });
+
+        modes.Follow(Array.Empty<string>());
+
+        Assert.Equal(Mode.Combat, modes.Current);
+    }
+
+    [Fact]
     public void ATraderChosenFromTheBagsKeepsItsMode()
     {
         ModeController modes = Controller();
