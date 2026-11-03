@@ -1106,6 +1106,87 @@ std::string PanelsLine(const std::string& open)
 }
 
 // About ten times a second is plenty to follow a panel opening and costs nothing.
+// A conversation raises no panel flag at all. But the player's controller runs
+// a state of its own while talking to someone, ControllerPlayerStateTalkToNpc,
+// from arriving until the player next moves, as read live on 2026-11-04 with
+// Harmond and Kerrick. A trader, the stash and the blacksmith start the same
+// way and then raise the inventory flag, so the talk counts as a conversation
+// only while no window has opened since it began.
+using ExecutingState = void* (*)(const void* controller);
+ExecutingState executingState = nullptr;
+const void* talkStateTable = nullptr;
+bool wasTalking = false;
+bool windowSinceTalk = false;
+
+void FindTalk()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    void* state = reinterpret_cast<void*>(GetProcAddress(game, "?GetExecutingState@ControllerAI@GAME@@IEBAPEAVControllerAIState@2@XZ"));
+    talkStateTable = reinterpret_cast<const void*>(GetProcAddress(game, "??_7ControllerPlayerStateTalkToNpc@GAME@@6B@"));
+
+    // The state stack's offsets are in the getter's bytes.
+    if (state == nullptr || talkStateTable == nullptr || !StartsWith(state, "4883b9f002000000740f488b81e8020000488b00488b4010c3488b81a0020000c3"))
+    {
+        Say("Conversations cannot be seen: the controller's state has changed. Replies can still be pointed at with the stick.");
+        return;
+    }
+
+    executingState = reinterpret_cast<ExecutingState>(state);
+}
+
+bool Talking()
+{
+    if (executingState == nullptr || findObject == nullptr)
+    {
+        return false;
+    }
+
+    __try
+    {
+        unsigned char* player = static_cast<unsigned char*>(mainPlayer(*engineSlot));
+
+        if (player == nullptr)
+        {
+            return false;
+        }
+
+        unsigned int id = *reinterpret_cast<unsigned int*>(player + PlayerControllerId);
+        void* controller = findObject(objectManager(), id);
+
+        if (controller == nullptr || *reinterpret_cast<const void**>(controller) != controllerPlayerTable)
+        {
+            return false;
+        }
+
+        void* state = executingState(controller);
+        return state != nullptr && *reinterpret_cast<const void**>(state) == talkStateTable;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+// Whether a conversation is showing, given whether any window is open now.
+bool ConversationShowing(bool windowOpen)
+{
+    bool talking = Talking();
+
+    if (talking && !wasTalking)
+    {
+        windowSinceTalk = false;
+    }
+
+    wasTalking = talking;
+
+    if (windowOpen)
+    {
+        windowSinceTalk = true;
+    }
+
+    return talking && !windowSinceTalk;
+}
+
 void CheckPanels(float elapsed)
 {
     sincePanelCheck += elapsed;
@@ -1159,7 +1240,9 @@ void CheckPanels(float elapsed)
     }
 
     // Escape's menu raises two bytes together; either alone is something else.
-    if (bytes[std::size(Panels)] == 1 && bytes[std::size(Panels) + 1] == 1)
+    bool menu = bytes[std::size(Panels)] == 1 && bytes[std::size(Panels) + 1] == 1;
+
+    if (menu)
     {
         if (open.size() > 1)
         {
@@ -1167,6 +1250,11 @@ void CheckPanels(float elapsed)
         }
 
         open += "\"Menu\"";
+    }
+
+    if (ConversationShowing(open.size() > 1) && open.find("Dialog") == std::string::npos)
+    {
+        open += "\"Dialog\"";
     }
 
     open += "]";
@@ -3282,6 +3370,7 @@ DWORD WINAPI Start(LPVOID)
             FindCaravan();
             FindMarket();
             FindMarketSack();
+            FindTalk();
             FindCollision();
             FindHealth();
             FindTargets();
