@@ -80,9 +80,9 @@ public sealed class SnappingTests
         GridNavigator navigator = new(Ready, null, spots);
         navigator.Act(Mode.Skills, "down");
 
-        spots.Showing = new List<ScreenPoint> { new(734, 326), new(860, 330) };
+        spots.Showing = new List<ScreenPoint> { new(734, 326), new(830, 330) };
 
-        Assert.Equal(new PointerMoveTo(860, 330), navigator.Act(Mode.Skills, "right"));
+        Assert.Equal(new PointerMoveTo(830, 330), navigator.Act(Mode.Skills, "right"));
         Assert.Equal(2, spots.Reads);
     }
 

@@ -7,8 +7,14 @@ namespace GDPilot.Core;
 /// </summary>
 public sealed record SpotLook(int DiscRadius, int RingRadius, double MinimumContrast, int Spacing)
 {
-    /// <summary>A skill button at 1920 by 1080, UI scale 0.5: an icon about 36 pixels across in a dark tree.</summary>
-    public static SpotLook SkillButton { get; } = new(12, 26, 55, 32);
+    /// <summary>
+    /// A skill button at 1920 by 1080, UI scale 0.5: an icon about 36 pixels
+    /// across in a dark tree. The darkest button seen, an unlearned Shaman
+    /// skill, stands out by 52; the brightest false find, a level label, by 44.
+    /// Buttons are never closer than 70 pixels, so anything within 45 of a
+    /// stronger find is its label or marker.
+    /// </summary>
+    public static SpotLook SkillButton { get; } = new(12, 26, 48, 45);
 }
 
 /// <summary>
