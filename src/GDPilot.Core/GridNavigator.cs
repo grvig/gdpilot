@@ -24,7 +24,7 @@ public sealed class GridNavigator
     private readonly IOccupancySource? occupancy;
     private readonly ISpotSource? spotSource;
     private readonly Dictionary<string, OccupancyMap> known = new();
-    private int tab;
+    private readonly Dictionary<Mode, int> tabs = new();
     private Mode mode = Mode.Suspended;
     private List<string> surfaces = new();
     private int surface;
@@ -131,23 +131,27 @@ public sealed class GridNavigator
             return intents;
         }
 
-        if (!readiness.Grids.TryGetValue(current + TabsSuffix, out GridSpec? tabs))
+        if (!readiness.Grids.TryGetValue(current + TabsSuffix, out GridSpec? strip))
         {
             Notice = $"No tabs are calibrated for {current}.";
             return intents;
         }
 
-        // The stash draws its tabs as a column down its left edge, but a row is just as possible.
-        int count = Math.Max(tabs.Columns, tabs.Rows);
+        // The stash draws its tabs as a column down its left edge; the skill window, as a row along its top.
+        int count = Math.Max(strip.Columns, strip.Rows);
+        tabs.TryGetValue(current, out int tab);
         tab = ((tab + step) % count + count) % count;
+        tabs[current] = tab;
         GridCell cell = new(tab, 0);
 
-        if (tabs.Columns == 1)
+        if (strip.Columns == 1)
         {
             cell = new GridCell(0, tab);
         }
 
-        (int x, int y) = tabs.Centre(cell);
+        // Another tab shows other buttons, so the ones seen on this one no longer apply.
+        seen.Clear();
+        (int x, int y) = strip.Centre(cell);
         intents.Add(new PointerMoveTo(x, y));
         intents.Add(new PointerDown(PointerButton.Left));
         intents.Add(new PointerUp(PointerButton.Left));

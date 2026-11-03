@@ -10,6 +10,8 @@ public sealed class SnappingTests
     private static readonly GridReadiness Ready = new(true, "ready", new Dictionary<string, GridSpec>
     {
         ["Inventory"] = new GridSpec(652, 645, 32, 32, 12, 8),
+        ["Skills.Tabs"] = new GridSpec(793, 247, 332, 32, 2, 1),
+        ["Stash.Tabs"] = new GridSpec(473, 463, 38, 38, 1, 2),
     })
     {
         Spots = new Dictionary<string, SpotArea> { ["Skills"] = Tree },
@@ -126,5 +128,29 @@ public sealed class SnappingTests
         GridNavigator navigator = new(Ready, null, new FakeSpots());
 
         Assert.Equal(new PointerMoveTo(652, 645), navigator.Act(Mode.Inventory, "right"));
+    }
+
+    [Fact]
+    public void ANewTabForgetsTheButtonsOfTheOldOne()
+    {
+        FakeSpots spots = new();
+        GridNavigator navigator = new(Ready, null, spots);
+        navigator.Act(Mode.Skills, "down");
+
+        navigator.Tab(Mode.Skills, 1);
+        spots.Showing = new List<ScreenPoint> { new(734, 326), new(1100, 330) };
+
+        Assert.Equal(new PointerMoveTo(1100, 330), navigator.Act(Mode.Skills, "right"));
+    }
+
+    [Fact]
+    public void EachMenuKeepsItsOwnTab()
+    {
+        GridNavigator navigator = new(Ready, null, new FakeSpots());
+        navigator.Tab(Mode.Stash, 1);
+
+        List<InputIntent> clicks = navigator.Tab(Mode.Skills, 1);
+
+        Assert.Equal(new PointerMoveTo(1125, 247), clicks[0]);
     }
 }
