@@ -83,6 +83,20 @@
       "B": "back",
       "Start": "back"
     },
+    "Skills": {
+      "DPadUp": "grid:up",
+      "DPadDown": "grid:down",
+      "DPadLeft": "grid:left",
+      "DPadRight": "grid:right",
+      "Back": "grid:next",
+      "LeftBumper": "tab:previous",
+      "RightBumper": "tab:next",
+      "A": "mouse:left",
+      "X": "mouse:right",
+      "Y": "panel:Skills",
+      "B": "back",
+      "Start": "back"
+    },
     "Vendor": {
       "DPadUp": "grid:up",
       "LT+A": "mouse:ctrl+left",
@@ -116,7 +130,11 @@
         "Stash.Bag1": { "originX": 870, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 12, "rows": 8 },
         "Stash.Bag2": { "originX": 1263, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 },
         "Stash.Tabs": { "originX": 473, "originY": 463, "pitchX": 1, "pitchY": 38, "columns": 1, "rows": 2 },
+        "Skills.Tabs": { "originX": 793, "originY": 247, "pitchX": 332, "pitchY": 32, "columns": 2, "rows": 1 },
         "Hotbar": { "originX": 717, "originY": 1059, "pitchX": 44.18, "pitchY": 1, "columns": 12, "rows": 1 }
+      },
+      "spots": {
+        "Skills": { "left": 700, "top": 300, "width": 710, "height": 480, "look": "skillButton", "fixed": [[645, 847], [568, 803]] }
       }
     }
   }
