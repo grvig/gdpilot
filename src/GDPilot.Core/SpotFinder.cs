@@ -29,45 +29,68 @@ public static class SpotFinder
     private const int Stride = 2;
     private const int RingPoints = 32;
 
+    /// <summary>More ring points brighter than the limit than this, and the brighter quarter is over it.</summary>
+    private const int LitAllowed = RingPoints - RingPoints * 3 / 4;
+
     public static List<ScreenPoint> Find(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, SpotLook look)
     {
         int margin = look.RingRadius + 1;
         int spanX = width + margin * 2;
         int spanY = height + margin * 2;
-        double[,] brightness = new double[spanX, spanY];
+        // Kept as one flat row after another, with each sample a fixed step from the centre, since this runs at a press.
+        float[] brightness = new float[spanX * spanY];
 
-        for (int x = 0; x < spanX; x++)
+        for (int y = 0; y < spanY; y++)
         {
-            for (int y = 0; y < spanY; y++)
+            for (int x = 0; x < spanX; x++)
             {
                 (byte red, byte green, byte blue) = pixel(left - margin + x, top - margin + y);
-                brightness[x, y] = (red + green + blue) / 3.0;
+                brightness[y * spanX + x] = (red + green + blue) / 3f;
             }
         }
 
-        List<(int X, int Y)> disc = DiscOffsets(look.DiscRadius);
-        List<(int X, int Y)> ring = RingOffsets(look.RingRadius);
+        int[] disc = DiscOffsets(look.DiscRadius).Select(offset => offset.Y * spanX + offset.X).ToArray();
+        int[] ring = RingOffsets(look.RingRadius).Select(offset => offset.Y * spanX + offset.X).ToArray();
         List<(double Score, int X, int Y)> candidates = new();
-        double[] around = new double[ring.Count];
+        double[] around = new double[ring.Length];
 
         for (int y = 0; y < height; y += Stride)
         {
             for (int x = 0; x < width; x += Stride)
             {
-                int centreX = x + margin;
-                int centreY = y + margin;
+                int centre = (y + margin) * spanX + x + margin;
                 double inside = 0;
 
-                foreach ((int dx, int dy) in disc)
+                foreach (int offset in disc)
                 {
-                    inside += brightness[centreX + dx, centreY + dy];
+                    inside += brightness[centre + offset];
                 }
 
-                inside /= disc.Count;
+                inside /= disc.Length;
 
-                for (int index = 0; index < ring.Count; index++)
+                // Most of a menu is dark background, which cannot reach the contrast even against black.
+                if (inside < look.MinimumContrast)
                 {
-                    around[index] = brightness[centreX + ring[index].X, centreY + ring[index].Y];
+                    continue;
+                }
+
+                // The surround passes only if its brighter quarter stays dim enough, so stop counting once too much of it is lit.
+                double limit = inside - look.MinimumContrast;
+                int lit = 0;
+
+                for (int index = 0; index < ring.Length && lit < LitAllowed; index++)
+                {
+                    around[index] = brightness[centre + ring[index]];
+
+                    if (around[index] > limit)
+                    {
+                        lit++;
+                    }
+                }
+
+                if (lit >= LitAllowed)
+                {
+                    continue;
                 }
 
                 Array.Sort(around);
