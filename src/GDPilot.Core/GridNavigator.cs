@@ -22,6 +22,7 @@ public sealed class GridNavigator
 
     private readonly GridReadiness readiness;
     private readonly IOccupancySource? occupancy;
+    private readonly ISpotSource? spotSource;
     private readonly Dictionary<string, OccupancyMap> known = new();
     private int tab;
     private Mode mode = Mode.Suspended;
@@ -29,11 +30,13 @@ public sealed class GridNavigator
     private int surface;
     private GridCell cell;
     private bool placed;
+    private ScreenPoint spot;
 
-    public GridNavigator(GridReadiness readiness, IOccupancySource? occupancy = null)
+    public GridNavigator(GridReadiness readiness, IOccupancySource? occupancy = null, ISpotSource? spotSource = null)
     {
         this.readiness = readiness;
         this.occupancy = occupancy;
+        this.spotSource = spotSource;
     }
 
     /// <summary>Whether the last press jumped between items, rather than stepping a cell.</summary>
@@ -67,6 +70,11 @@ public sealed class GridNavigator
                 .ToList();
             surface = 0;
             placed = false;
+        }
+
+        if (spotSource is not null && readiness.Spots.TryGetValue(current.ToString(), out SpotArea? area))
+        {
+            return Snap(area, action);
         }
 
         if (surfaces.Count == 0)
@@ -143,6 +151,51 @@ public sealed class GridNavigator
         intents.Add(new PointerUp(PointerButton.Left));
         Notice = null;
         return intents;
+    }
+
+    /// <summary>
+    /// Snaps to the menu's spots as the screen shows them at this press, since a
+    /// skill tree changes with the tab showing. "grid:next" starts over from the
+    /// first spot.
+    /// </summary>
+    private PointerMoveTo? Snap(SpotArea area, string action)
+    {
+        List<ScreenPoint>? found = spotSource!.Read(area);
+
+        if (found is null)
+        {
+            Notice = "The screen could not be read to find this menu's buttons.";
+            return null;
+        }
+
+        found.AddRange(area.Fixed);
+        ScreenPoint? target;
+
+        if (action == "next" || !placed)
+        {
+            target = SpotNavigator.First(found);
+        }
+        else
+        {
+            target = SpotNavigator.Next(found, spot, Direction(action));
+
+            if (target is null)
+            {
+                target = spot;
+            }
+        }
+
+        if (target is null)
+        {
+            Notice = "Nothing to snap to in this menu.";
+            return null;
+        }
+
+        spot = target.Value;
+        placed = true;
+        Jumping = true;
+        Notice = null;
+        return new PointerMoveTo(spot.X, spot.Y);
     }
 
     /// <summary>A fresh, trusted reading of a surface, or null to step instead.</summary>

@@ -3,6 +3,12 @@ namespace GDPilot.Core;
 /// <summary>A place on screen the cursor can snap to, such as a skill or a star, in pixels.</summary>
 public readonly record struct ScreenPoint(int X, int Y);
 
+/// <summary>Finds the spots of a menu's area as they are on screen now, or null when the screen cannot be read.</summary>
+public interface ISpotSource
+{
+    List<ScreenPoint>? Read(SpotArea area);
+}
+
 /// <summary>
 /// Moves between spots that sit anywhere, not on a grid: the skill tree's
 /// buttons, the stars of the devotion map. A press goes to the nearest spot
