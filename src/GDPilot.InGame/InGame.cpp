@@ -813,6 +813,38 @@ void FindStash()
     Say("Found the player's stash; the stash is exact too.");
 }
 
+// Reads any sack that keeps its own cell size, as the stash's and a trader's
+// do, whole, or returns false. Guarded like the bags.
+bool ReadSackItems(const void* sack, SackReading& reading)
+{
+    __try
+    {
+        const void* map = sackMap(sack);
+        reading.columns = gridWidth(sack);
+        reading.rows = gridHeight(sack);
+        reading.cellWidth = static_cast<float>(sackCellWidth(sack));
+        reading.cellHeight = static_cast<float>(sackCellHeight(sack));
+        const unsigned char* head = *static_cast<const unsigned char* const*>(map);
+        const unsigned char* node = Link(head, NodeLeft);
+        reading.count = 0;
+
+        while (node[NodeIsHead] == 0 && reading.count < MostItems)
+        {
+            RawItem& item = reading.items[reading.count];
+            item.id = *reinterpret_cast<const unsigned int*>(node + NodeId);
+            std::memcpy(&item.x, node + NodeRect, sizeof(float) * 4);
+            reading.count++;
+            node = Next(node);
+        }
+
+        return reading.cellWidth > 0 && reading.cellHeight > 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
 // Reads the stash tab showing, whole, or returns false. Guarded like the bags.
 bool ReadStash(SackReading& reading)
 {
@@ -835,26 +867,7 @@ bool ReadStash(SackReading& reading)
             return false;
         }
 
-        const void* sack = first[selected];
-        const void* map = sackMap(sack);
-        reading.columns = gridWidth(sack);
-        reading.rows = gridHeight(sack);
-        reading.cellWidth = static_cast<float>(sackCellWidth(sack));
-        reading.cellHeight = static_cast<float>(sackCellHeight(sack));
-        const unsigned char* head = *static_cast<const unsigned char* const*>(map);
-        const unsigned char* node = Link(head, NodeLeft);
-        reading.count = 0;
-
-        while (node[NodeIsHead] == 0 && reading.count < MostItems)
-        {
-            RawItem& item = reading.items[reading.count];
-            item.id = *reinterpret_cast<const unsigned int*>(node + NodeId);
-            std::memcpy(&item.x, node + NodeRect, sizeof(float) * 4);
-            reading.count++;
-            node = Next(node);
-        }
-
-        return reading.cellWidth > 0 && reading.cellHeight > 0;
+        return ReadSackItems(first[selected], reading);
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
