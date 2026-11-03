@@ -403,6 +403,72 @@ bool CaravanOpen()
     }
 }
 
+// A trader's window raises the inventory flag too, and nothing in the engine
+// marks it open. But the game opens a trader's market through
+// GameEngine::OpenMarket just before the window shows, as read live on
+// 2026-11-04 at Kerrick's, so a market opened and then the inventory flag
+// rising means a trader. The mark holds while the flag stays up, and lapses if
+// the flag does not rise soon after.
+using OpenMarketCall = void (*)(void* engine, unsigned int id, void* type, const void* where);
+OpenMarketCall originalOpenMarket = nullptr;
+constexpr ULONGLONG MarketWindowDelay = 3000;
+ULONGLONG marketOpenedAt = 0;
+bool marketShown = false;
+
+void OpenedMarket(void* engine, unsigned int id, void* type, const void* where)
+{
+    marketOpenedAt = GetTickCount64();
+    originalOpenMarket(engine, id, type, where);
+}
+
+void FindMarket()
+{
+    void* open = reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"Game.dll"), "?OpenMarket@GameEngine@GAME@@QEAAXIAEAW4Market_TypeEnum@2@AEBVVec2@2@@Z"));
+
+    // The market list's offset in the engine is in the function's first bytes.
+    if (open == nullptr || !StartsWith(open, "40534c8b99f8400000"))
+    {
+        Say("A trader cannot be told from the bags: OpenMarket has changed. Press LT and D-pad up at a trader.");
+        return;
+    }
+
+    originalOpenMarket = reinterpret_cast<OpenMarketCall>(open);
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(reinterpret_cast<PVOID*>(&originalOpenMarket), reinterpret_cast<PVOID>(OpenedMarket));
+    LONG result = DetourTransactionCommit();
+
+    if (result != NO_ERROR)
+    {
+        originalOpenMarket = nullptr;
+        Say("A trader cannot be told from the bags: attaching to OpenMarket failed with error %ld.", result);
+    }
+}
+
+// Whether the inventory flag, now up or not, belongs to a trader's window.
+bool TraderShowing(bool inventoryUp)
+{
+    if (!inventoryUp)
+    {
+        marketShown = false;
+
+        if (marketOpenedAt != 0 && GetTickCount64() - marketOpenedAt > MarketWindowDelay)
+        {
+            marketOpenedAt = 0;
+        }
+
+        return false;
+    }
+
+    if (marketOpenedAt != 0)
+    {
+        marketShown = true;
+        marketOpenedAt = 0;
+    }
+
+    return marketShown;
+}
+
 // Guarded, because a UI object that is being rebuilt during a load can briefly
 // point nowhere; a fault then means "unknown", never a crash.
 bool ReadPanelBytes(unsigned char bytes[], std::size_t count)
@@ -819,7 +885,9 @@ void CheckLayouts(float elapsed)
 {
     sinceLayoutCheck += elapsed;
 
-    if (sackObject == nullptr || sinceLayoutCheck < 0.25f || (lastPanels.find("Inventory") == std::string::npos && lastPanels.find("Stash") == std::string::npos))
+    bool bagsShowing = lastPanels.find("Inventory") != std::string::npos || lastPanels.find("Stash") != std::string::npos || lastPanels.find("Vendor") != std::string::npos;
+
+    if (sackObject == nullptr || sinceLayoutCheck < 0.25f || !bagsShowing)
     {
         return;
     }
@@ -981,6 +1049,15 @@ void CheckPanels(float elapsed)
     }
 
     std::string open = "[";
+    bool trader = false;
+
+    for (std::size_t index = 0; index < std::size(Panels); index++)
+    {
+        if (std::strcmp(Panels[index].mode, "Inventory") == 0)
+        {
+            trader = TraderShowing(bytes[index] == 1);
+        }
+    }
 
     for (std::size_t index = 0; index < std::size(Panels); index++)
     {
@@ -996,6 +1073,10 @@ void CheckPanels(float elapsed)
             if (std::strcmp(mode, "Inventory") == 0 && CaravanOpen())
             {
                 mode = "Stash";
+            }
+            else if (std::strcmp(mode, "Inventory") == 0 && trader)
+            {
+                mode = "Vendor";
             }
 
             open += std::string("\"") + mode + "\"";
@@ -3124,6 +3205,7 @@ DWORD WINAPI Start(LPVOID)
             FindInventoryRoute();
             FindStash();
             FindCaravan();
+            FindMarket();
             FindCollision();
             FindHealth();
             FindTargets();
