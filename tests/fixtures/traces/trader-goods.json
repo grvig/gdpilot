@@ -1,0 +1,12 @@
+{
+  "entries": [
+    { "at": 0 },
+    { "at": 1200, "buttons": "DPadDown" },
+    { "at": 1300 },
+    { "at": 2200, "buttons": "DPadDown" },
+    { "at": 2300 },
+    { "at": 3200, "buttons": "DPadRight" },
+    { "at": 3300 },
+    { "at": 4000 }
+  ]
+}

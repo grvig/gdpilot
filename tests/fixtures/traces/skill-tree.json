@@ -1,0 +1,16 @@
+{
+  "entries": [
+    { "at": 0 },
+    { "at": 1200, "buttons": "DPadRight" },
+    { "at": 1300 },
+    { "at": 2600, "buttons": "RightBumper" },
+    { "at": 2700 },
+    { "at": 3800, "buttons": "DPadDown" },
+    { "at": 3900 },
+    { "at": 4800, "buttons": "DPadRight" },
+    { "at": 4900 },
+    { "at": 5800, "buttons": "DPadDown" },
+    { "at": 5900 },
+    { "at": 6600 }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "entries": [
+    { "at": 0 },
+    { "at": 1000, "buttons": "DPadDown" },
+    { "at": 1100 },
+    { "at": 2000, "buttons": "DPadDown" },
+    { "at": 2100 },
+    { "at": 3000, "buttons": "LeftBumper" },
+    { "at": 3100 },
+    { "at": 4000, "buttons": "DPadRight" },
+    { "at": 4100 },
+    { "at": 4800 }
+  ]
+}

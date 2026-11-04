@@ -55,6 +55,15 @@ in the game, with recorded pad traces:
 | `analog-walk.json` | Walking thirty degrees right of forward, then back and left, then stopping |
 | `interact-pick-up.json` | A pressed beside a dropped item, after the link is up; the item is picked up |
 | `aim-and-lock.json` | Twin-stick aiming in the game's camera, then a lock among enemies |
+| `skill-tree.json` | Opening the skill tree, the other mastery's tab, and stepping between skills |
+| `devotion-stars.json` | From the skill tree to the devotion map's tab, then star to star |
+| `conversation-reply.json` | In a conversation, D-pad down onto the reply |
+| `game-menu.json` | Start for the game's menu, then down its entries |
+| `blacksmith.json` | At a blacksmith: a category tab, a recipe, then the bags |
+| `trader-goods.json` | At a trader, without LT: down and across the goods item by item |
+
+The conversation, blacksmith and trader traces start with the window already
+open: talk to the person first.
 
 Lock-on needs foes near the character and in view. `GDPilot.exe --targets`
 prints what the in-game part sees, which of them are in view, and which one a
