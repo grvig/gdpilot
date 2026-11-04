@@ -10,7 +10,8 @@ public sealed class SnappingTests
     private static readonly GridReadiness Ready = new(true, "ready", new Dictionary<string, GridSpec>
     {
         ["Inventory"] = new GridSpec(652, 645, 32, 32, 12, 8),
-        ["Skills.Tabs"] = new GridSpec(793, 247, 332, 32, 2, 1),
+        ["Skills.Tabs"] = new GridSpec(793, 247, 166, 32, 3, 1),
+        ["Devotion.Tabs"] = new GridSpec(796, 21, 164, 20, 3, 1),
         ["Stash.Tabs"] = new GridSpec(473, 463, 38, 38, 1, 2),
     })
     {
@@ -155,7 +156,7 @@ public sealed class SnappingTests
 
         List<InputIntent> clicks = navigator.Tab(Mode.Skills, 1);
 
-        Assert.Equal(new PointerMoveTo(1125, 247), clicks[0]);
+        Assert.Equal(new PointerMoveTo(959, 247), clicks[0]);
     }
 
     [Fact]
@@ -170,5 +171,16 @@ public sealed class SnappingTests
 
         Assert.Equal(new PointerMoveTo(833, 820), navigator.Act(Mode.Dialog, "up"));
         Assert.Equal(new PointerMoveTo(833, 820), navigator.Act(Mode.Dialog, "down"));
+    }
+
+    [Fact]
+    public void TheDevotionMapCountsTabsWithTheSkillWindowAndUsesItsOwnStrip()
+    {
+        GridNavigator navigator = new(Ready, null, new FakeSpots());
+        navigator.Tab(Mode.Skills, 1);
+
+        List<InputIntent> clicks = navigator.Tab(Mode.Devotion, 1);
+
+        Assert.Equal(new PointerMoveTo(1124, 21), clicks[0]);
     }
 }

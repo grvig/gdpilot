@@ -139,9 +139,10 @@ public sealed class GridNavigator
 
         // The stash draws its tabs as a column down its left edge; the skill window, as a row along its top.
         int count = Math.Max(strip.Columns, strip.Rows);
-        tabs.TryGetValue(current, out int tab);
+        Mode window = TabbedWindow(current);
+        tabs.TryGetValue(window, out int tab);
         tab = ((tab + step) % count + count) % count;
-        tabs[current] = tab;
+        tabs[window] = tab;
         GridCell cell = new(tab, 0);
 
         if (strip.Columns == 1)
@@ -232,6 +233,21 @@ public sealed class GridNavigator
                 seen.Add(point);
             }
         }
+    }
+
+    /// <summary>
+    /// Whose tab count a mode moves. The devotion map is the skill window's
+    /// middle tab, drawn with the window's tabs along the top of the screen
+    /// instead, so the two count their tabs together.
+    /// </summary>
+    private static Mode TabbedWindow(Mode current)
+    {
+        if (current == Mode.Devotion)
+        {
+            return Mode.Skills;
+        }
+
+        return current;
     }
 
     /// <summary>A fresh, trusted reading of a surface, or null to step instead.</summary>
