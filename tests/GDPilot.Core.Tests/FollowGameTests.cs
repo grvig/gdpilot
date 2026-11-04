@@ -8,7 +8,7 @@ public sealed class FollowGameTests
     private static readonly TimeSpan Tick = TimeSpan.FromMilliseconds(10);
 
     private static readonly ButtonLayers Layers = BindingTable.Parse(
-        new Dictionary<string, string> { ["DPadUp"] = "panel:Inventory", ["LT+DPadDown"] = "panel:Stash", ["LT+DPadUp"] = "panel:Vendor" },
+        new Dictionary<string, string> { ["DPadUp"] = "panel:Inventory", ["LT+DPadDown"] = "panel:Stash", ["LT+DPadUp"] = "panel:Vendor", ["B"] = "back" },
         0.5);
 
     private static ModeController Controller()
@@ -136,5 +136,42 @@ public sealed class FollowGameTests
         modes.Follow(new[] { "Smithing" });
 
         Assert.Equal(Mode.Combat, modes.Current);
+    }
+
+    [Fact]
+    public void AConversationTheGameReportsIsFollowed()
+    {
+        ModeController modes = Controller();
+
+        modes.Follow(new[] { "Dialog" });
+
+        Assert.Equal(Mode.Dialog, modes.Current);
+    }
+
+    [Fact]
+    public void AConversationLeftWithBackIsNotReturnedToWhileTheTalkLingers()
+    {
+        ModeController modes = Controller();
+        modes.Follow(new[] { "Dialog" });
+        modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.B }, Tick);
+        Wait(modes, TimeSpan.FromMilliseconds(400));
+
+        modes.Follow(new[] { "Dialog" });
+
+        Assert.Equal(Mode.Combat, modes.Current);
+    }
+
+    [Fact]
+    public void TheNextConversationIsFollowedOnceTheLastOneEnded()
+    {
+        ModeController modes = Controller();
+        modes.Follow(new[] { "Dialog" });
+        modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.B }, Tick);
+        Wait(modes, TimeSpan.FromMilliseconds(400));
+        modes.Follow(Array.Empty<string>());
+
+        modes.Follow(new[] { "Dialog" });
+
+        Assert.Equal(Mode.Dialog, modes.Current);
     }
 }

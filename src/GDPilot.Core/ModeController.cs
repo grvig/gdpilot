@@ -36,6 +36,13 @@ public sealed class ModeController
     private GamepadButtons previous;
     private TimeSpan sinceTap = TimeSpan.MaxValue;
 
+    /// <summary>
+    /// A conversation the player backed out of. The game goes on reporting the
+    /// talk until the character next moves, so the report is not followed back
+    /// into until it has stopped.
+    /// </summary>
+    private bool conversationLeft;
+
     private readonly GridNavigator? grids;
 
     /// <summary>True while grid presses are stepping because the screen could not be read; shown on the overlay.</summary>
@@ -130,6 +137,16 @@ public sealed class ModeController
             }
         }
 
+        if (!modes.Contains(Mode.Dialog))
+        {
+            conversationLeft = false;
+        }
+
+        if (conversationLeft)
+        {
+            modes.Remove(Mode.Dialog);
+        }
+
         if (Agrees(modes))
         {
             return;
@@ -216,6 +233,11 @@ public sealed class ModeController
         }
         else if (binding is BackBinding)
         {
+            if (stack.Current == Mode.Dialog)
+            {
+                conversationLeft = true;
+            }
+
             // Escape with nothing open brings up the game's menu.
             if (!stack.Pop())
             {
