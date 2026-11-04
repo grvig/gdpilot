@@ -134,6 +134,20 @@ The skills are found on screen at each press, so the D-pad follows whichever
 tree is showing; a skill hidden under a tooltip stays within reach. The
 mastery bar's plus button and Undo Points are stops too.
 
+## On the devotion map
+
+The devotion map is the skill window's middle tab: the bumpers move from a
+mastery's tree to it and on to the other mastery. On the map the D-pad steps
+from star to star in the direction pressed, A takes a star, X right-clicks,
+and the zoom buttons at the top are stops too. Back returns to the first star.
+
+## At a blacksmith
+
+A crafter's window opens beside the bags, and GDPilot switches to its buttons
+by itself. The D-pad moves over the category tabs, the recipe list and the
+Combine button; the left bumper moves on to each bag and back. A picks or
+clicks, X right-clicks, and LT+A splits a stack.
+
 ## In a conversation and the game's menu
 
 When the character talks to someone, GDPilot switches to the conversation's
