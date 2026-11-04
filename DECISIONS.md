@@ -810,3 +810,30 @@ the level whether its window is open or not, and nothing found so far changes
 when a trader's window opens. Rather than guess, LT and D-pad up in the bags
 tells GDPilot a trader is open, and the mode holds while the game reports the
 inventory.
+
+## 2026-11-04 — Snapping in the menus
+
+**Menu buttons are found on screen, not read from the game.** None of the
+game's menu windows are exported, and their widgets carry no type names to
+find them by. A skill button, though, is a bright disc in a dark tree, a
+devotion star a point of light, a reply or a recipe a line of gold or cyan
+text in a dark box. Finding them by look at each press follows whichever
+tree or tab is showing with nothing to calibrate per mastery. Real captures
+of both mastery trees, the devotion map, a conversation and a blacksmith pin
+each look in the tests. The D-pad goes to the nearest spot in its direction,
+by the same rule the bags use.
+
+**Which window is open comes from the game.** The game raises no flag for a
+conversation, a trader, a crafter or the devotion map, so each is told apart
+another way. A trader: the game opens a market just before its window, so
+the market opening and then the bags' flag rising means a trader, and the
+market's own sack gives its goods exactly. A conversation and a crafter: the
+player's controller runs a talk state from reaching someone until moving
+away; the talk with no window since is a conversation, and the bags opening
+during the talk without a market or a caravan is a crafter. The devotion
+map: a byte that every large window raises, without the skill window's,
+the menu's or the bags' flags.
+
+**A conversation is left by walking away or with B.** The talk state outlives
+the conversation's box until the character moves, so after B the report is
+not followed back into until it stops.
