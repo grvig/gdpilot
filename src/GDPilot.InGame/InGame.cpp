@@ -372,6 +372,13 @@ constexpr std::size_t UiOffset = 0x19b0;
 constexpr std::size_t MenuFlag = 0x17a9;
 constexpr std::size_t MenuConfirmFlag = 0x9c5a;
 
+// The devotion map is a tab of the skill window, but showing it lowers the
+// skill window's flag and raises none of its own. A byte the skill window,
+// the devotion map and Escape's menu all raise, and the bags and the world map
+// do not, stays up, as read live on 2026-11-04, so that byte without the
+// skills' flag or the menu's means the devotion map.
+constexpr std::size_t BigWindowFlag = 0x1ef1;
+
 // The stash raises the same inventory flag as the bags alone, but the game
 // records whose stash is showing: DisplayCaravanWindow stores the caravan's id
 // in the engine at 0x373a8, and the id goes back to zero as the stash closes,
@@ -498,6 +505,7 @@ bool ReadPanelBytes(unsigned char bytes[], std::size_t count)
             bytes[index] = ui[Panels[index].offset];
         }
 
+        bytes[count - 3] = ui[BigWindowFlag];
         bytes[count - 2] = ui[MenuFlag];
         bytes[count - 1] = ui[MenuConfirmFlag];
         return true;
@@ -1228,7 +1236,7 @@ void CheckPanels(float elapsed)
     }
 
     sincePanelCheck = 0;
-    unsigned char bytes[std::size(Panels) + 2]{};
+    unsigned char bytes[std::size(Panels) + 3]{};
 
     if (!ReadPanelBytes(bytes, std::size(bytes)))
     {
@@ -1271,7 +1279,26 @@ void CheckPanels(float elapsed)
     }
 
     // Escape's menu raises two bytes together; either alone is something else.
-    bool menu = bytes[std::size(Panels)] == 1 && bytes[std::size(Panels) + 1] == 1;
+    bool menu = bytes[std::size(Panels) + 1] == 1 && bytes[std::size(Panels) + 2] == 1;
+    bool skills = false;
+
+    for (std::size_t index = 0; index < std::size(Panels); index++)
+    {
+        if (std::strcmp(Panels[index].mode, "Skills") == 0 && bytes[index] == 1)
+        {
+            skills = true;
+        }
+    }
+
+    if (bytes[std::size(Panels)] == 1 && !skills && !menu)
+    {
+        if (open.size() > 1)
+        {
+            open += ",";
+        }
+
+        open += "\"Devotion\"";
+    }
 
     if (menu)
     {
