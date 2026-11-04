@@ -87,7 +87,7 @@ public sealed class StashTabTests
         IReadOnlyList<string> legend = OverlayState.Build(Mode.Stash, SuspendReason.None, stash).Legend;
 
         Assert.Contains("RB: Next tab", legend);
-        Assert.Contains("D-pad ↑: Cell up", legend);
-        Assert.Contains("View: Next grid", legend);
+        Assert.Contains("D-pad ↑: Move up", legend);
+        Assert.Contains("View: Next list", legend);
     }
 }

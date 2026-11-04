@@ -199,10 +199,11 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
                 return $"{pointer.Button} click";
             case PanelBinding panel:
                 return panel.Mode.ToString();
+            // The same presses walk bags, skill trees, stars and replies, so they are named for the move, not the cell.
             case GridBinding grid when grid.Action == "next":
-                return "Next grid";
+                return "Next list";
             case GridBinding grid:
-                return $"Cell {grid.Action}";
+                return $"Move {grid.Action}";
             case TabBinding tab when tab.Step > 0:
                 return "Next tab";
             case TabBinding:
