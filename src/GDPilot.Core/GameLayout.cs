@@ -41,6 +41,10 @@ public static class GameLayout
     private static readonly ScreenArea Bags = new(0.32, 0.16, 0.68, 0.84);
     private static readonly ScreenArea BagsBesideAnother = new(0.22, 0.12, 0.8, 0.9);
     private static readonly ScreenArea SkillWindow = new(0.24, 0.19, 0.77, 0.84);
+
+    // The devotion map fills the screen; what must stay clear on it is the affinities down the left and the tabs and zoom along the top, measured on 2026-11-04.
+    private static readonly ScreenArea Affinities = new(0, 0.2, 0.12, 0.8);
+    private static readonly ScreenArea DevotionBar = new(0.32, 0, 0.68, 0.15);
     private static readonly ScreenArea Map = new(0.24, 0.16, 0.77, 0.85);
     private static readonly ScreenArea Talk = new(0.2, 0.35, 0.8, 0.95);
     private static readonly ScreenArea GameMenu = new(0.34, 0.5, 0.66, 0.72);
@@ -48,6 +52,12 @@ public static class GameLayout
     /// <summary>Everything the game draws in a mode, the world's own interface included.</summary>
     public static IReadOnlyList<ScreenArea> Reserved(Mode mode)
     {
+        // The devotion map covers the world's own interface along with the world.
+        if (mode == Mode.Devotion)
+        {
+            return new List<ScreenArea> { Affinities, DevotionBar };
+        }
+
         List<ScreenArea> areas = new() { Minimap, Quests, Hotbar, Corner };
 
         switch (mode)
@@ -62,7 +72,6 @@ public static class GameLayout
                 areas.Add(BagsBesideAnother);
                 break;
             case Mode.Skills:
-            case Mode.Devotion:
                 areas.Add(SkillWindow);
                 break;
             case Mode.WorldMap:

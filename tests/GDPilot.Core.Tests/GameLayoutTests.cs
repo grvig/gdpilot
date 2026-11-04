@@ -57,4 +57,14 @@ public sealed class GameLayoutTests
         Assert.True(new ScreenArea(0, 0, 0.5, 0.5).Overlaps(new ScreenArea(0.4, 0.4, 1, 1)));
         Assert.Equal(0.01, new ScreenArea(0, 0, 0.5, 0.5).Shared(new ScreenArea(0.4, 0.4, 1, 1)), 6);
     }
+
+    [Fact]
+    public void OnTheDevotionMapOnlyTheAffinitiesAndTheTabsStayClear()
+    {
+        IReadOnlyList<ScreenArea> reserved = GameLayout.Reserved(Mode.Devotion);
+
+        Assert.Contains(reserved, area => area.Left == 0 && area.Right <= 0.15);
+        Assert.Contains(reserved, area => area.Top == 0 && area.Left > 0.3 && area.Right < 0.7);
+        Assert.Equal(2, reserved.Count);
+    }
 }
