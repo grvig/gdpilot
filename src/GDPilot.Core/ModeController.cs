@@ -87,6 +87,13 @@ public sealed class ModeController
                     intents.Add(move);
                 }
 
+                // A reply that ends the conversation closes its box while the talk report lingers; a press that finds no box ends the mode.
+                if (binding is GridBinding && stack.Current == Mode.Dialog && grids is not null && grids.NothingShowing)
+                {
+                    conversationLeft = true;
+                    stack.Pop();
+                }
+
                 if (binding is TabBinding tab && grids is not null)
                 {
                     intents.AddRange(grids.Tab(stack.Current, tab.Step));

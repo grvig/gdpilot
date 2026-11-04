@@ -49,6 +49,9 @@ public sealed class GridNavigator
     /// <summary>Whether jumping is on but the last press in this mode had to step, because the screen could not be trusted.</summary>
     public bool FellBack => occupancy is not null && placed && !Jumping;
 
+    /// <summary>Whether the last press found nothing at all to snap to, as when a conversation's box has closed.</summary>
+    public bool NothingShowing { get; private set; }
+
     /// <summary>Why the last grid press did nothing, or null when it worked.</summary>
     public string? Notice { get; private set; }
 
@@ -177,12 +180,15 @@ public sealed class GridNavigator
     private PointerMoveTo? Snap(SpotArea area, string action)
     {
         List<ScreenPoint>? found = spotSource!.Read(area);
+        NothingShowing = false;
 
         if (found is null)
         {
             Notice = "The screen could not be read to find this menu's buttons.";
             return null;
         }
+
+        NothingShowing = found.Count == 0 && area.Fixed.Count == 0;
 
         // Buttons stay put while a tooltip hides them; a conversation's replies change with every step.
         if (area.Kind == SpotKind.Buttons && area.Look is not null)
