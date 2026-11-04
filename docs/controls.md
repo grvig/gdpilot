@@ -108,18 +108,38 @@ character. [camera.md](camera.md) has the details and the settings.
 | A | Left click: pick up or put down |
 | X | Right click: use or equip |
 | Left trigger + A | Ctrl+click: split a stack |
-| Left trigger + D-pad up | In the bags: a trader's window is open |
+| Left trigger + D-pad up | In the bags: a trader's window is open (only needed without the in-game part) |
 | B or Start | Close the panel |
 
 At the stash the bumpers switch tabs instead, and Back moves between the stash
 and the bags. An item larger than one cell is a single stop when the in-game
 part is loaded, since the game then says exactly where each item sits.
 
-With the in-game part loaded, GDPilot sees the stash open by itself and reads
-the tab showing from the game, so its items are exact too. A trader's window
-looks to the game like the bags alone, so after talking to a trader press the
-left trigger and D-pad up once to bring the trader's goods into the D-pad's
-reach.
+With the in-game part loaded, GDPilot sees the stash and a trader's window
+open by themselves and reads the stash tab showing and the trader's goods
+from the game, so their items are exact too.
+
+## In the skill tree
+
+| Button | Does |
+| --- | --- |
+| D-pad | Jump to the nearest skill in that direction |
+| Bumpers | The other mastery's tree |
+| A | Left click: put a point in |
+| X | Right click |
+| Back | Back to the first skill |
+| Y, B or Start | Close the window |
+
+The skills are found on screen at each press, so the D-pad follows whichever
+tree is showing; a skill hidden under a tooltip stays within reach. The
+mastery bar's plus button and Undo Points are stops too.
+
+## In a conversation and the game's menu
+
+When the character talks to someone, GDPilot switches to the conversation's
+buttons by itself. The D-pad moves between the replies, A picks one, and B
+leaves the conversation. Walking away ends it too. In the game's menu, from
+Start, the D-pad moves between its entries and A picks one.
 
 ## Aiming in the game's own camera
 
