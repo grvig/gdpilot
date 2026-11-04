@@ -736,16 +736,16 @@ int Cells(float units, float cell)
 }
 
 // The grids each bag is calibrated as: the inventory shows the same two bags
-// alone, beside a trader and beside the stash, in three different places.
+// alone, beside a trader, beside the stash and beside a crafter.
 struct SackNames
 {
     int sack;
-    const char* names[3];
+    const char* names[4];
 };
 
 constexpr SackNames Bags[] = {
-    {0, {"Inventory", "Vendor.Bag1", "Stash.Bag1"}},
-    {1, {"Inventory.Bag2", "Vendor.Bag2", "Stash.Bag2"}},
+    {0, {"Inventory", "Vendor.Bag1", "Stash.Bag1", "Crafting.Bag1"}},
+    {1, {"Inventory.Bag2", "Vendor.Bag2", "Stash.Bag2", "Crafting.Bag2"}},
 };
 
 std::string sentLayouts[std::size(Bags)];
@@ -967,7 +967,7 @@ void CheckLayouts(float elapsed)
 {
     sinceLayoutCheck += elapsed;
 
-    bool bagsShowing = lastPanels.find("Inventory") != std::string::npos || lastPanels.find("Stash") != std::string::npos || lastPanels.find("Vendor") != std::string::npos;
+    bool bagsShowing = lastPanels.find("Inventory") != std::string::npos || lastPanels.find("Stash") != std::string::npos || lastPanels.find("Vendor") != std::string::npos || lastPanels.find("Crafting") != std::string::npos;
 
     if (sackObject == nullptr || sinceLayoutCheck < 0.25f || !bagsShowing)
     {
@@ -1207,6 +1207,28 @@ bool Talking()
     }
 }
 
+// The blacksmith opens the bags beside his recipes without a market and
+// without a caravan, as read live with Duncan on 2026-11-04, so the inventory
+// flag rising during a talk that is neither is a crafter's window. The mark
+// holds while the flag stays up.
+bool crafterShown = false;
+bool inventoryWasUp = false;
+
+bool CrafterShowing(bool inventoryUp, bool otherwise)
+{
+    if (!inventoryUp)
+    {
+        crafterShown = false;
+    }
+    else if (!inventoryWasUp && !otherwise && Talking())
+    {
+        crafterShown = true;
+    }
+
+    inventoryWasUp = inventoryUp;
+    return crafterShown;
+}
+
 // Whether a conversation is showing, given whether any window is open now.
 bool ConversationShowing(bool windowOpen)
 {
@@ -1246,12 +1268,15 @@ void CheckPanels(float elapsed)
 
     std::string open = "[";
     bool trader = false;
+    bool crafter = false;
+    bool stash = CaravanOpen();
 
     for (std::size_t index = 0; index < std::size(Panels); index++)
     {
         if (std::strcmp(Panels[index].mode, "Inventory") == 0)
         {
             trader = TraderShowing(bytes[index] == 1);
+            crafter = CrafterShowing(bytes[index] == 1, trader || stash);
         }
     }
 
@@ -1266,13 +1291,17 @@ void CheckPanels(float elapsed)
 
             const char* mode = Panels[index].mode;
 
-            if (std::strcmp(mode, "Inventory") == 0 && CaravanOpen())
+            if (std::strcmp(mode, "Inventory") == 0 && stash)
             {
                 mode = "Stash";
             }
             else if (std::strcmp(mode, "Inventory") == 0 && trader)
             {
                 mode = "Vendor";
+            }
+            else if (std::strcmp(mode, "Inventory") == 0 && crafter)
+            {
+                mode = "Crafting";
             }
 
             open += std::string("\"") + mode + "\"";
