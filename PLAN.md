@@ -655,10 +655,12 @@ skills, menus that snap to items, and controls that adapt to what is on screen.
 - **Rumble.** Low health, heavy hits, rare drops.
 - **The stash from the game.** The tab showing is read from the player, and
   the stash is told from the bags by the caravan the engine records, so its
-  buttons come up by themselves. Done 2026-11-02. A trader's window still
-  takes LT and D-pad up, since nothing in the game marks it open.
+  buttons come up by themselves. Done 2026-11-02.
 - **Snapping in every menu.** Skill tree nodes, devotion stars, dialogue
-  choices, the blacksmith's recipe list.
+  choices, the blacksmith's recipe list. Done 2026-11-04, each found on screen
+  by its look while the game says which window is open; traders are now seen
+  by themselves and their goods read from the game. The attributes' buttons
+  are left: they only show with points to spend.
 - **Button icons** matching the connected pad.
 
 ### Phase 8 — Shortcuts, profiles and release
