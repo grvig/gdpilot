@@ -1118,6 +1118,18 @@ const void* talkStateTable = nullptr;
 bool wasTalking = false;
 bool windowSinceTalk = false;
 
+// The state runs on from one talk into the next when the character never
+// moves between them, from a trader to the man beside him, so each talk's
+// beginning starts the count of windows afresh.
+using TalkBegin = void (*)(void* state);
+TalkBegin originalTalkBegin = nullptr;
+
+void TalkBegan(void* state)
+{
+    windowSinceTalk = false;
+    originalTalkBegin(state);
+}
+
 void FindTalk()
 {
     HMODULE game = GetModuleHandleW(L"Game.dll");
@@ -1132,6 +1144,25 @@ void FindTalk()
     }
 
     executingState = reinterpret_cast<ExecutingState>(state);
+    void* begin = reinterpret_cast<void*>(GetProcAddress(game, "?OnBegin@ControllerPlayerStateTalkToNpc@GAME@@UEAAXXZ"));
+
+    if (begin == nullptr || !StartsWith(begin, "40574883ec4048c7442430feffffff"))
+    {
+        Say("A conversation straight after another talk may go unseen: the talk state's beginning has changed.");
+        return;
+    }
+
+    originalTalkBegin = reinterpret_cast<TalkBegin>(begin);
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(reinterpret_cast<PVOID*>(&originalTalkBegin), reinterpret_cast<PVOID>(TalkBegan));
+    LONG result = DetourTransactionCommit();
+
+    if (result != NO_ERROR)
+    {
+        originalTalkBegin = nullptr;
+        Say("A conversation straight after another talk may go unseen: attaching failed with error %ld.", result);
+    }
 }
 
 bool Talking()

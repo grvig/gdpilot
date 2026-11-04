@@ -97,3 +97,4 @@ Game.dll ?GetMarketInventorySack@GameEngine@GAME@@QEBAPEBVInventorySack@2@IW4Mar
 # Seeing a conversation: the controller's running state and the talk state's type.
 Game.dll ?GetExecutingState@ControllerAI@GAME@@IEBAPEAVControllerAIState@2@XZ
 Game.dll ??_7ControllerPlayerStateTalkToNpc@GAME@@6B@
+Game.dll ?OnBegin@ControllerPlayerStateTalkToNpc@GAME@@UEAAXXZ
