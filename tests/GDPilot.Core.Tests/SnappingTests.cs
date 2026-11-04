@@ -10,6 +10,7 @@ public sealed class SnappingTests
     private static readonly GridReadiness Ready = new(true, "ready", new Dictionary<string, GridSpec>
     {
         ["Inventory"] = new GridSpec(652, 645, 32, 32, 12, 8),
+        ["Crafting.Bag1"] = new GridSpec(824, 645, 32, 32, 12, 8),
         ["Skills.Tabs"] = new GridSpec(793, 247, 166, 32, 3, 1),
         ["Devotion.Tabs"] = new GridSpec(796, 21, 164, 20, 3, 1),
         ["Stash.Tabs"] = new GridSpec(473, 463, 38, 38, 1, 2),
@@ -18,6 +19,7 @@ public sealed class SnappingTests
         Spots = new Dictionary<string, SpotArea>
         {
             ["Skills"] = Tree,
+            ["Crafting"] = new SpotArea(470, 330, 320, 230, null, Array.Empty<ScreenPoint>(), SpotKind.Recipes),
             ["Dialog"] = new SpotArea(773, 300, 477, 635, null, Array.Empty<ScreenPoint>(), SpotKind.Replies),
         },
     };
@@ -182,5 +184,18 @@ public sealed class SnappingTests
         List<InputIntent> clicks = navigator.Tab(Mode.Devotion, 1);
 
         Assert.Equal(new PointerMoveTo(1124, 21), clicks[0]);
+    }
+
+    [Fact]
+    public void ACraftersRecipesComeFirstAndNextMovesOnToTheBags()
+    {
+        FakeSpots spots = new() { Showing = new List<ScreenPoint> { new(520, 346), new(520, 369) } };
+        GridNavigator navigator = new(Ready, null, spots);
+
+        Assert.Equal(new PointerMoveTo(520, 346), navigator.Act(Mode.Crafting, "down"));
+        Assert.Equal(new PointerMoveTo(520, 369), navigator.Act(Mode.Crafting, "down"));
+        Assert.Equal(new PointerMoveTo(824, 645), navigator.Act(Mode.Crafting, "next"));
+        Assert.Equal(new PointerMoveTo(824, 677), navigator.Act(Mode.Crafting, "down"));
+        Assert.Equal(new PointerMoveTo(520, 346), navigator.Act(Mode.Crafting, "next"));
     }
 }

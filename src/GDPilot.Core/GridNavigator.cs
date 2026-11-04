@@ -20,6 +20,9 @@ public sealed class GridNavigator
 {
     private const string TabsSuffix = ".Tabs";
 
+    /// <summary>The surface a mode's spots make, first among its grids; no grid name is empty.</summary>
+    private const string SpotsSurface = "";
+
     private readonly GridReadiness readiness;
     private readonly IOccupancySource? occupancy;
     private readonly ISpotSource? spotSource;
@@ -69,14 +72,16 @@ public sealed class GridNavigator
                 .Where(name => !name.EndsWith(TabsSuffix, StringComparison.Ordinal))
                 .Order()
                 .ToList();
+
+            // A crafter lists recipes beside the bags, so spots and grids can share a mode, the spots first.
+            if (spotSource is not null && readiness.Spots.ContainsKey(current.ToString()))
+            {
+                surfaces.Insert(0, SpotsSurface);
+            }
+
             surface = 0;
             placed = false;
             seen.Clear();
-        }
-
-        if (spotSource is not null && readiness.Spots.TryGetValue(current.ToString(), out SpotArea? area))
-        {
-            return Snap(area, action);
         }
 
         if (surfaces.Count == 0)
@@ -85,18 +90,22 @@ public sealed class GridNavigator
             return null;
         }
 
-        GridSpec grid = readiness.Grids[surfaces[surface]];
-
         if (action == "next")
         {
             surface = (surface + 1) % surfaces.Count;
-            grid = readiness.Grids[surfaces[surface]];
+            placed = false;
         }
 
+        if (surfaces[surface] == SpotsSurface)
+        {
+            return Snap(readiness.Spots[current.ToString()], action);
+        }
+
+        GridSpec grid = readiness.Grids[surfaces[surface]];
         OccupancyMap? map = Occupancy(surfaces[surface], grid);
         Jumping = map is not null;
 
-        if (action == "next" || !placed)
+        if (!placed)
         {
             // The first press lands on the first item, or the top-left cell, rather than stepping from wherever the cursor was.
             cell = map?.FirstItem() ?? new GridCell(0, 0);
