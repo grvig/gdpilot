@@ -374,9 +374,10 @@ constexpr std::size_t MenuConfirmFlag = 0x9c5a;
 
 // The devotion map is a tab of the skill window, but showing it lowers the
 // skill window's flag and raises none of its own. A byte the skill window,
-// the devotion map and Escape's menu all raise, and the bags and the world map
-// do not, stays up, as read live on 2026-11-04, so that byte without the
-// skills' flag or the menu's means the devotion map.
+// the devotion map, Escape's menu and the trader's and crafter's windows all
+// raise, and the bags alone and the world map do not, stays up, as read live
+// on 2026-11-04, so that byte without the skills', the menu's or the bags'
+// flag means the devotion map.
 constexpr std::size_t BigWindowFlag = 0x1ef1;
 
 // The stash raises the same inventory flag as the bags alone, but the game
@@ -1281,6 +1282,7 @@ void CheckPanels(float elapsed)
     // Escape's menu raises two bytes together; either alone is something else.
     bool menu = bytes[std::size(Panels) + 1] == 1 && bytes[std::size(Panels) + 2] == 1;
     bool skills = false;
+    bool bags = false;
 
     for (std::size_t index = 0; index < std::size(Panels); index++)
     {
@@ -1288,9 +1290,15 @@ void CheckPanels(float elapsed)
         {
             skills = true;
         }
+
+        if (std::strcmp(Panels[index].mode, "Inventory") == 0 && bytes[index] == 1)
+        {
+            bags = true;
+        }
     }
 
-    if (bytes[std::size(Panels)] == 1 && !skills && !menu)
+    // A trader's and a crafter's windows raise the shared byte too, but always with the bags.
+    if (bytes[std::size(Panels)] == 1 && !skills && !menu && !bags)
     {
         if (open.size() > 1)
         {
