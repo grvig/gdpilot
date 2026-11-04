@@ -144,10 +144,14 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 - The D-pad opens panels in combat, and each panel switches to its own buttons.
 - In the bags, the stash and while trading, the D-pad jumps from item to item
   over empty cells, the bumpers switch stash tabs, and LT+A splits stacks. With
-  the in-game part, the stash opens its own buttons by itself and its items
-  come from the game; at a trader, LT and D-pad up once. This is calibrated for 1920×1080 at UI scale 0.5; see
-  [docs/calibration.md](docs/calibration.md), and `--calibrate` for any other
-  display.
+  the in-game part, the stash and a trader open their own buttons by
+  themselves and their items come from the game. This is calibrated for
+  1920×1080 at UI scale 0.5; see [docs/calibration.md](docs/calibration.md),
+  and `--calibrate` for any other display.
+- In the skill tree, on the devotion map, in a conversation, at a blacksmith
+  and in the game's menu, the D-pad snaps to the nearest skill, star, reply,
+  recipe or entry in its direction, and each window brings up its own buttons
+  by itself.
 - The overlay, the kill switch, the focus pause and the stuck-key watchdog.
 - `--replay` plays a recorded pad performance through the whole program, and
   `--check-game` checks an installed game version.
