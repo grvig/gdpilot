@@ -196,6 +196,26 @@ Two things keep a bad reading from misleading a press:
 reading sees, `#` for an item, `.` for empty and `?` for unsure, and whether
 presses would jump. Set `jumpToItems` to false to always step.
 
+## Menus without a grid
+
+The skill tree, the devotion map, a conversation, a blacksmith's list and the
+game's menu have no cells. A profile names, under `spots`, the rectangle of
+the screen where each one's stops are found, what they look like, and any
+fixed places beside them as `[x, y]` pairs:
+
+| Look | Finds |
+| --- | --- |
+| `skillButton` | Bright buttons in a dark tree, about 36 pixels across |
+| `devotionStar` | Points of light a few pixels across |
+| `dialogueChoice` | Gold reply lines in the dark box along the bottom, after the speaker's name |
+| `recipeLine` | Cyan recipe lines in a crafter's list |
+| `places` | Nothing: only the fixed places, such as the menu's entries |
+
+At another display or UI scale, move each rectangle and fixed place by
+measuring a capture, as for grids. The looks are measured at 1920 by 1080, UI
+scale 0.5; at a much larger UI scale the buttons grow and the button and star
+looks need their sizes in `SpotFinder.cs` scaled to match.
+
 ## Splitting stacks
 
 A `mouse:` binding can carry one modifier, held across the whole click:
