@@ -190,7 +190,7 @@ public sealed class ModeController
             return true;
         }
 
-        return open.Contains(Mode.Inventory) && stack.Current is Mode.Stash or Mode.Vendor or Mode.Character;
+        return open.Contains(Mode.Inventory) && stack.Current is Mode.Stash or Mode.Vendor or Mode.Crafting or Mode.Character;
     }
 
     /// <summary>

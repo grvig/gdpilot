@@ -58,6 +58,7 @@ public static class GameLayout
                 break;
             case Mode.Stash:
             case Mode.Vendor:
+            case Mode.Crafting:
                 areas.Add(BagsBesideAnother);
                 break;
             case Mode.Skills:

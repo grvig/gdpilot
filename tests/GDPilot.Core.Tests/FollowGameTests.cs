@@ -105,6 +105,16 @@ public sealed class FollowGameTests
     }
 
     [Fact]
+    public void ACraftersWindowTheGameNamesIsFollowed()
+    {
+        ModeController modes = Controller();
+
+        modes.Follow(new[] { "Crafting" });
+
+        Assert.Equal(Mode.Crafting, modes.Current);
+    }
+
+    [Fact]
     public void ATraderChosenFromTheBagsKeepsItsMode()
     {
         ModeController modes = Controller();

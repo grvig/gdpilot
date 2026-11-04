@@ -12,6 +12,7 @@ public enum Mode
     Devotion,
     WorldMap,
     Vendor,
+    Crafting,
     Dialog,
     Menu,
 }
