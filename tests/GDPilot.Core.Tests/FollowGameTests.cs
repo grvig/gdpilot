@@ -105,6 +105,20 @@ public sealed class FollowGameTests
     }
 
     [Fact]
+    public void TheDevotionTabIsFollowedFromTheSkillTreeAndBack()
+    {
+        ModeController modes = Controller();
+        modes.Follow(new[] { "Skills" });
+
+        modes.Follow(new[] { "Devotion" });
+        Assert.Equal(Mode.Devotion, modes.Current);
+
+        modes.Follow(new[] { "Skills" });
+        Assert.Equal(Mode.Skills, modes.Current);
+        Assert.Equal(1, modes.Depth);
+    }
+
+    [Fact]
     public void ACraftersWindowTheGameNamesIsFollowed()
     {
         ModeController modes = Controller();
