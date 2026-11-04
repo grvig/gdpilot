@@ -291,8 +291,12 @@ Not yet verified:
 ## Known issues
 
 - Without the in-game part, an item larger than one cell takes one press per
-  cell, as the screen reading cannot tell items apart reliably. A trader's
-  goods are always read off the screen; the stash now comes from the game.
+  cell, as the screen reading cannot tell items apart reliably. With it, the
+  bags, the stash and a trader's goods all come from the game.
+- The devotion map can pan and zoom; stars off screen are reached by the
+  right stick's cursor until panning is on the pad.
+- The spot looks are measured at UI scale 0.5; another scale needs their sizes
+  scaled.
 - Collision does not stop for trees and some props; the game fades those itself.
 - With the panel closed but the tool still in a panel mode, the reading sees
   the world, which reads as all items, so presses step as they did in Phase 3.
@@ -329,16 +333,19 @@ The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
    looks; the stash and vendor placements were not seen live yet.
 1. **A tuning session with the owner at the pad**: flick strength, turn and
    tilt speeds, twin-stick reach, rumble strength. Every one is a setting.
-2. **Snapping in every menu**: skill tree nodes, devotion stars, dialogue
-   choices, the blacksmith's list.
-3. **A trader's goods from the game**, if a way to see the window open turns
-   up; until then LT and D-pad up in the bags.
-4. A bug pass at the end of the phase, as always.
+2. **The attributes' buttons**, which only show with points to spend: measure
+   them on a character with points and add them as fixed places.
+3. **Button icons matching the connected pad.**
+4. A bug pass at the end of the phase, as always: the devotion map's panning
+   and zoom, other crafters (enchanter, potions), a conversation left by its
+   own reply.
 
-The stash from the game was finished on 2026-11-02: the tab showing is read
-item by item, the stash is reported as its own window, and GDPilot switched to
-the stash's buttons by itself and stepped between its items live. The trader's
-binding was checked live at Kerrick's.
+Menu snapping was finished on 2026-11-04. The skill tree, the devotion map, a
+conversation's replies, a blacksmith's recipes and the game's menu each snap
+to what is on screen, found by look at each press, and every one was checked
+live. The game now also reports a trader's window and its goods, a
+conversation, a crafter's window and the devotion map; docs/in-game.md lists
+how each is told apart.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
 done.
