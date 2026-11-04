@@ -97,6 +97,24 @@
       "B": "back",
       "Start": "back"
     },
+    "Dialog": {
+      "DPadUp": "grid:up",
+      "DPadDown": "grid:down",
+      "DPadLeft": "grid:left",
+      "DPadRight": "grid:right",
+      "A": "mouse:left",
+      "B": "back",
+      "Start": "back"
+    },
+    "Menu": {
+      "DPadUp": "grid:up",
+      "DPadDown": "grid:down",
+      "DPadLeft": "grid:left",
+      "DPadRight": "grid:right",
+      "A": "mouse:left",
+      "B": "back",
+      "Start": "back"
+    },
     "Vendor": {
       "DPadUp": "grid:up",
       "LT+A": "mouse:ctrl+left",
@@ -134,7 +152,9 @@
         "Hotbar": { "originX": 717, "originY": 1059, "pitchX": 44.18, "pitchY": 1, "columns": 12, "rows": 1 }
       },
       "spots": {
-        "Skills": { "left": 700, "top": 300, "width": 710, "height": 480, "look": "skillButton", "fixed": [[645, 847], [568, 803]] }
+        "Skills": { "left": 700, "top": 300, "width": 710, "height": 480, "look": "skillButton", "fixed": [[645, 847], [568, 803]] },
+        "Dialog": { "left": 773, "top": 300, "width": 477, "height": 635, "look": "dialogueChoice" },
+        "Menu": { "look": "places", "fixed": [[970, 452], [970, 512], [970, 573], [970, 633]] }
       }
     }
   }
