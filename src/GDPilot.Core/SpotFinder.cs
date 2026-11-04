@@ -15,6 +15,14 @@ public sealed record SpotLook(int DiscRadius, int RingRadius, double MinimumCont
     /// stronger find is its label or marker.
     /// </summary>
     public static SpotLook SkillButton { get; } = new(12, 26, 48, 45);
+
+    /// <summary>
+    /// A star of a constellation on the devotion map at 1920 by 1080, UI scale
+    /// 0.5: a point of light a few pixels across, glowing brighter once its
+    /// constellation is taken. The dust of tiny background stars falls short of
+    /// the contrast; stars of one constellation sit at least 20 pixels apart.
+    /// </summary>
+    public static SpotLook DevotionStar { get; } = new(4, 12, 60, 20);
 }
 
 /// <summary>

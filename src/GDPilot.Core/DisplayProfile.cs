@@ -34,6 +34,8 @@ public sealed class SpotAreaConfig
         {
             case "skillButton" when Width > 0 && Height > 0:
                 return new SpotArea(Left, Top, Width, Height, SpotLook.SkillButton, places);
+            case "devotionStar" when Width > 0 && Height > 0:
+                return new SpotArea(Left, Top, Width, Height, SpotLook.DevotionStar, places);
             case "dialogueChoice" when Width > 0 && Height > 0:
                 return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Replies);
             case "places" when places.Count > 0:

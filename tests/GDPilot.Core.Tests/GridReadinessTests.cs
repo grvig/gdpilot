@@ -117,6 +117,7 @@ public sealed class GridReadinessTests
                   "uiScale": 0.5,
                   "spots": {
                     "Dialog": { "left": 773, "top": 300, "width": 477, "height": 635, "look": "dialogueChoice" },
+                    "Devotion": { "left": 240, "top": 110, "width": 1660, "height": 930, "look": "devotionStar" },
                     "Menu": { "look": "places", "fixed": [[970, 452], [970, 512]] },
                     "WorldMap": { "look": "places" }
                   }
@@ -129,6 +130,7 @@ public sealed class GridReadinessTests
 
         Assert.Equal(SpotKind.Replies, readiness.Spots["Dialog"].Kind);
         Assert.Equal(SpotKind.Places, readiness.Spots["Menu"].Kind);
+        Assert.Equal(SpotLook.DevotionStar, readiness.Spots["Devotion"].Look);
         Assert.Equal(2, readiness.Spots["Menu"].Fixed.Count);
         Assert.False(readiness.Spots.ContainsKey("WorldMap"));
     }
