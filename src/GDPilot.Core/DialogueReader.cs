@@ -12,12 +12,6 @@ public static class DialogueReader
     /// <summary>The empty right of the box measured 6 to 17; the town around it, 45 and up.</summary>
     private const double BoxDarkness = 22;
 
-    /// <summary>Gold pixels in a row for it to be part of a line of text.</summary>
-    private const int GoldPerRow = 6;
-
-    /// <summary>Rows without gold that a line may span, for the gaps inside letters.</summary>
-    private const int LineGap = 3;
-
     /// <summary>Box rows with text in them may be brighter; this many in a row still count as the box.</summary>
     private const int BoxGap = 12;
 
@@ -37,7 +31,7 @@ public static class DialogueReader
         }
 
         // The box's gilded edge lies just outside its dark rows, so only those rows are read.
-        List<(int First, int Last)> lines = GoldLines(pixel, left, boxTop, width / 2, boxBottom - boxTop + 1);
+        List<(int First, int Last)> lines = TextLines.Find(pixel, left, boxTop, width / 2, boxBottom - boxTop + 1, IsGold);
 
         // The first gold line is the speaker's name.
         for (int index = 1; index < lines.Count; index++)
@@ -82,48 +76,6 @@ public static class DialogueReader
         }
 
         return (boxTop, boxBottom);
-    }
-
-    private static List<(int First, int Last)> GoldLines(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
-    {
-        List<(int First, int Last)> lines = new();
-        int first = -1;
-        int last = -1;
-
-        for (int y = top; y < top + height; y++)
-        {
-            int gold = 0;
-
-            for (int x = left; x < left + width; x++)
-            {
-                if (IsGold(pixel(x, y)))
-                {
-                    gold++;
-                }
-            }
-
-            if (gold >= GoldPerRow)
-            {
-                if (first < 0)
-                {
-                    first = y;
-                }
-
-                last = y;
-            }
-            else if (first >= 0 && y - last > LineGap)
-            {
-                lines.Add((first, last));
-                first = -1;
-            }
-        }
-
-        if (first >= 0)
-        {
-            lines.Add((first, last));
-        }
-
-        return lines;
     }
 
     private static bool IsGold((byte Red, byte Green, byte Blue) colour)
