@@ -98,3 +98,8 @@ Game.dll ?GetMarketInventorySack@GameEngine@GAME@@QEBAPEBVInventorySack@2@IW4Mar
 Game.dll ?GetExecutingState@ControllerAI@GAME@@IEBAPEAVControllerAIState@2@XZ
 Game.dll ??_7ControllerPlayerStateTalkToNpc@GAME@@6B@
 Game.dll ?OnBegin@ControllerPlayerStateTalkToNpc@GAME@@UEAAXXZ
+
+# Yes and No questions, and how rare a piece of loot is.
+Game.dll ?GetDialogManager@GameEngine@GAME@@QEAAAEAVDialogManager@2@XZ
+Game.dll ?GetNumDialog@DialogManager@GAME@@QEBAHXZ
+Game.dll ?GetItemClassification@Item@GAME@@UEBA?AW4ItemClassification@2@_N@Z

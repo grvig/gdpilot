@@ -361,11 +361,16 @@ struct PanelFlag
     const char* mode;
 };
 
+// Each window's own flag, as read live: the quest log and the help share the
+// panel down the left of the screen.
 constexpr PanelFlag Panels[] = {
     {0x95d2, "Inventory"},
-    {0x991a, "Dialog"},
+    {0x991a, "Journal"},
     {0x9f9a, "Skills"},
     {0xa2da, "WorldMap"},
+    {0xafda, "Factions"},
+    {0xa962, "Achievements"},
+    {0x8b2a, "LootFilter"},
 };
 
 constexpr std::size_t UiOffset = 0x19b0;
@@ -893,8 +898,6 @@ bool ReadStash(SackReading& reading)
 // Kerrick's on 2026-11-04.
 using MarketSack = const void* (*)(const void* engine, unsigned int id, int type);
 MarketSack marketSack = nullptr;
-std::string sentMarket;
-
 void FindMarketSack()
 {
     void* sack = reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"Game.dll"), "?GetMarketInventorySack@GameEngine@GAME@@QEBAPEBVInventorySack@2@IW4Market_TypeEnum@2@@Z"));
@@ -927,20 +930,41 @@ bool ReadMarket(SackReading& reading)
     }
 }
 
+// Nothing the game exposes says which of its tabs a trader is showing, and the
+// goods differ by tab, so each sack with anything in it is reported under its
+// own name, and GDPilot matches them against the screen.
+constexpr int MostMarketTypes = 8;
+std::string sentMarkets[MostMarketTypes + 1];
+
 void CheckMarket()
 {
-    if (marketSack == nullptr || lastPanels.find("Vendor") == std::string::npos || !ReadMarket(bagReading))
+    if (marketSack == nullptr || lastPanels.find("Vendor") == std::string::npos)
     {
         return;
     }
 
-    std::string line = LayoutLine("Vendor", bagReading);
-
-    if (line != sentMarket)
+    for (int type = 1; type <= MostMarketTypes; type++)
     {
-        sentMarket = line;
-        Say("Trader's goods: %d items in %u by %u cells.", bagReading.count, bagReading.columns, bagReading.rows);
-        Post(line);
+        marketType = type;
+
+        if (!ReadMarket(bagReading))
+        {
+            continue;
+        }
+
+        std::string line = LayoutLine(("Vendor#" + std::to_string(type)).c_str(), bagReading);
+
+        if (line != sentMarkets[type])
+        {
+            sentMarkets[type] = line;
+
+            if (bagReading.count > 0)
+            {
+                Say("Trader's goods, type %d: %d items in %u by %u cells.", type, bagReading.count, bagReading.columns, bagReading.rows);
+            }
+
+            Post(line);
+        }
     }
 }
 
@@ -990,7 +1014,12 @@ void CheckLayouts(float elapsed)
         }
 
         sentStash.clear();
-        sentMarket.clear();
+
+        for (std::string& sent : sentMarkets)
+        {
+            sent.clear();
+        }
+
     }
 
     // The game raises the inventory's flag for the stash as well, so the stash is read whenever the bags are.
@@ -1207,28 +1236,6 @@ bool Talking()
     }
 }
 
-// The blacksmith opens the bags beside his recipes without a market and
-// without a caravan, as read live with Duncan on 2026-11-04, so the inventory
-// flag rising during a talk that is neither is a crafter's window. The mark
-// holds while the flag stays up.
-bool crafterShown = false;
-bool inventoryWasUp = false;
-
-bool CrafterShowing(bool inventoryUp, bool otherwise)
-{
-    if (!inventoryUp)
-    {
-        crafterShown = false;
-    }
-    else if (!inventoryWasUp && !otherwise && Talking())
-    {
-        crafterShown = true;
-    }
-
-    inventoryWasUp = inventoryUp;
-    return crafterShown;
-}
-
 // Whether a conversation is showing, given whether any window is open now.
 bool ConversationShowing(bool windowOpen)
 {
@@ -1249,6 +1256,51 @@ bool ConversationShowing(bool windowOpen)
     return talking && !windowSinceTalk;
 }
 
+bool bagsWereUp = false;
+constexpr int DevotionChecks = 3;
+int devotionChecks = 0;
+
+// A question with Yes and No, such as quitting or buying more stash, is the
+// dialog manager's: it holds one for as long as the question is up, as read
+// live on 2026-11-05.
+using DialogManagerOf = void* (*)(void* engine);
+using DialogCount = int (*)(const void* manager);
+DialogManagerOf dialogManager = nullptr;
+DialogCount dialogCount = nullptr;
+
+void FindQuestions()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    void* manager = reinterpret_cast<void*>(GetProcAddress(game, "?GetDialogManager@GameEngine@GAME@@QEAAAEAVDialogManager@2@XZ"));
+    void* count = reinterpret_cast<void*>(GetProcAddress(game, "?GetNumDialog@DialogManager@GAME@@QEBAHXZ"));
+
+    if (manager == nullptr || count == nullptr || !StartsWith(manager, "488d4138c3") || !StartsWith(count, "488b510848b8"))
+    {
+        Say("Yes and No questions cannot be seen: the dialog manager has changed. The stick's cursor can still answer them.");
+        return;
+    }
+
+    dialogManager = reinterpret_cast<DialogManagerOf>(manager);
+    dialogCount = reinterpret_cast<DialogCount>(count);
+}
+
+bool QuestionUp()
+{
+    if (dialogCount == nullptr)
+    {
+        return false;
+    }
+
+    __try
+    {
+        return dialogCount(dialogManager(*engineSlot)) > 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
 void CheckPanels(float elapsed)
 {
     sincePanelCheck += elapsed;
@@ -1266,17 +1318,38 @@ void CheckPanels(float elapsed)
         return;
     }
 
+    // The shared byte can follow the inventory flag by a frame or two, so the check as the flag
+    // rises is left out rather than saying "the bags alone" of a crafter's window.
+    bool bagsRising = false;
+
+    for (std::size_t index = 0; index < std::size(Panels); index++)
+    {
+        if (std::strcmp(Panels[index].mode, "Inventory") == 0)
+        {
+            bagsRising = bytes[index] == 1 && !bagsWereUp;
+            bagsWereUp = bytes[index] == 1;
+        }
+    }
+
+    if (bagsRising)
+    {
+        return;
+    }
+
     std::string open = "[";
     bool trader = false;
     bool crafter = false;
     bool stash = CaravanOpen();
+    bool beside = bytes[std::size(Panels)] == 1;
 
     for (std::size_t index = 0; index < std::size(Panels); index++)
     {
         if (std::strcmp(Panels[index].mode, "Inventory") == 0)
         {
             trader = TraderShowing(bytes[index] == 1);
-            crafter = CrafterShowing(bytes[index] == 1, trader || stash);
+
+            // The blacksmith opens the bags beside his recipes with neither a market nor a caravan, as read live with Duncan.
+            crafter = bytes[index] == 1 && beside && !trader && !stash;
         }
     }
 
@@ -1327,7 +1400,21 @@ void CheckPanels(float elapsed)
     }
 
     // A trader's and a crafter's windows raise the shared byte too, but always with the bags.
-    if (bytes[std::size(Panels)] == 1 && !skills && !menu && !bags)
+    bool devotion = bytes[std::size(Panels)] == 1 && !skills && !menu && !bags;
+
+    // Closing the menu drops its flags a moment before the shared byte, which must not pass for
+    // the map; coming from the skill window it is the map at once, so its buttons never lapse.
+    if (devotion && lastPanels.find("Skills") == std::string::npos && lastPanels.find("Devotion") == std::string::npos && devotionChecks < DevotionChecks)
+    {
+        devotionChecks++;
+        devotion = false;
+    }
+    else if (!devotion)
+    {
+        devotionChecks = 0;
+    }
+
+    if (devotion)
     {
         if (open.size() > 1)
         {
@@ -1347,9 +1434,19 @@ void CheckPanels(float elapsed)
         open += "\"Menu\"";
     }
 
-    if (ConversationShowing(open.size() > 1) && open.find("Dialog") == std::string::npos)
+    if (ConversationShowing(open.size() > 1))
     {
         open += "\"Dialog\"";
+    }
+
+    if (QuestionUp())
+    {
+        if (open.size() > 1)
+        {
+            open += ",";
+        }
+
+        open += "\"Confirm\"";
     }
 
     open += "]";
@@ -2133,6 +2230,9 @@ using CoordsOf = const unsigned char* (*)(const void* entity);
 using BoxOf = const float* (*)(const void* entity, bool flag);
 
 EntitiesInSphere entitiesInSphere = nullptr;
+
+using ItemRarity = int (*)(const void* item, bool identified);
+ItemRarity itemRarity = nullptr;
 CoordsOf coordsOf = nullptr;
 BoxOf boxOf = nullptr;
 void** engineGlobal = nullptr;
@@ -2183,6 +2283,14 @@ void FindInteractables()
     }
 
     entitiesInSphere = reinterpret_cast<EntitiesInSphere>(query);
+    void* rarity = reinterpret_cast<void*>(GetProcAddress(game, "?GetItemClassification@Item@GAME@@UEBA?AW4ItemClassification@2@_N@Z"));
+
+    // The field it reads is in its bytes. Without it, loot is still loot, just never felt as rare.
+    if (rarity != nullptr && StartsWith(rarity, "84d274078b8178080000c38b817c080000c3"))
+    {
+        itemRarity = reinterpret_cast<ItemRarity>(rarity);
+    }
+
     coordsOf = reinterpret_cast<CoordsOf>(coords);
     boxOf = reinterpret_cast<BoxOf>(box);
     Say("Found the game's entity query; smart interact can see loot, townsfolk and the world's fixed things.");
@@ -2217,6 +2325,7 @@ int KindOf(const void* entity)
 
 struct Thing
 {
+    int rarity;
     unsigned int id;
     int kind;
     float x;
@@ -2339,6 +2448,12 @@ int ScanThings(void* camera, const int viewport[4], Thing seenThings[], int most
             thing.x = x;
             thing.y = y;
             thing.distance = distance;
+            thing.rarity = 0;
+
+            if (kind == 1 && itemRarity != nullptr)
+            {
+                thing.rarity = itemRarity(*entity, false);
+            }
         }
 
         return count;
@@ -2395,7 +2510,7 @@ void CheckThings(void* camera, float elapsed)
             line += ",";
         }
 
-        line += "{\"id\":" + std::to_string(thing.id) + ",\"kind\":\"" + KindNames[thing.kind] + "\",\"x\":" + Fixed(thing.x, 4) + ",\"y\":" + Fixed(thing.y, 4) + ",\"distance\":" + Fixed(thing.distance, 1) + "}";
+        line += "{\"id\":" + std::to_string(thing.id) + ",\"kind\":\"" + KindNames[thing.kind] + "\",\"x\":" + Fixed(thing.x, 4) + ",\"y\":" + Fixed(thing.y, 4) + ",\"distance\":" + Fixed(thing.distance, 1) + ",\"rarity\":" + std::to_string(thing.rarity) + "}";
     }
 
     line += "]}\n";
@@ -3466,6 +3581,7 @@ DWORD WINAPI Start(LPVOID)
             FindMarket();
             FindMarketSack();
             FindTalk();
+            FindQuestions();
             FindCollision();
             FindHealth();
             FindTargets();
