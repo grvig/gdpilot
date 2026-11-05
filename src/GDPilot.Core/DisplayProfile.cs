@@ -47,6 +47,8 @@ public sealed class SpotAreaConfig
                 return new SpotArea(Left, Top, Width, Height, SpotLook.DevotionStar, places, SpotKind.Stars) { When = when };
             case "slotList" when Width > 0 && Height > 0:
                 return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.SlotList) { When = when };
+            case "riftGate" when Width > 0 && Height > 0:
+                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.RiftGates) { When = when };
             case "textLine" when Width > 0 && Height > 0:
                 return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Lines) { When = when };
             case "recipeLine" when Width > 0 && Height > 0:
@@ -69,6 +71,7 @@ public enum SpotKind
     Replies,
     Recipes,
     Lines,
+    RiftGates,
     SlotList,
     Places,
 }

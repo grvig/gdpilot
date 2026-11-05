@@ -57,4 +57,24 @@ public sealed class DialogueFixtureTests
         Assert.InRange(rows[^1].Y, 300, 315);
         Assert.Equal(34, rows[^1].Y - rows[^2].Y);
     }
+
+    // The world map from a rift gate, cropped from (460, 180), with eight gates known and no others.
+    [Fact]
+    public void EveryRiftGateOnTheMapIsFoundAndNothingElse()
+    {
+        Frame capture = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "worldmap.png"));
+        ScreenPoint[] gates =
+        {
+            new(524, 237), new(214, 230), new(324, 292), new(274, 141), new(162, 148), new(274, 95), new(570, 124), new(599, 60),
+        };
+
+        List<ScreenPoint> found = RiftGateFinder.Find(capture.Pixel, 22, 45, 968, 590);
+
+        Assert.Equal(gates.Length, found.Count);
+
+        foreach (ScreenPoint gate in gates)
+        {
+            Assert.Contains(found, spot => Math.Abs(spot.X - gate.X) <= 3 && Math.Abs(spot.Y - gate.Y) <= 3);
+        }
+    }
 }

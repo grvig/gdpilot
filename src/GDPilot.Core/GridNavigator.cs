@@ -19,6 +19,7 @@ public sealed record CameraToggleBinding : ButtonBinding;
 public sealed class GridNavigator
 {
     private const string TabsSuffix = ".Tabs";
+    private const int RiftGateSpacing = 20;
 
     /// <summary>Which of a trader's sacks each of its tabs shows, in tab order.</summary>
     private static readonly int[] TraderSacks = { 2, 3, 1, 4 };
@@ -298,6 +299,10 @@ public sealed class GridNavigator
         if (area.Kind is SpotKind.Buttons or SpotKind.Stars && area.Look is not null)
         {
             Remember(found, area.Look.Spacing);
+        }
+        else if (area.Kind == SpotKind.RiftGates)
+        {
+            Remember(found, RiftGateSpacing);
         }
         else if (area.Kind != SpotKind.SlotList || found.Count > seen.Count)
         {
