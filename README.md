@@ -102,7 +102,7 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 | 4 | Reading item positions | **Done.** From the game itself, exactly, with the screen as a fallback. |
 | 5 | The in-game part and the action camera | **Done.** Third person with turning, zoom, collision and following, all from the pad. |
 | 6 | Lock-on, camera-relative movement, smart interact | **Done.** Lock-on, walking in any direction, twin-stick aiming, tilting, the dodge and smart interact, all checked in the game. |
-| 7 | Radial skills, rumble, snapping in every menu | **Mostly done.** The skill wheel, rumble, and snapping in the skill tree, devotion map, conversations, the game's menu and a blacksmith's window; attributes and pad-matched button icons to come. |
+| 7 | Radial skills, rumble, snapping in every menu | **In progress.** The skill wheel, rumble, and snapping in the skill tree, devotion map, conversations, traders, the journal and other windows, the game's menu and a blacksmith's window; attributes, swapping skills from the wheel, rumble on rare drops and pad-matched button icons to come. |
 | 8 | Shortcuts, profiles, first run, tray, release | Not started |
 
 **Working today:**

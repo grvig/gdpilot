@@ -20,7 +20,7 @@ holds the phases and the rules for the in-game part.
 | 4. Occupancy detection | Done: exact item layouts from the game, checked live; screen reading as the fallback |
 | 5. In-game part and action camera | Done: camera, turning, zoom, collision, following, panel and item reports, all checked live |
 | 6. Lock-on, camera-relative movement, smart interact | Done: all checked live |
-| 7. Radial skills, rumble, snapping in every menu | Started: the skill wheel with icons checked live; rumble built, health checked live; snapping in other menus not started |
+| 7. Radial skills, rumble, snapping in every menu | In progress: most menus snap and were checked live; see "Next session starts here" for what is left |
 | 8. Shortcuts, profiles, first run, release | Not started |
 | Souls-level feel (PLAN.md section 17) | Done, but for tuning with the owner at the pad |
 | 9. Hardening | Not started; a bug pass closes each phase meanwhile |
@@ -293,8 +293,8 @@ Not yet verified:
 - Without the in-game part, an item larger than one cell takes one press per
   cell, as the screen reading cannot tell items apart reliably. With it, the
   bags, the stash and a trader's goods all come from the game.
-- The devotion map can pan and zoom; stars off screen are reached by the
-  right stick's cursor until panning is on the pad.
+- The devotion map need not pan: fully zoomed out it all fits, and zoom is a stop.
+  A few bright stars and a few outline points are still misjudged by the finder.
 - The spot looks are measured at UI scale 0.5; another scale needs their sizes
   scaled.
 - Collision does not stop for trees and some props; the game fades those itself.
@@ -328,24 +328,30 @@ Nothing.
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
 
-0. The overlay was redesigned on 2026-11-01 (Grim Dawn styling, clear of the
-   game's interface, folding, stacked with the game). Ask the owner how it
-   looks; the stash and vendor placements were not seen live yet.
-1. **A tuning session with the owner at the pad**: flick strength, turn and
-   tilt speeds, twin-stick reach, rumble strength. Every one is a setting.
-2. **The attributes' buttons**, which only show with points to spend: measure
-   them on a character with points and add them as fixed places.
-3. **Button icons matching the connected pad.**
-4. A bug pass at the end of the phase, as always: the devotion map's panning
-   and zoom, other crafters (enchanter, potions), a conversation left by its
-   own reply.
+Phase 7 is being finished. A pass on 2026-11-05 found faults in the first round
+of menu snapping and gaps against the plan. Done and checked live that day:
+conversations (a reply under the cursor, a goodbye, several replies), every
+tab of a trader, the journal, factions, achievements and loot filter, the
+game's menu with Options and Yes and No questions, and devotion opened from the
+D-pad with its stars told from lit outlines. `--spots` lists a menu's stops.
 
-Menu snapping was finished on 2026-11-04. The skill tree, the devotion map, a
-conversation's replies, a blacksmith's recipes and the game's menu each snap
-to what is on screen, found by look at each press, and every one was checked
-live. The game now also reports a trader's window and its goods, a
-conversation, a crafter's window and the devotion map; docs/in-game.md lists
-how each is told apart.
+Still to do in Phase 7, in order:
+
+1. **Check live:** the gear slots beside the bags, which are measured from a
+   capture but not yet tried; the overlay's place in each new window.
+2. **Other windows from townsfolk:** the Inventor, the Spirit Guide, and how a
+   rift gate's map behaves; the world map's stops. Kory the Keeper and Captain
+   John Bourbon have not been tried either.
+3. **A new test character**, for the attributes' buttons, which show only with
+   points to spend, and for choosing a mastery.
+4. **Promised and not built:** swapping a skill from the wheel with a face
+   button, and rumble on a rare drop. The game now reports each loot's rarity;
+   what its numbers mean still has to be read.
+5. **Button icons matching the connected pad.**
+6. **Soft aim among living enemies, and a dodge with a skill in slot 4**, live.
+7. **The bug pass**, the remaining docs, and keeping the overlay's card from
+   being read as stops on the devotion map.
+8. **With someone at the pad:** the "Not yet verified" list above, and tuning.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
 done.
