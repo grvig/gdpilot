@@ -1,37 +1,32 @@
 namespace GDPilot.Core;
 
 /// <summary>
-/// Finds the replies in a conversation box. The box is a near-black panel
-/// along the bottom of the screen that grows upwards with its text; the
-/// speaker's name and every reply are drawn in gold, the speech in white. So
-/// the replies are the gold lines inside the dark run of rows at the bottom,
-/// after the first, which is the name. Clicking a reply's text picks it.
+/// Finds the replies in a conversation box. The speaker's name and every reply
+/// are drawn in gold, the speech in white, and the first two start at the same
+/// place, just right of their icons. The box is translucent, so how dark it is
+/// depends on the ground behind it, and the reply under the cursor is banded in
+/// olive; but gold text starting at that one place is not something the world
+/// draws by chance. The first such line is the name, and the rest are replies.
 /// </summary>
 public static class DialogueReader
 {
-    /// <summary>The empty right of the box measured 6 to 17; the town around it, 45 and up.</summary>
-    private const double BoxDarkness = 22;
+    /// <summary>How far past the area's left edge a line of the box's text may start.</summary>
+    private const int StartsWithin = 14;
 
-    /// <summary>Box rows with text in them may be brighter; this many in a row still count as the box.</summary>
-    private const int BoxGap = 12;
+    /// <summary>Text stands 12 to 24 rows tall; thinner is the box's gilded trim, and taller is the world behind it.</summary>
+    private const int ShortestLine = 10;
+
+    private const int TallestLine = 30;
 
     /// <summary>How far into a line the cursor goes, onto its first words.</summary>
     private const int TextInset = 60;
 
-    /// <param name="left">Where reply text starts, just right of the reply icons.</param>
-    /// <param name="width">Wide enough to reach the box's empty right, where its darkness is judged.</param>
+    /// <param name="left">Where the name and reply text start, just right of their icons.</param>
+    /// <param name="width">Twice as wide as the text to read.</param>
     public static List<ScreenPoint> Choices(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
     {
+        List<(int First, int Last)> lines = BoxLines(pixel, left, top, width, height);
         List<ScreenPoint> choices = new();
-        (int boxTop, int boxBottom) = Box(pixel, left, top, width, height);
-
-        if (boxTop < 0)
-        {
-            return choices;
-        }
-
-        // The box's gilded edge lies just outside its dark rows, so only those rows are read.
-        List<(int First, int Last)> lines = TextLines.Find(pixel, left, boxTop, width / 2, boxBottom - boxTop + 1, IsGold);
 
         // The first gold line is the speaker's name.
         for (int index = 1; index < lines.Count; index++)
@@ -42,59 +37,46 @@ public static class DialogueReader
         return choices;
     }
 
-    /// <summary>The first and last rows of the dark box rising from the bottom of the area, or -1 when there is none.</summary>
-    private static (int Top, int Bottom) Box(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
+    /// <summary>Whether a conversation's box is on screen at all, which is whether its speaker's name is.</summary>
+    public static bool Showing(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
     {
-        int right = left + width;
-        int sampleFrom = right - width / 3;
-        int boxTop = -1;
-        int boxBottom = -1;
-        int bright = 0;
+        return BoxLines(pixel, left, top, width, height).Count > 0;
+    }
 
-        for (int y = top + height - 1; y >= top; y--)
+    private static List<(int First, int Last)> BoxLines(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
+    {
+        int span = width / 2;
+
+        return TextLines.Find(pixel, left, top, span, height, IsGold)
+            .Where(line => line.Last - line.First + 1 >= ShortestLine && line.Last - line.First + 1 <= TallestLine)
+            .Where(line => Start(pixel, left, span, line) <= StartsWithin)
+            .ToList();
+    }
+
+    /// <summary>The middle row's worth of how far in a line's gold begins, so a stray pixel left of it does not count.</summary>
+    private static int Start(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int span, (int First, int Last) line)
+    {
+        List<int> starts = new();
+
+        for (int y = line.First; y <= line.Last; y++)
         {
-            if (MedianBrightness(pixel, sampleFrom, right, y) < BoxDarkness)
+            for (int x = 0; x < span; x++)
             {
-                boxTop = y;
-                bright = 0;
-
-                if (boxBottom < 0)
+                if (IsGold(pixel(left + x, y)))
                 {
-                    boxBottom = y;
+                    starts.Add(x);
+                    break;
                 }
-
-                continue;
-            }
-
-            bright++;
-
-            // Either the bottom of the area is not a box at all, or the box has ended.
-            if (bright > BoxGap)
-            {
-                break;
             }
         }
 
-        return (boxTop, boxBottom);
+        starts.Sort();
+        return starts[starts.Count / 2];
     }
 
     private static bool IsGold((byte Red, byte Green, byte Blue) colour)
     {
         (byte red, byte green, byte blue) = colour;
         return red >= 150 && green >= 110 && blue <= green * 0.7 && red - blue >= 80;
-    }
-
-    private static double MedianBrightness(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int from, int to, int y)
-    {
-        List<double> values = new();
-
-        for (int x = from; x < to; x += 2)
-        {
-            (byte red, byte green, byte blue) = pixel(x, y);
-            values.Add((red + green + blue) / 3.0);
-        }
-
-        values.Sort();
-        return values[values.Count / 2];
     }
 }

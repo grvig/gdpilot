@@ -8,9 +8,9 @@ public sealed class DialogueReaderTests
     private const int Height = 300;
 
     /// <summary>
-    /// A town at brightness 60 with a dark box from row 150 down, holding the
-    /// speaker's name, a line of speech and two replies; a gold sign hangs in
-    /// the town above it.
+    /// A town at brightness 60 with a box from row 150 down, holding the speaker's
+    /// name, a line of speech, two replies and a thin gilded trim; a gold sign
+    /// hangs in the town above it, not lined up with the text.
     /// </summary>
     private static (byte, byte, byte) Scene(int x, int y)
     {
@@ -18,7 +18,7 @@ public sealed class DialogueReaderTests
 
         if (y < 150)
         {
-            if (text && y >= 50 && y < 60)
+            if (x >= 90 && x < 200 && x % 3 == 0 && y >= 50 && y < 65)
             {
                 return (220, 180, 60);
             }
@@ -26,7 +26,7 @@ public sealed class DialogueReaderTests
             return (60, 60, 60);
         }
 
-        bool gold = (y >= 170 && y < 181) || (y >= 230 && y < 241) || (y >= 255 && y < 266);
+        bool gold = (y >= 170 && y < 181) || (y >= 230 && y < 241) || (y >= 255 && y < 266) || (y >= 290 && y < 294);
         bool white = y >= 200 && y < 211;
 
         if (text && gold)
@@ -51,15 +51,16 @@ public sealed class DialogueReaderTests
     }
 
     [Fact]
-    public void WithoutABoxThereAreNoReplies()
+    public void WithoutABoxThereIsNothingShowing()
     {
         static (byte, byte, byte) Town(int x, int y) => Scene(x, y % 150);
 
         Assert.Empty(DialogueReader.Choices(Town, 0, 0, Width, Height));
+        Assert.False(DialogueReader.Showing(Town, 0, 0, Width, Height));
     }
 
     [Fact]
-    public void ABoxWithOnlyTheNameHasNoReplies()
+    public void ABoxWithOnlyTheNameIsShowingAndHasNoReplies()
     {
         static (byte, byte, byte) NameOnly(int x, int y)
         {
@@ -72,5 +73,6 @@ public sealed class DialogueReaderTests
         }
 
         Assert.Empty(DialogueReader.Choices(NameOnly, 0, 0, Width, Height));
+        Assert.True(DialogueReader.Showing(NameOnly, 0, 0, Width, Height));
     }
 }

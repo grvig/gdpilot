@@ -19,4 +19,16 @@ public sealed class DialogueFixtureTests
         ScreenPoint reply = Assert.Single(choices);
         Assert.InRange(reply.Y, 278, 294);
     }
+
+    // The same conversation with the cursor on the reply, which the game bands in olive and lightens, cropped from (580, 760).
+    [Fact]
+    public void TheReplyUnderTheCursorIsStillFound()
+    {
+        Frame capture = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "dialogue-hover.png"));
+
+        List<ScreenPoint> choices = DialogueReader.Choices(capture.Pixel, 193, 0, 477, 175);
+
+        ScreenPoint reply = Assert.Single(choices);
+        Assert.InRange(reply.Y, 118, 134);
+    }
 }
