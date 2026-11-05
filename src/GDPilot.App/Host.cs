@@ -88,7 +88,9 @@ internal static class Host
             jumping = occupancy;
         }
 
-        ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness, jumping, new ScreenSpots()));
+        ScreenSpots spots = new();
+        ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness, jumping, spots));
+        ConversationWatch conversation = new(() => ConversationShowing(readiness, spots));
         Mapper mapper = new(config.Mapping(), layers[Mode.Combat]) { Wheel = config.Wheel(), Lock = config.LockOn(), SoftAim = config.SoftAim(), TwinStick = config.Input.TwinStick, InteractReach = config.Input.InteractReach };
 
         // A replay is timed from the first tick, so startup does not eat into it.
@@ -166,7 +168,7 @@ internal static class Host
                 // With the in-game part connected, the game says which panels are open; without it, presses are tracked.
                 if (link.Panels is PanelsReport panels)
                 {
-                    modes.Follow(panels.Open);
+                    modes.Follow(conversation.Filter(panels.Open, now - last));
                 }
                 StopTurningWhenSuspended(suspension, link, ref wasSuspended);
                 loop.Tick(now - last);
@@ -255,6 +257,16 @@ internal static class Host
         double seconds = (clock.Elapsed - started).TotalSeconds;
         Console.WriteLine($"Stopped. Everything held has been released. {ticks} ticks at {ticks / seconds:F0} Hz against {config.Input.PollHz} configured.");
         return 0;
+    }
+
+    private static bool ConversationShowing(GridReadiness readiness, ScreenSpots spots)
+    {
+        if (readiness.Spots.TryGetValue(nameof(Mode.Dialog), out SpotArea? area))
+        {
+            return spots.ConversationShowing(area);
+        }
+
+        return true;
     }
 
     /// <summary>

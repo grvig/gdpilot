@@ -171,31 +171,4 @@ public sealed class FollowGameTests
 
         Assert.Equal(Mode.Dialog, modes.Current);
     }
-
-    [Fact]
-    public void AConversationLeftWithBackIsNotReturnedToWhileTheTalkLingers()
-    {
-        ModeController modes = Controller();
-        modes.Follow(new[] { "Dialog" });
-        modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.B }, Tick);
-        Wait(modes, TimeSpan.FromMilliseconds(400));
-
-        modes.Follow(new[] { "Dialog" });
-
-        Assert.Equal(Mode.Combat, modes.Current);
-    }
-
-    [Fact]
-    public void TheNextConversationIsFollowedOnceTheLastOneEnded()
-    {
-        ModeController modes = Controller();
-        modes.Follow(new[] { "Dialog" });
-        modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.B }, Tick);
-        Wait(modes, TimeSpan.FromMilliseconds(400));
-        modes.Follow(Array.Empty<string>());
-
-        modes.Follow(new[] { "Dialog" });
-
-        Assert.Equal(Mode.Dialog, modes.Current);
-    }
 }

@@ -53,6 +53,23 @@ internal sealed class ScreenSpots : ISpotSource
         return SpotFinder.Find(pixel, area.Left, area.Top, area.Width, area.Height, area.Look);
     }
 
+    /// <summary>Whether a conversation's box is on screen. A failed capture says yes, since it proves nothing has closed.</summary>
+    public bool ConversationShowing(SpotArea area)
+    {
+        CapturedFrame frame;
+
+        try
+        {
+            frame = ScreenCapture.Region(area.Left, area.Top, area.Width, area.Height);
+        }
+        catch (InvalidOperationException)
+        {
+            return true;
+        }
+
+        return DialogueReader.Showing((x, y) => Pixel(frame, x - area.Left, y - area.Top), area.Left, area.Top, area.Width, area.Height);
+    }
+
     private static (byte, byte, byte) Pixel(CapturedFrame frame, int x, int y)
     {
         if (x < 0 || y < 0 || x >= frame.Width || y >= frame.Height)
