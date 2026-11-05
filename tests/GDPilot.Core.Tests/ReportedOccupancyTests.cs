@@ -74,4 +74,13 @@ public sealed class ReportedOccupancyTests
             return null;
         }
     }
+
+    [Fact]
+    public void ASackNotYetLaidOutIsNotBelieved()
+    {
+        ReportedOccupancy layouts = new(null);
+        layouts.Accept(new LayoutReport("Vendor#1", 10, 18, new[] { new ItemRect(1, 0, 0, 0, 0) }));
+
+        Assert.Null(layouts.Read("Vendor#1", new GridSpec(483, 323, 32, 32, 10, 18), null));
+    }
 }

@@ -75,4 +75,23 @@ public sealed class DialogueReaderTests
         Assert.Empty(DialogueReader.Choices(NameOnly, 0, 0, Width, Height));
         Assert.True(DialogueReader.Showing(NameOnly, 0, 0, Width, Height));
     }
+
+    [Fact]
+    public void AnythingLinedUpAboveTheBoxIsNotTakenForItsName()
+    {
+        // Above the box: a torch's glow that happens to line up, and a bright roof that does not.
+        static (byte, byte, byte) Flicker(int x, int y)
+        {
+            if (y >= 20 && y < 40 && x >= 12 && x < 200 && x % 3 == 0)
+            {
+                return (220, 180, 60);
+            }
+
+            return Scene(x, y);
+        }
+
+        List<ScreenPoint> choices = DialogueReader.Choices(Flicker, 0, 0, Width, Height);
+
+        Assert.Equal(new[] { new ScreenPoint(60, 235), new ScreenPoint(60, 260) }, choices);
+    }
 }

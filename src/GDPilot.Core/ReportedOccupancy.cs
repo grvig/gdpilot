@@ -44,7 +44,8 @@ public sealed class ReportedOccupancy : IOccupancySource
         }
 
         // A report sized differently from the calibrated grid would put items in the wrong cells.
-        if (report is not null && report.Columns == grid.Columns && report.Rows == grid.Rows)
+        // A trader's tab not yet shown has its items unplaced, all of no size, until the game lays them out.
+        if (report is not null && report.Columns == grid.Columns && report.Rows == grid.Rows && report.Items.All(item => item.Width > 0 && item.Height > 0))
         {
             return OccupancyMap.FromItems(report.Columns, report.Rows, report.Items);
         }

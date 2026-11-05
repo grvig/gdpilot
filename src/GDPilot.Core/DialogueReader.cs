@@ -46,11 +46,29 @@ public static class DialogueReader
     private static List<(int First, int Last)> BoxLines(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
     {
         int span = width / 2;
+        List<(int First, int Last)> all = TextLines.Find(pixel, left, top, span, height, IsGold);
+        List<(int First, int Last)> lines = new();
 
-        return TextLines.Find(pixel, left, top, span, height, IsGold)
-            .Where(line => line.Last - line.First + 1 >= ShortestLine && line.Last - line.First + 1 <= TallestLine)
-            .Where(line => Start(pixel, left, span, line) <= StartsWithin)
-            .ToList();
+        // Upwards from the bottom, past the trim: nothing but the box's own lines lie between its
+        // foot and the name, so the first thing that is not one is the world above the box.
+        for (int index = all.Count - 1; index >= 0; index--)
+        {
+            int tall = all[index].Last - all[index].First + 1;
+
+            if (tall < ShortestLine && lines.Count == 0)
+            {
+                continue;
+            }
+
+            if (tall < ShortestLine || tall > TallestLine || Start(pixel, left, span, all[index]) > StartsWithin)
+            {
+                break;
+            }
+
+            lines.Insert(0, all[index]);
+        }
+
+        return lines;
     }
 
     /// <summary>The middle row's worth of how far in a line's gold begins, so a stray pixel left of it does not count.</summary>

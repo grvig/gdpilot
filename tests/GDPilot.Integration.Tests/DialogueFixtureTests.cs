@@ -31,4 +31,17 @@ public sealed class DialogueFixtureTests
         ScreenPoint reply = Assert.Single(choices);
         Assert.InRange(reply.Y, 118, 134);
     }
+
+    // A longer conversation with Lancel the Knight, with two replies under its speech, cropped from (580, 640).
+    [Fact]
+    public void EachOfSeveralRepliesIsFoundInOrder()
+    {
+        Frame capture = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "dialogue-replies.png"));
+
+        List<ScreenPoint> choices = DialogueReader.Choices(capture.Pixel, 193, 0, 477, 295);
+
+        Assert.Equal(2, choices.Count);
+        Assert.InRange(choices[0].Y, 225, 245);
+        Assert.InRange(choices[1].Y, 255, 275);
+    }
 }
