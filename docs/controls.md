@@ -160,6 +160,18 @@ Start, the D-pad moves between its entries and A picks one; in Options it moves
 between the tabs and buttons, the right stick's cursor reaching the settings
 themselves. A Yes or No question takes the buttons wherever it appears.
 
+## Changing the hotbar from the wheel
+
+While the wheel is held and pointing at a slot, a skill's button exchanges that
+skill's slot with the one pointed at, and A opens the game's list of what the
+slot can hold: the D-pad moves through it, A chooses and B closes it.
+
+## Travelling by rift
+
+At a rift gate the map opens with the D-pad on the gates: A travels. The buttons
+on the overlay read as your pad prints them; `padStyle` under `input` can name
+another family than the one connected.
+
 ## The journal and other windows
 
 In the journal, the factions, the achievements and the loot filter, the D-pad
