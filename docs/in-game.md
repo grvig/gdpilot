@@ -23,17 +23,19 @@ them against an installed game.
 
 | Window | How |
 | --- | --- |
-| Inventory, skills, world map | A flag of the game's own for each |
+| Inventory, skills, world map, journal, factions, achievements, loot filter | A flag of the game's own for each |
 | Escape's menu | Two flags raised together |
 | Stash | The inventory flag, while the engine records the caravan showing |
 | Trader | The inventory flag rising just after the game opens a market |
-| Crafter | The inventory flag rising while talking, with neither a market nor a caravan |
-| Conversation | The player's talk state, with no window opened since the talk began |
+| Crafter | The inventory flag with the shared large-window byte, and neither a market nor a caravan |
+| Conversation | The player's talk state, with no window opened since the talk began; GDPilot also needs its box on screen |
+| Yes or No question | The game's dialog manager holding one |
 | Devotion map | A byte every large window raises, without the skills', the menu's or the bags' flag |
 
-The talk state lasts until the character next moves, so a conversation left
-with B is not followed back into until the report stops. A trader's and a
-crafter's marks hold while the inventory flag stays up.
+The talk state lasts until the character next moves, long after a goodbye, so
+GDPilot counts it only while the box shows. A trader's goods are reported sack
+by sack, as `Vendor#1` and so on, and the red glow of the tab on screen says
+which sack is showing.
 
 ## Spots found on screen
 

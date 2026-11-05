@@ -21,6 +21,8 @@ game always shows what each button does in the mode you are in.
 | Left trigger + right stick click | Switch between the game's camera and third person |
 | D-pad up, left, right, down | Inventory, devotion, skills, map |
 | Left trigger + D-pad up, down | Tell GDPilot a trader's or the stash's window is open (only needed without the in-game part) |
+| Left trigger + D-pad left, right | The journal, the factions |
+| Left trigger + Back, Start | Achievements, the loot filter |
 | Start | Back out of the top panel, or open the game's menu |
 | Start and Back, held | Resynchronise: close everything back to combat |
 
@@ -104,15 +106,15 @@ character. [camera.md](camera.md) has the details and the settings.
 | Button | Does |
 | --- | --- |
 | D-pad | Jump to the next item in that direction, skipping empty cells |
-| Left bumper | Next bag (with a trader, also the trader's goods) |
+| Left bumper or Back | Next bag, then the gear |
 | A | Left click: pick up or put down |
 | X | Right click: use or equip |
 | Left trigger + A | Ctrl+click: split a stack |
 | Left trigger + D-pad up | In the bags: a trader's window is open (only needed without the in-game part) |
 | B or Start | Close the panel |
 
-At the stash the bumpers switch tabs instead, and Back moves between the stash
-and the bags. An item larger than one cell is a single stop when the in-game
+At the stash and with a trader the bumpers switch tabs instead, and Back moves
+between the goods, the bags and the gear. An item larger than one cell is a single stop when the in-game
 part is loaded, since the game then says exactly where each item sits.
 
 With the in-game part loaded, GDPilot sees the stash and a trader's window
@@ -136,8 +138,9 @@ mastery bar's plus button and Undo Points are stops too.
 
 ## On the devotion map
 
-The devotion map is the skill window's middle tab: the bumpers move from a
-mastery's tree to it and on to the other mastery. On the map the D-pad steps
+The devotion map is the skill window's middle tab: D-pad left opens it from
+combat, and the bumpers move from a mastery's tree to it and on to the other
+mastery. Zoomed fully out, the whole map fits on screen. On the map the D-pad steps
 from star to star in the direction pressed, A takes a star, X right-clicks,
 and the zoom buttons at the top are stops too. Back returns to the first star.
 
@@ -145,15 +148,22 @@ and the zoom buttons at the top are stops too. Back returns to the first star.
 
 A crafter's window opens beside the bags, and GDPilot switches to its buttons
 by itself. The D-pad moves over the category tabs, the recipe list and the
-Combine button; the left bumper moves on to each bag and back. A picks or
-clicks, X right-clicks, and LT+A splits a stack.
+Combine button; the bumpers change category, and Back moves on to each bag and
+the gear. A picks or clicks, X right-clicks, and LT+A splits a stack.
 
 ## In a conversation and the game's menu
 
 When the character talks to someone, GDPilot switches to the conversation's
 buttons by itself. The D-pad moves between the replies, A picks one, and B
 leaves the conversation. Walking away ends it too. In the game's menu, from
-Start, the D-pad moves between its entries and A picks one.
+Start, the D-pad moves between its entries and A picks one; in Options it moves
+between the tabs and buttons, the right stick's cursor reaching the settings
+themselves. A Yes or No question takes the buttons wherever it appears.
+
+## The journal and other windows
+
+In the journal, the factions, the achievements and the loot filter, the D-pad
+steps between what can be clicked, A clicks and B or Start closes.
 
 ## Aiming in the game's own camera
 

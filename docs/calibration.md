@@ -209,7 +209,12 @@ fixed places beside them as `[x, y]` pairs:
 | `devotionStar` | Points of light a few pixels across |
 | `dialogueChoice` | Gold reply lines in the dark box along the bottom, after the speaker's name |
 | `recipeLine` | Cyan recipe lines in a crafter's list |
+| `textLine` | Any line of bright text, as in the journal |
 | `places` | Nothing: only the fixed places, such as the menu's entries |
+
+A mode can show several screens, as the menu shows Options: `"when": [x, top,
+bottom]` names a piece of a window's frame that must be lit for those stops to
+apply. `--spots Name` prints what is found right now.
 
 At another display or UI scale, move each rectangle and fixed place by
 measuring a capture, as for grids. The looks are measured at 1920 by 1080, UI
