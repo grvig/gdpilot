@@ -37,6 +37,7 @@ public sealed class ModeController
     private TimeSpan sinceTap = TimeSpan.MaxValue;
 
     private readonly GridNavigator? grids;
+    private Mode navigatedFor = Mode.Combat;
 
     /// <summary>True while grid presses are stepping because the screen could not be read; shown on the overlay.</summary>
     public bool GridFellBack => grids is not null && grids.FellBack;
@@ -68,6 +69,13 @@ public sealed class ModeController
         GamepadButtons pressed = snapshot.Buttons & ~previous;
         previous = snapshot.Buttons;
         ButtonLayers layers = layersFor(stack.Current);
+
+        // A window reopened may show something else, even with no press made in another mode between.
+        if (stack.Current != navigatedFor)
+        {
+            navigatedFor = stack.Current;
+            grids?.Forget();
+        }
 
         foreach (GamepadButtons button in Enum.GetValues<GamepadButtons>())
         {

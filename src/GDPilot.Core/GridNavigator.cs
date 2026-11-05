@@ -34,6 +34,7 @@ public sealed class GridNavigator
     private GridCell cell;
     private bool placed;
     private ScreenPoint spot;
+    private SpotArea? snapping;
     private readonly List<ScreenPoint> seen = new();
 
     public GridNavigator(GridReadiness readiness, IOccupancySource? occupancy = null, ISpotSource? spotSource = null)
@@ -73,14 +74,16 @@ public sealed class GridNavigator
                 .Order()
                 .ToList();
 
-            // A crafter lists recipes beside the bags, so spots and grids can share a mode, the spots first.
-            if (spotSource is not null && readiness.Spots.ContainsKey(current.ToString()))
+            // A crafter lists recipes beside the bags, so spots and grids can share a mode. Things
+            // to read come first; fixed places, such as the equipment beside the bags, come last.
+            if (spotSource is not null)
             {
-                surfaces.Insert(0, SpotsSurface);
+                AddSpotsSurface(current);
             }
 
             surface = 0;
             placed = false;
+            snapping = null;
             seen.Clear();
         }
 
@@ -98,7 +101,15 @@ public sealed class GridNavigator
 
         if (surfaces[surface] == SpotsSurface)
         {
-            return Snap(readiness.Spots[current.ToString()], action);
+            SpotArea? area = AreaShowing(current);
+
+            if (area is null)
+            {
+                Notice = $"Nothing in {current} is known to snap to on this screen.";
+                return null;
+            }
+
+            return Snap(area, action);
         }
 
         GridSpec grid = readiness.Grids[surfaces[surface]];
@@ -150,6 +161,13 @@ public sealed class GridNavigator
         int count = Math.Max(strip.Columns, strip.Rows);
         Mode window = TabbedWindow(current);
         tabs.TryGetValue(window, out int tab);
+
+        // The game remembers each window's tab, and the cursor can change it, so the screen is believed first.
+        if (spotSource?.SelectedTab(strip) is int selected)
+        {
+            tab = selected;
+        }
+
         tab = ((tab + step) % count + count) % count;
         tabs[window] = tab;
         GridCell cell = new(tab, 0);
@@ -169,6 +187,56 @@ public sealed class GridNavigator
         return intents;
     }
 
+    /// <summary>Starts over, as when a window has closed and whatever opens next may show something else.</summary>
+    public void Forget()
+    {
+        mode = Mode.Suspended;
+    }
+
+    private void AddSpotsSurface(Mode current)
+    {
+        List<SpotArea> areas = AreasOf(current);
+
+        if (areas.Count == 0)
+        {
+            return;
+        }
+
+        if (areas.All(area => area.Kind == SpotKind.Places) && surfaces.Count > 0)
+        {
+            surfaces.Add(SpotsSurface);
+            return;
+        }
+
+        surfaces.Insert(0, SpotsSurface);
+    }
+
+    /// <summary>A mode's own spots and any others it shows, named like "Menu.Options".</summary>
+    private List<SpotArea> AreasOf(Mode current)
+    {
+        return readiness.Spots
+            .Where(pair => pair.Key == current.ToString() || pair.Key.StartsWith(current + ".", StringComparison.Ordinal))
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => pair.Value)
+            .ToList();
+    }
+
+    /// <summary>The spots for what the mode has on screen: those whose frame shows, else those that need none.</summary>
+    private SpotArea? AreaShowing(Mode current)
+    {
+        List<SpotArea> areas = AreasOf(current);
+
+        foreach (SpotArea area in areas)
+        {
+            if (area.When is FrameLine line && spotSource!.Shows(line))
+            {
+                return area;
+            }
+        }
+
+        return areas.FirstOrDefault(area => area.When is null);
+    }
+
     /// <summary>
     /// Snaps to the menu's spots as the screen shows them at this press, since a
     /// skill tree changes with the tab showing. "grid:next" starts over from the
@@ -176,6 +244,14 @@ public sealed class GridNavigator
     /// </summary>
     private PointerMoveTo? Snap(SpotArea area, string action)
     {
+        // Another screen of the same mode starts over, as its spots have nothing to do with the last one's.
+        if (!ReferenceEquals(area, snapping))
+        {
+            snapping = area;
+            placed = false;
+            seen.Clear();
+        }
+
         List<ScreenPoint>? found = spotSource!.Read(area);
 
         if (found is null)
@@ -233,15 +309,30 @@ public sealed class GridNavigator
     /// </summary>
     private void Remember(List<ScreenPoint> found, int spacing)
     {
+        // A tooltip hides a few; most gone means another tree is showing, as after a tab clicked with the cursor.
+        int stillThere = seen.Count(old => found.Any(point => Near(old, point, spacing)));
+
+        if (found.Count > 0 && stillThere * 2 < seen.Count)
+        {
+            seen.Clear();
+        }
+
         foreach (ScreenPoint point in found)
         {
-            bool known = seen.Any(old => (old.X - point.X) * (old.X - point.X) + (old.Y - point.Y) * (old.Y - point.Y) <= spacing * spacing);
+            bool known = seen.Any(old => Near(old, point, spacing));
 
             if (!known)
             {
                 seen.Add(point);
             }
         }
+    }
+
+    private static bool Near(ScreenPoint first, ScreenPoint second, int spacing)
+    {
+        int dx = first.X - second.X;
+        int dy = first.Y - second.Y;
+        return dx * dx + dy * dy <= spacing * spacing;
     }
 
     /// <summary>

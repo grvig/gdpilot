@@ -53,6 +53,45 @@ internal sealed class ScreenSpots : ISpotSource
         return SpotFinder.Find(pixel, area.Left, area.Top, area.Width, area.Height, area.Look);
     }
 
+    public bool Shows(FrameLine line)
+    {
+        const int Margin = 3;
+        int left = line.X - Margin;
+        CapturedFrame frame;
+
+        try
+        {
+            frame = ScreenCapture.Region(left, line.Top, Margin * 2 + 1, line.Bottom - line.Top + 1);
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+
+        return line.Seen((x, y) => Pixel(frame, x - left, y - line.Top));
+    }
+
+    public int? SelectedTab(GridSpec strip)
+    {
+        const int Margin = 60;
+        (int firstX, int firstY) = strip.Centre(new GridCell(0, 0));
+        (int lastX, int lastY) = strip.Centre(new GridCell(strip.Columns - 1, strip.Rows - 1));
+        int left = firstX - Margin;
+        int top = Math.Max(0, firstY - Margin);
+        CapturedFrame frame;
+
+        try
+        {
+            frame = ScreenCapture.Region(left, top, lastX - firstX + Margin * 2, lastY + Margin - top);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+
+        return TabStrip.Selected((x, y) => Pixel(frame, x - left, y - top), strip);
+    }
+
     /// <summary>Whether a conversation's box is on screen. A failed capture says yes, since it proves nothing has closed.</summary>
     public bool ConversationShowing(SpotArea area)
     {

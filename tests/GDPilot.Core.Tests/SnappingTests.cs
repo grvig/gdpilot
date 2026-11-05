@@ -7,6 +7,9 @@ public sealed class SnappingTests
 {
     private static readonly SpotArea Tree = new(700, 300, 710, 480, SpotLook.SkillButton, new[] { new ScreenPoint(645, 847) });
 
+    private static readonly FrameLine MenuFrame = new(837, 420, 660);
+    private static readonly FrameLine OptionsFrame = new(526, 300, 780);
+
     private static readonly GridReadiness Ready = new(true, "ready", new Dictionary<string, GridSpec>
     {
         ["Inventory"] = new GridSpec(652, 645, 32, 32, 12, 8),
@@ -21,6 +24,9 @@ public sealed class SnappingTests
             ["Skills"] = Tree,
             ["Crafting"] = new SpotArea(470, 330, 320, 230, null, Array.Empty<ScreenPoint>(), SpotKind.Recipes),
             ["Dialog"] = new SpotArea(773, 300, 477, 635, null, Array.Empty<ScreenPoint>(), SpotKind.Replies),
+            ["Inventory"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(690, 268) }, SpotKind.Places),
+            ["Menu"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(970, 452) }, SpotKind.Places) { When = MenuFrame },
+            ["Menu.Options"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(1115, 790) }, SpotKind.Places) { When = OptionsFrame },
         },
     };
 
@@ -30,9 +36,28 @@ public sealed class SnappingTests
 
         public int Reads { get; private set; }
 
+        public FrameLine? Frame { get; set; }
+
+        public int? Selected { get; set; }
+
+        public bool Shows(FrameLine line)
+        {
+            return Frame == line;
+        }
+
+        public int? SelectedTab(GridSpec strip)
+        {
+            return Selected;
+        }
+
         public List<ScreenPoint>? Read(SpotArea area)
         {
             Reads++;
+
+            if (area.Kind == SpotKind.Places)
+            {
+                return new List<ScreenPoint>();
+            }
 
             if (Showing is null)
             {
@@ -197,5 +222,74 @@ public sealed class SnappingTests
         Assert.Equal(new PointerMoveTo(824, 645), navigator.Act(Mode.Crafting, "next"));
         Assert.Equal(new PointerMoveTo(824, 677), navigator.Act(Mode.Crafting, "down"));
         Assert.Equal(new PointerMoveTo(520, 346), navigator.Act(Mode.Crafting, "next"));
+    }
+
+    [Fact]
+    public void AFixedPlacesSurfaceComesAfterTheBags()
+    {
+        GridNavigator navigator = new(Ready, null, new FakeSpots());
+
+        Assert.Equal(new PointerMoveTo(652, 645), navigator.Act(Mode.Inventory, "down"));
+        Assert.Equal(new PointerMoveTo(690, 268), navigator.Act(Mode.Inventory, "next"));
+        Assert.Equal(new PointerMoveTo(652, 645), navigator.Act(Mode.Inventory, "next"));
+    }
+
+    [Fact]
+    public void TheSpotsFollowWhicheverScreenOfAModeIsShowing()
+    {
+        FakeSpots spots = new() { Frame = MenuFrame };
+        GridNavigator navigator = new(Ready, null, spots);
+
+        Assert.Equal(new PointerMoveTo(970, 452), navigator.Act(Mode.Menu, "down"));
+
+        spots.Frame = OptionsFrame;
+
+        Assert.Equal(new PointerMoveTo(1115, 790), navigator.Act(Mode.Menu, "down"));
+    }
+
+    [Fact]
+    public void AScreenWithNoKnownSpotsMovesNothingAndSaysSo()
+    {
+        FakeSpots spots = new() { Frame = null };
+        GridNavigator navigator = new(Ready, null, spots);
+
+        Assert.Null(navigator.Act(Mode.Menu, "down"));
+        Assert.NotNull(navigator.Notice);
+    }
+
+    [Fact]
+    public void TheNextTabCountsFromWhatTheScreenShows()
+    {
+        FakeSpots spots = new() { Selected = 2 };
+        GridNavigator navigator = new(Ready, null, spots);
+
+        // The game kept the last tab from before; the next one wraps round to the first.
+        Assert.Equal(new PointerMoveTo(793, 247), navigator.Tab(Mode.Skills, 1)[0]);
+    }
+
+    [Fact]
+    public void ATreeChangedByTheCursorDropsTheOldOnesButtons()
+    {
+        FakeSpots spots = new();
+        GridNavigator navigator = new(Ready, null, spots);
+        navigator.Act(Mode.Skills, "down");
+
+        // None of the three buttons seen are there now: another tree is showing.
+        spots.Showing = new List<ScreenPoint> { new(1200, 500), new(1300, 600), new(1400, 700) };
+
+        Assert.Equal(new PointerMoveTo(1200, 500), navigator.Act(Mode.Skills, "right"));
+    }
+
+    [Fact]
+    public void ForgettingStartsAMenuOverAtItsFirstButton()
+    {
+        FakeSpots spots = new();
+        GridNavigator navigator = new(Ready, null, spots);
+        navigator.Act(Mode.Skills, "down");
+        navigator.Act(Mode.Skills, "right");
+
+        navigator.Forget();
+
+        Assert.Equal(new PointerMoveTo(734, 326), navigator.Act(Mode.Skills, "down"));
     }
 }

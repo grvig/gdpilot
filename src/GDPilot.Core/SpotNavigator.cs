@@ -7,6 +7,18 @@ public readonly record struct ScreenPoint(int X, int Y);
 public interface ISpotSource
 {
     List<ScreenPoint>? Read(SpotArea area);
+
+    /// <summary>Whether a piece of a window's frame is on screen now.</summary>
+    bool Shows(FrameLine line)
+    {
+        return true;
+    }
+
+    /// <summary>Which tab of a strip the game has selected now, or null when that cannot be told.</summary>
+    int? SelectedTab(GridSpec strip)
+    {
+        return null;
+    }
 }
 
 /// <summary>

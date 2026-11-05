@@ -25,23 +25,32 @@ public sealed class SpotAreaConfig
     public string Look { get; init; } = "";
     public int[][] Fixed { get; init; } = Array.Empty<int[]>();
 
+    /// <summary>A frame line as [x, top, bottom] that must be on screen for these spots to apply, when a mode shows several screens.</summary>
+    public int[] When { get; init; } = Array.Empty<int>();
+
     /// <summary>The area, or null when it is empty or its look is not one GDPilot knows.</summary>
     public SpotArea? ToArea()
     {
         List<ScreenPoint> places = Fixed.Where(pair => pair.Length == 2).Select(pair => new ScreenPoint(pair[0], pair[1])).ToList();
+        FrameLine? when = null;
+
+        if (When.Length == 3)
+        {
+            when = new FrameLine(When[0], When[1], When[2]);
+        }
 
         switch (Look)
         {
             case "skillButton" when Width > 0 && Height > 0:
-                return new SpotArea(Left, Top, Width, Height, SpotLook.SkillButton, places);
+                return new SpotArea(Left, Top, Width, Height, SpotLook.SkillButton, places) { When = when };
             case "devotionStar" when Width > 0 && Height > 0:
-                return new SpotArea(Left, Top, Width, Height, SpotLook.DevotionStar, places);
+                return new SpotArea(Left, Top, Width, Height, SpotLook.DevotionStar, places) { When = when };
             case "recipeLine" when Width > 0 && Height > 0:
-                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Recipes);
+                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Recipes) { When = when };
             case "dialogueChoice" when Width > 0 && Height > 0:
-                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Replies);
+                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Replies) { When = when };
             case "places" when places.Count > 0:
-                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Places);
+                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Places) { When = when };
             default:
                 return null;
         }
@@ -58,7 +67,11 @@ public enum SpotKind
 }
 
 /// <summary>A menu's spots: found inside the rectangle as its kind says, plus the fixed places.</summary>
-public sealed record SpotArea(int Left, int Top, int Width, int Height, SpotLook? Look, IReadOnlyList<ScreenPoint> Fixed, SpotKind Kind = SpotKind.Buttons);
+public sealed record SpotArea(int Left, int Top, int Width, int Height, SpotLook? Look, IReadOnlyList<ScreenPoint> Fixed, SpotKind Kind = SpotKind.Buttons)
+{
+    /// <summary>The frame line that must be on screen for these spots to apply, or null when they always do.</summary>
+    public FrameLine? When { get; init; }
+}
 
 /// <summary>A grid as the configuration writes it, zeros meaning not yet calibrated.</summary>
 public sealed class GridConfig
