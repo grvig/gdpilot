@@ -49,6 +49,12 @@ public static class GameLayout
     private static readonly ScreenArea Talk = new(0.2, 0.35, 0.8, 0.95);
     private static readonly ScreenArea GameMenu = new(0.34, 0.5, 0.66, 0.72);
 
+    // Measured on 2026-11-05: the journal down the left, the middle windows, and a question.
+    private static readonly ScreenArea JournalPanel = new(0, 0.17, 0.2, 0.84);
+    private static readonly ScreenArea MiddleWindow = new(0.22, 0.18, 0.78, 0.8);
+    private static readonly ScreenArea FilterWindow = new(0.22, 0.18, 0.8, 0.9);
+    private static readonly ScreenArea Question = new(0.4, 0.4, 0.6, 0.62);
+
     /// <summary>Everything the game draws in a mode, the world's own interface included.</summary>
     public static IReadOnlyList<ScreenArea> Reserved(Mode mode)
     {
@@ -82,6 +88,19 @@ public static class GameLayout
                 break;
             case Mode.Menu:
                 areas.Add(GameMenu);
+                break;
+            case Mode.Journal:
+                areas.Add(JournalPanel);
+                break;
+            case Mode.Factions:
+            case Mode.Achievements:
+                areas.Add(MiddleWindow);
+                break;
+            case Mode.LootFilter:
+                areas.Add(FilterWindow);
+                break;
+            case Mode.Confirm:
+                areas.Add(Question);
                 break;
         }
 

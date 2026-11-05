@@ -20,8 +20,11 @@ public sealed class GridNavigator
 {
     private const string TabsSuffix = ".Tabs";
 
-    /// <summary>The surface a mode's spots make, first among its grids; no grid name is empty.</summary>
-    private const string SpotsSurface = "";
+    /// <summary>Which of a trader's sacks each of its tabs shows, in tab order.</summary>
+    private static readonly int[] TraderSacks = { 2, 3, 1, 4 };
+
+    /// <summary>Marks a surface as spots rather than a grid: alone, the spots whose frame shows; before a name, those spots.</summary>
+    private const string SpotsSurface = "@";
 
     private readonly GridReadiness readiness;
     private readonly IOccupancySource? occupancy;
@@ -99,9 +102,9 @@ public sealed class GridNavigator
             placed = false;
         }
 
-        if (surfaces[surface] == SpotsSurface)
+        if (surfaces[surface].StartsWith(SpotsSurface, StringComparison.Ordinal))
         {
-            SpotArea? area = AreaShowing(current);
+            SpotArea? area = AreaOf(current, surfaces[surface]);
 
             if (area is null)
             {
@@ -177,13 +180,33 @@ public sealed class GridNavigator
             cell = new GridCell(0, tab);
         }
 
-        // Another tab shows other buttons, so the ones seen on this one no longer apply.
+        // Another tab shows other things, so what was seen on this one no longer applies, and the next press starts over.
         seen.Clear();
+        known.Clear();
+        placed = false;
         (int x, int y) = strip.Centre(cell);
         intents.Add(new PointerMoveTo(x, y));
         intents.Add(new PointerDown(PointerButton.Left));
         intents.Add(new PointerUp(PointerButton.Left));
         Notice = null;
+        return intents;
+    }
+
+    /// <summary>Clicks one tab of a mode's strip by its place along it.</summary>
+    public List<InputIntent> ClickTab(Mode current, int tab)
+    {
+        List<InputIntent> intents = new();
+
+        if (!readiness.Ready || !readiness.Grids.TryGetValue(current + TabsSuffix, out GridSpec? strip) || tab >= Math.Max(strip.Columns, strip.Rows))
+        {
+            return intents;
+        }
+
+        tabs[TabbedWindow(current)] = tab;
+        (int x, int y) = strip.Centre(new GridCell(tab, 0));
+        intents.Add(new PointerMoveTo(x, y));
+        intents.Add(new PointerDown(PointerButton.Left));
+        intents.Add(new PointerUp(PointerButton.Left));
         return intents;
     }
 
@@ -193,40 +216,51 @@ public sealed class GridNavigator
         mode = Mode.Suspended;
     }
 
+    /// <summary>
+    /// A mode's spots, named like "Crafting" and "Crafting.Gear", become surfaces
+    /// beside its grids. Spots with a frame are one surface, whichever screen shows.
+    /// </summary>
     private void AddSpotsSurface(Mode current)
     {
-        List<SpotArea> areas = AreasOf(current);
+        List<KeyValuePair<string, SpotArea>> areas = AreasOf(current);
+        int front = 0;
 
-        if (areas.Count == 0)
+        foreach ((string name, SpotArea area) in areas.Where(pair => pair.Value.When is null))
         {
-            return;
+            if (area.Kind == SpotKind.Places)
+            {
+                surfaces.Add(SpotsSurface + name);
+            }
+            else
+            {
+                surfaces.Insert(front, SpotsSurface + name);
+                front++;
+            }
         }
 
-        if (areas.All(area => area.Kind == SpotKind.Places) && surfaces.Count > 0)
+        if (areas.Any(pair => pair.Value.When is not null))
         {
-            surfaces.Add(SpotsSurface);
-            return;
+            surfaces.Insert(front, SpotsSurface);
         }
-
-        surfaces.Insert(0, SpotsSurface);
     }
 
-    /// <summary>A mode's own spots and any others it shows, named like "Menu.Options".</summary>
-    private List<SpotArea> AreasOf(Mode current)
+    private List<KeyValuePair<string, SpotArea>> AreasOf(Mode current)
     {
         return readiness.Spots
             .Where(pair => pair.Key == current.ToString() || pair.Key.StartsWith(current + ".", StringComparison.Ordinal))
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-            .Select(pair => pair.Value)
             .ToList();
     }
 
-    /// <summary>The spots for what the mode has on screen: those whose frame shows, else those that need none.</summary>
-    private SpotArea? AreaShowing(Mode current)
+    /// <summary>The spots a surface stands for, or null when its frames are none of them on screen.</summary>
+    private SpotArea? AreaOf(Mode current, string name)
     {
-        List<SpotArea> areas = AreasOf(current);
+        if (name != SpotsSurface)
+        {
+            return readiness.Spots[name.Substring(SpotsSurface.Length)];
+        }
 
-        foreach (SpotArea area in areas)
+        foreach ((string _, SpotArea area) in AreasOf(current))
         {
             if (area.When is FrameLine line && spotSource!.Shows(line))
             {
@@ -234,7 +268,7 @@ public sealed class GridNavigator
             }
         }
 
-        return areas.FirstOrDefault(area => area.When is null);
+        return null;
     }
 
     /// <summary>
@@ -359,7 +393,7 @@ public sealed class GridNavigator
         }
 
         known.TryGetValue(name, out OccupancyMap? previous);
-        OccupancyMap? map = occupancy.Read(name, grid, previous);
+        OccupancyMap? map = occupancy.Read(ReportName(name), grid, previous);
 
         if (map is null || !map.IsConfident)
         {
@@ -368,6 +402,22 @@ public sealed class GridNavigator
 
         known[name] = map;
         return map;
+    }
+
+    /// <summary>
+    /// The report a grid's items come under. Each of a trader's tabs is a sack of its
+    /// own, and the screen says which tab shows. Measured at Kerrick's: each tab's
+    /// cells matched its sack exactly. The last tab, the buyback, has no sack
+    /// reported, so it is read off the screen.
+    /// </summary>
+    private string ReportName(string name)
+    {
+        if (name == nameof(Mode.Vendor) && readiness.Grids.TryGetValue(name + TabsSuffix, out GridSpec? strip) && spotSource?.SelectedTab(strip) is int tab && tab < TraderSacks.Length)
+        {
+            return $"{name}#{TraderSacks[tab]}";
+        }
+
+        return name;
     }
 
     private static GridDirection Direction(string action)

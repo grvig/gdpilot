@@ -35,6 +35,12 @@ public sealed class ModeController
     private bool panicFired;
     private GamepadButtons previous;
     private TimeSpan sinceTap = TimeSpan.MaxValue;
+    private TimeSpan? devotionTabIn;
+
+    /// <summary>How long after the skill window's key its tabs can be clicked: the tap, and the window opening.</summary>
+    private static readonly TimeSpan DevotionTabDelay = TimeSpan.FromMilliseconds(350);
+
+    private const int DevotionTab = 1;
 
     private readonly GridNavigator? grids;
     private Mode navigatedFor = Mode.Combat;
@@ -103,6 +109,7 @@ public sealed class ModeController
         }
 
         WatchPanic(snapshot, elapsed);
+        ClickDevotionTab(elapsed, intents);
 
         if (tapping is null && taps.Count > 0)
         {
@@ -150,12 +157,17 @@ public sealed class ModeController
             return;
         }
 
-        // The menu and a conversation sit over everything else, so they are what the buttons should drive.
+        // The menu and a conversation sit over everything else, and a question over those, so they are what the buttons should drive.
         Mode shown = modes[0];
 
         foreach (Mode mode in modes)
         {
-            if (mode is Mode.Menu or Mode.Dialog)
+            if (mode is Mode.Menu or Mode.Dialog && shown != Mode.Confirm)
+            {
+                shown = mode;
+            }
+
+            if (mode == Mode.Confirm)
             {
                 shown = mode;
             }
@@ -176,6 +188,12 @@ public sealed class ModeController
             return stack.Current == Mode.Combat;
         }
 
+        // A question takes the buttons from whatever it was asked over.
+        if (open.Contains(Mode.Confirm))
+        {
+            return stack.Current == Mode.Confirm;
+        }
+
         if (open.Contains(stack.Current))
         {
             return true;
@@ -193,6 +211,29 @@ public sealed class ModeController
         taps.Clear();
         tapping = null;
         previous = GamepadButtons.None;
+    }
+
+    private void ClickDevotionTab(TimeSpan elapsed, List<InputIntent> intents)
+    {
+        if (devotionTabIn is not TimeSpan left)
+        {
+            return;
+        }
+
+        left -= elapsed;
+        devotionTabIn = left;
+
+        if (left > TimeSpan.Zero)
+        {
+            return;
+        }
+
+        devotionTabIn = null;
+
+        if (grids is not null)
+        {
+            intents.AddRange(grids.ClickTab(Mode.Skills, DevotionTab));
+        }
     }
 
     private void ReleaseFinishedTap(TimeSpan elapsed, List<InputIntent> intents)
@@ -220,6 +261,12 @@ public sealed class ModeController
             if (panelKeys.TryGetValue(panel.Mode, out KeyCode key))
             {
                 taps.Enqueue(key);
+            }
+            else if (panel.Mode == Mode.Devotion && panelKeys.TryGetValue(Mode.Skills, out KeyCode skills) && stack.Current == Mode.Devotion)
+            {
+                // No key opens the devotion map: it is the skill window's middle tab, clicked once the window is up.
+                taps.Enqueue(skills);
+                devotionTabIn = DevotionTabDelay;
             }
         }
         else if (binding is BackBinding)

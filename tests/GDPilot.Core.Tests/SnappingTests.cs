@@ -15,6 +15,8 @@ public sealed class SnappingTests
         ["Inventory"] = new GridSpec(652, 645, 32, 32, 12, 8),
         ["Crafting.Bag1"] = new GridSpec(824, 645, 32, 32, 12, 8),
         ["Skills.Tabs"] = new GridSpec(793, 247, 166, 32, 3, 1),
+        ["Vendor"] = new GridSpec(483, 323, 32, 32, 10, 18),
+        ["Vendor.Tabs"] = new GridSpec(505, 283, 61.25, 32, 5, 1),
         ["Devotion.Tabs"] = new GridSpec(796, 21, 164, 20, 3, 1),
         ["Stash.Tabs"] = new GridSpec(473, 463, 38, 38, 1, 2),
     })
@@ -24,7 +26,8 @@ public sealed class SnappingTests
             ["Skills"] = Tree,
             ["Crafting"] = new SpotArea(470, 330, 320, 230, null, Array.Empty<ScreenPoint>(), SpotKind.Recipes),
             ["Dialog"] = new SpotArea(773, 300, 477, 635, null, Array.Empty<ScreenPoint>(), SpotKind.Replies),
-            ["Inventory"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(690, 268) }, SpotKind.Places),
+            ["Inventory.Gear"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(690, 268) }, SpotKind.Places),
+            ["Crafting.Gear"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(862, 268) }, SpotKind.Places),
             ["Menu"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(970, 452) }, SpotKind.Places) { When = MenuFrame },
             ["Menu.Options"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(1115, 790) }, SpotKind.Places) { When = OptionsFrame },
         },
@@ -172,6 +175,8 @@ public sealed class SnappingTests
         navigator.Tab(Mode.Skills, 1);
         spots.Showing = new List<ScreenPoint> { new(734, 326), new(1100, 330) };
 
+        // The next press starts over on the new tab's first button, then moves on among only its own.
+        Assert.Equal(new PointerMoveTo(734, 326), navigator.Act(Mode.Skills, "right"));
         Assert.Equal(new PointerMoveTo(1100, 330), navigator.Act(Mode.Skills, "right"));
     }
 
@@ -221,7 +226,6 @@ public sealed class SnappingTests
         Assert.Equal(new PointerMoveTo(520, 369), navigator.Act(Mode.Crafting, "down"));
         Assert.Equal(new PointerMoveTo(824, 645), navigator.Act(Mode.Crafting, "next"));
         Assert.Equal(new PointerMoveTo(824, 677), navigator.Act(Mode.Crafting, "down"));
-        Assert.Equal(new PointerMoveTo(520, 346), navigator.Act(Mode.Crafting, "next"));
     }
 
     [Fact]
@@ -291,5 +295,41 @@ public sealed class SnappingTests
         navigator.Forget();
 
         Assert.Equal(new PointerMoveTo(734, 326), navigator.Act(Mode.Skills, "down"));
+    }
+
+    [Fact]
+    public void AModesRecipesBagsAndGearAreEachASurfaceInTurn()
+    {
+        FakeSpots spots = new() { Showing = new List<ScreenPoint> { new(520, 346) } };
+        GridNavigator navigator = new(Ready, null, spots);
+
+        Assert.Equal(new PointerMoveTo(520, 346), navigator.Act(Mode.Crafting, "down"));
+        Assert.Equal(new PointerMoveTo(824, 645), navigator.Act(Mode.Crafting, "next"));
+        Assert.Equal(new PointerMoveTo(862, 268), navigator.Act(Mode.Crafting, "next"));
+        Assert.Equal(new PointerMoveTo(520, 346), navigator.Act(Mode.Crafting, "next"));
+    }
+
+    [Theory]
+    [InlineData(0, 2)]
+    [InlineData(1, 3)]
+    [InlineData(2, 1)]
+    [InlineData(3, 4)]
+    public void TheTraderTabOnScreenPicksItsSack(int tab, int sack)
+    {
+        ReportedOccupancy layouts = new(null);
+        layouts.Accept(new LayoutReport($"Vendor#{sack}", 10, 18, new[] { new ItemRect(7, 3, 2, 2, 2) }));
+        GridNavigator navigator = new(Ready, layouts, new FakeSpots { Selected = tab });
+
+        Assert.Equal(new PointerMoveTo(579, 387), navigator.Act(Mode.Vendor, "down"));
+    }
+
+    [Fact]
+    public void TheBuybackTabHasNoSackAndFallsToTheScreen()
+    {
+        ReportedOccupancy layouts = new(null);
+        layouts.Accept(new LayoutReport("Vendor#2", 10, 18, new[] { new ItemRect(7, 3, 2, 2, 2) }));
+        GridNavigator navigator = new(Ready, layouts, new FakeSpots { Selected = 4 });
+
+        Assert.Equal(new PointerMoveTo(483, 323), navigator.Act(Mode.Vendor, "down"));
     }
 }

@@ -40,6 +40,11 @@ internal sealed class ScreenSpots : ISpotSource
 
         Func<int, int, (byte, byte, byte)> pixel = (x, y) => Pixel(frame, x - left, y - top);
 
+        if (area.Kind == SpotKind.Lines)
+        {
+            return RecipeReader.Lines(pixel, area.Left, area.Top, area.Width, area.Height);
+        }
+
         if (area.Kind == SpotKind.Recipes)
         {
             return RecipeReader.Recipes(pixel, area.Left, area.Top, area.Width, area.Height);

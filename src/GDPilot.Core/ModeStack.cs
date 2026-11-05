@@ -14,7 +14,12 @@ public enum Mode
     Vendor,
     Crafting,
     Dialog,
+    Journal,
+    Factions,
+    Achievements,
+    LootFilter,
     Menu,
+    Confirm,
 }
 
 /// <summary>

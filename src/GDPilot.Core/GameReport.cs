@@ -211,7 +211,8 @@ public abstract record GameReport
             }
 
             Has(thing, "distance", out double distance);
-            things.Add(new NearbyThing(id, kind, x, y, distance));
+            Has(thing, "rarity", out int rarity);
+            things.Add(new NearbyThing(id, kind, x, y, distance) { Rarity = rarity });
         }
 
         return new InteractablesReport(things);
@@ -226,6 +227,7 @@ public abstract record GameReport
             ["x"] = thing.X,
             ["y"] = thing.Y,
             ["distance"] = thing.Distance,
+            ["rarity"] = thing.Rarity,
         };
     }
 
@@ -358,7 +360,11 @@ public enum ThingKind
 }
 
 /// <summary>Something close by that a click would pick up, talk to or use, drawn on the screen as fractions of the window.</summary>
-public sealed record NearbyThing(uint Id, ThingKind Kind, double X, double Y, double Distance);
+public sealed record NearbyThing(uint Id, ThingKind Kind, double X, double Y, double Distance)
+{
+    /// <summary>The game's own quality for loot, from common up; 0 for anything else.</summary>
+    public int Rarity { get; init; }
+}
 
 /// <summary>Everything within reach of the character to pick up, talk to or use, in view, sent whenever it changes.</summary>
 public sealed record InteractablesReport(IReadOnlyList<NearbyThing> Things) : GameReport
