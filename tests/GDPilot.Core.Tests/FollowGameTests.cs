@@ -144,6 +144,23 @@ public sealed class FollowGameTests
     }
 
     [Fact]
+    public void ASlotsListHoldsThoughTheGameReportsNothingAndAClickEndsIt()
+    {
+        ButtonLayers list = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "mouse:left" }, 0.5);
+        ModeController modes = new(new Dictionary<Mode, KeyCode>(), _ => list);
+        modes.OpenSlotList();
+
+        modes.Follow(Array.Empty<string>());
+        Assert.Equal(Mode.Assign, modes.Current);
+
+        modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.A }, Tick);
+        Assert.Equal(Mode.Assign, modes.Current);
+
+        modes.Tick(GamepadSnapshot.Rest, Tick);
+        Assert.Equal(Mode.Combat, modes.Current);
+    }
+
+    [Fact]
     public void ACraftersWindowTheGameNamesIsFollowed()
     {
         ModeController modes = Controller();

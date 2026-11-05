@@ -36,6 +36,7 @@ public sealed class ModeController
     private GamepadButtons previous;
     private TimeSpan sinceTap = TimeSpan.MaxValue;
     private TimeSpan? devotionTabIn;
+    private GamepadButtons slotListClick;
 
     /// <summary>How long after the skill window's key its tabs can be clicked: the tap, and the window opening.</summary>
     private static readonly TimeSpan DevotionTabDelay = TimeSpan.FromMilliseconds(350);
@@ -61,6 +62,16 @@ public sealed class ModeController
 
     /// <summary>The binding tables for the mode the game is believed to be in.</summary>
     public ButtonLayers CurrentLayers => layersFor(stack.Current);
+
+    /// <summary>The game's list of what a hotbar slot can hold has opened; nothing the game reports says so.</summary>
+    public void OpenSlotList()
+    {
+        if (stack.Current == Mode.Combat)
+        {
+            stack.Toggle(Mode.Assign);
+            slotListClick = GamepadButtons.None;
+        }
+    }
 
     public List<InputIntent> Tick(GamepadSnapshot snapshot, TimeSpan elapsed)
     {
@@ -110,6 +121,7 @@ public sealed class ModeController
 
         WatchPanic(snapshot, elapsed);
         ClickDevotionTab(elapsed, intents);
+        WatchSlotList(pressed, snapshot, layers);
 
         if (tapping is null && taps.Count > 0)
         {
@@ -195,6 +207,12 @@ public sealed class ModeController
     /// </summary>
     private bool Agrees(List<Mode> open)
     {
+        // The game reports nothing for a slot's list, and a question could not arrive over one.
+        if (stack.Current == Mode.Assign)
+        {
+            return true;
+        }
+
         if (open.Count == 0)
         {
             return stack.Current == Mode.Combat;
@@ -223,6 +241,29 @@ public sealed class ModeController
         taps.Clear();
         tapping = null;
         previous = GamepadButtons.None;
+    }
+
+    /// <summary>A click on the list closes it, once the button that clicked has come back up.</summary>
+    private void WatchSlotList(GamepadButtons pressed, GamepadSnapshot snapshot, ButtonLayers layers)
+    {
+        if (stack.Current != Mode.Assign)
+        {
+            return;
+        }
+
+        foreach (GamepadButtons button in Enum.GetValues<GamepadButtons>())
+        {
+            if (button != GamepadButtons.None && (pressed & button) != 0 && layers.BindingFor(button, snapshot.LeftTrigger) is PointerBinding)
+            {
+                slotListClick = button;
+            }
+        }
+
+        if (slotListClick != GamepadButtons.None && (snapshot.Buttons & slotListClick) == 0)
+        {
+            slotListClick = GamepadButtons.None;
+            stack.Pop();
+        }
     }
 
     private void ClickDevotionTab(TimeSpan elapsed, List<InputIntent> intents)

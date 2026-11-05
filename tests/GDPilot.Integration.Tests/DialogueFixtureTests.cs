@@ -44,4 +44,17 @@ public sealed class DialogueFixtureTests
         Assert.InRange(choices[0].Y, 225, 245);
         Assert.InRange(choices[1].Y, 255, 275);
     }
+
+    // A hotbar slot's list, opened on the first slot and cropped from (660, 700), with nine rows.
+    [Fact]
+    public void EachRowOfASlotsListIsFound()
+    {
+        Frame capture = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "slotlist.png"));
+
+        List<ScreenPoint> rows = SlotListReader.Rows(capture.Pixel, 0, 0, 340, 330);
+
+        Assert.Equal(9, rows.Count);
+        Assert.InRange(rows[^1].Y, 300, 315);
+        Assert.Equal(34, rows[^1].Y - rows[^2].Y);
+    }
 }

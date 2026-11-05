@@ -91,7 +91,7 @@ internal static class Host
         ScreenSpots spots = new();
         ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness, jumping, spots));
         ConversationWatch conversation = new(() => ConversationShowing(readiness, spots));
-        Mapper mapper = new(config.Mapping(), layers[Mode.Combat]) { Wheel = config.Wheel(), Lock = config.LockOn(), SoftAim = config.SoftAim(), TwinStick = config.Input.TwinStick, InteractReach = config.Input.InteractReach };
+        Mapper mapper = new(config.Mapping(), layers[Mode.Combat]) { Wheel = config.Wheel(), Lock = config.LockOn(), SoftAim = config.SoftAim(), TwinStick = config.Input.TwinStick, InteractReach = config.Input.InteractReach, HotbarSlot = key => HotbarSlot(readiness, key) };
 
         // A replay is timed from the first tick, so startup does not eat into it.
         Stopwatch replayClock = new();
@@ -263,6 +263,16 @@ internal static class Host
         double seconds = (clock.Elapsed - started).TotalSeconds;
         Console.WriteLine($"Stopped. Everything held has been released. {ticks} ticks at {ticks / seconds:F0} Hz against {config.Input.PollHz} configured.");
         return 0;
+    }
+
+    private static (int X, int Y)? HotbarSlot(GridReadiness readiness, KeyCode key)
+    {
+        if (readiness.Grids.TryGetValue("Hotbar", out GridSpec? hotbar) && RadialMenu.HotbarColumn(key) is int column)
+        {
+            return hotbar.Centre(new GridCell(column, 0));
+        }
+
+        return null;
     }
 
     private static bool ConversationShowing(GridReadiness readiness, ScreenSpots spots)

@@ -2794,6 +2794,8 @@ bool MeasureYaw(void* camera, const float back[3], float elapsed)
 constexpr std::size_t CharacterAxes = 0xf0;
 constexpr int ForwardAxis = 2;
 std::atomic<bool> recenterRequested{false};
+std::atomic<int> swapFirst{-1};
+std::atomic<int> swapSecond{-1};
 bool recentering = false;
 float recenterHeading = 0;
 float recenterClock = 0;
@@ -3290,8 +3292,76 @@ void Tilt(void* camera, float elapsed)
     Write(camera, LivePitch, (gamePitch + tiltOffset) * Pi / 180);
 }
 
+// The player's arrangement of the hotbar: which skill each slot holds. The
+// game's own setter also moves things about and frees what it replaces, so an
+// exchange swaps the two entries of the skill set showing, which leaves every
+// skill just as it was but for its place. The offsets are in the getter's bytes.
+using HotSlotsOf = void* (*)(void* player);
+using SkillSetOf = unsigned char* (*)(const void* slots);
+HotSlotsOf hotSlotsOf = nullptr;
+SkillSetOf skillSetOf = nullptr;
+constexpr int MostHotSlots = 0x2f;
+constexpr std::size_t SkillSetSlots = 8;
+
+void FindHotSlots()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    void* slots = reinterpret_cast<void*>(GetProcAddress(game, "?GetPlayerHotSlotCtrl@Player@GAME@@QEAAAEAVPlayerHotSlotCtrl@2@XZ"));
+    void* set = reinterpret_cast<void*>(GetProcAddress(game, "?GetDisplayedSkillSet@PlayerHotSlotCtrl@GAME@@AEBAPEAUSkillSet@12@XZ"));
+    void* option = reinterpret_cast<void*>(GetProcAddress(game, "?GetHotSlotOption@PlayerHotSlotCtrl@GAME@@QEBAPEAVHotSlotOption@2@I@Z"));
+
+    if (slots == nullptr || set == nullptr || option == nullptr || !StartsWith(slots, "488d81484a0000c3") || !StartsWith(option, "48895c2408574883ec208bda488bf9e8dcd7ffff4885c0741b48833f00741583fb2f7310488b44d808"))
+    {
+        Say("Skills cannot be exchanged from the wheel: the hotbar has changed. Its slots' lists still work.");
+        return;
+    }
+
+    hotSlotsOf = reinterpret_cast<HotSlotsOf>(slots);
+    skillSetOf = reinterpret_cast<SkillSetOf>(set);
+}
+
+bool ExchangeHotSlots(int first, int second)
+{
+    __try
+    {
+        unsigned char* set = skillSetOf(hotSlotsOf(mainPlayer(*engineSlot)));
+
+        if (set == nullptr)
+        {
+            return false;
+        }
+
+        void** entries = reinterpret_cast<void**>(set + SkillSetSlots);
+        void* held = entries[first];
+        entries[first] = entries[second];
+        entries[second] = held;
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+void CheckSwap()
+{
+    int first = swapFirst.exchange(-1);
+    int second = swapSecond.load();
+
+    if (first < 0 || hotSlotsOf == nullptr || first >= MostHotSlots || second < 0 || second >= MostHotSlots)
+    {
+        return;
+    }
+
+    if (ExchangeHotSlots(first, second))
+    {
+        Say("Exchanged hotbar slots %d and %d.", first, second);
+    }
+}
+
 void Work(void* camera, float elapsed)
 {
+    CheckSwap();
     targetsScannedThisFrame = false;
     KeepForward(camera);
     CheckPanels(elapsed);
@@ -3433,6 +3503,12 @@ void Obey(const std::string& line)
     if (line.find("\"type\":\"recenter\"") != std::string::npos)
     {
         recenterRequested = true;
+    }
+
+    if (line.find("\"type\":\"swap-slots\"") != std::string::npos)
+    {
+        swapSecond = static_cast<int>(NumberAfter(line, "\"second\":"));
+        swapFirst = static_cast<int>(NumberAfter(line, "\"first\":"));
     }
 
     if (line.find("\"type\":\"lock\"") != std::string::npos)
@@ -3582,6 +3658,7 @@ DWORD WINAPI Start(LPVOID)
             FindMarketSack();
             FindTalk();
             FindQuestions();
+            FindHotSlots();
             FindCollision();
             FindHealth();
             FindTargets();

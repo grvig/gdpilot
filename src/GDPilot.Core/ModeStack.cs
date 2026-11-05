@@ -20,6 +20,7 @@ public enum Mode
     LootFilter,
     Menu,
     Confirm,
+    Assign,
 }
 
 /// <summary>

@@ -78,6 +78,21 @@ public sealed record RecenterCommand : GameCommand
 }
 
 /// <summary>
+/// Exchanges what two of the hotbar's slots hold, by the game's own numbering of
+/// them, as pointing the skill wheel at one and pressing the other's button asks.
+/// </summary>
+public sealed record SwapSlotsCommand(int First, int Second) : GameCommand
+{
+    public override string Write()
+    {
+        JsonObject root = Start("swap-slots");
+        root["first"] = First;
+        root["second"] = Second;
+        return root.ToJsonString();
+    }
+}
+
+/// <summary>
 /// The left stick, for the in-game part to steer the character with in any
 /// direction: up is the camera's forward, each axis from -1 to 1. Zero lets the
 /// game's own keys steer again. A held stick is sent again several times a
@@ -115,6 +130,8 @@ public static class GameCommands
                 return new LockCommand(root["id"]?.GetValue<uint>() ?? 0);
             case "recenter":
                 return new RecenterCommand();
+            case "swap-slots":
+                return new SwapSlotsCommand(root["first"]?.GetValue<int>() ?? 0, root["second"]?.GetValue<int>() ?? 0);
             case "move":
                 return new MoveCommand(root["x"]?.GetValue<double>() ?? 0, root["y"]?.GetValue<double>() ?? 0);
             default:

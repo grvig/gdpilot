@@ -24,6 +24,7 @@ public sealed class SnappingTests
         Spots = new Dictionary<string, SpotArea>
         {
             ["Skills"] = Tree,
+            ["Assign"] = new SpotArea(680, 300, 760, 730, null, Array.Empty<ScreenPoint>(), SpotKind.SlotList),
             ["Crafting"] = new SpotArea(470, 330, 320, 230, null, Array.Empty<ScreenPoint>(), SpotKind.Recipes),
             ["Dialog"] = new SpotArea(773, 300, 477, 635, null, Array.Empty<ScreenPoint>(), SpotKind.Replies),
             ["Inventory.Gear"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(690, 268) }, SpotKind.Places),
@@ -331,5 +332,22 @@ public sealed class SnappingTests
         GridNavigator navigator = new(Ready, layouts, new FakeSpots { Selected = 4 });
 
         Assert.Equal(new PointerMoveTo(483, 323), navigator.Act(Mode.Vendor, "down"));
+    }
+
+    [Fact]
+    public void ASlotsListKeepsItsRowsWhileARowsTooltipHidesItsEdge()
+    {
+        FakeSpots spots = new() { Showing = new List<ScreenPoint> { new(754, 735), new(754, 769), new(754, 803), new(754, 1007) } };
+        GridNavigator navigator = new(Ready, null, spots);
+
+        Assert.Equal(new PointerMoveTo(754, 735), navigator.Act(Mode.Assign, "down"));
+
+        spots.Showing = new List<ScreenPoint>();
+
+        Assert.Equal(new PointerMoveTo(754, 769), navigator.Act(Mode.Assign, "down"));
+
+        // Only the lowest row can be read past this one's tooltip; the rows between are still there.
+        spots.Showing = new List<ScreenPoint> { new(754, 1007) };
+        Assert.Equal(new PointerMoveTo(754, 803), navigator.Act(Mode.Assign, "down"));
     }
 }

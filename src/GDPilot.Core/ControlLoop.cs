@@ -49,6 +49,12 @@ public sealed class ControlLoop
         mapper.Buttons = modes.CurrentLayers;
         intents.AddRange(mapper.Tick(snapshot, elapsed));
 
+        if (mapper.SlotListOpened)
+        {
+            mapper.SlotListOpened = false;
+            modes.OpenSlotList();
+        }
+
         foreach (InputIntent intent in intents)
         {
             sink.Send(intent);

@@ -45,6 +45,8 @@ public sealed class SpotAreaConfig
                 return new SpotArea(Left, Top, Width, Height, SpotLook.SkillButton, places) { When = when };
             case "devotionStar" when Width > 0 && Height > 0:
                 return new SpotArea(Left, Top, Width, Height, SpotLook.DevotionStar, places, SpotKind.Stars) { When = when };
+            case "slotList" when Width > 0 && Height > 0:
+                return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.SlotList) { When = when };
             case "textLine" when Width > 0 && Height > 0:
                 return new SpotArea(Left, Top, Width, Height, null, places, SpotKind.Lines) { When = when };
             case "recipeLine" when Width > 0 && Height > 0:
@@ -59,7 +61,7 @@ public sealed class SpotAreaConfig
     }
 }
 
-/// <summary>What a menu's spots are: buttons or stars found by their look, a conversation's replies, a crafter's recipes, any list of text, or only the fixed places.</summary>
+/// <summary>What a menu's spots are: buttons or stars found by their look, a conversation's replies, a crafter's recipes, any list of text, a hotbar slot's list, or only the fixed places.</summary>
 public enum SpotKind
 {
     Buttons,
@@ -67,6 +69,7 @@ public enum SpotKind
     Replies,
     Recipes,
     Lines,
+    SlotList,
     Places,
 }
 

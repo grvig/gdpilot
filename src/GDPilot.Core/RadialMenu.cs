@@ -129,6 +129,22 @@ public sealed class RadialMenu
         return null;
     }
 
+    /// <summary>The game's own number for a key's hotbar slot: keys 1 to 9 and then 0, from nought. Null for any other key.</summary>
+    public static int? HotSlot(KeyCode key)
+    {
+        if (key is >= KeyCode.D1 and <= KeyCode.D9)
+        {
+            return key - KeyCode.D1;
+        }
+
+        if (key == KeyCode.D0)
+        {
+            return 9;
+        }
+
+        return null;
+    }
+
     /// <summary>Shuts the wheel without casting, as when input is suspended with it open.</summary>
     public void Close()
     {

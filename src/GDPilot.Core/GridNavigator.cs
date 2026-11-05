@@ -299,8 +299,9 @@ public sealed class GridNavigator
         {
             Remember(found, area.Look.Spacing);
         }
-        else
+        else if (area.Kind != SpotKind.SlotList || found.Count > seen.Count)
         {
+            // A slot's list does not change while it is open, and the tooltip of a row can hide some of the others.
             seen.Clear();
             seen.AddRange(found);
         }

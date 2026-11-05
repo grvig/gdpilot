@@ -62,6 +62,22 @@ public sealed class Mapper
 
     /// <summary>The skill wheel, or null when no slots are configured.</summary>
     public RadialMenu? Wheel { get; set; }
+
+    /// <summary>Where a key's slot is drawn on the hotbar, for clicking it, or null when that is not known.</summary>
+    public Func<KeyCode, (int X, int Y)?>? HotbarSlot { get; set; }
+
+    /// <summary>Set when a slot's list has just been opened from the wheel, for the mode to follow.</summary>
+    public bool SlotListOpened { get; set; }
+
+    private GamepadButtons wheelButtons;
+    private TimeSpan? slotClickIn;
+    private bool slotClickDown;
+
+    /// <summary>A stick still leaning from pointing at the wheel must not drag the cursor off the list it opened.</summary>
+    private bool waitForStickCentre;
+
+    private static readonly TimeSpan SlotRest = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan SlotPress = TimeSpan.FromMilliseconds(40);
     private bool wasLocked;
 
     /// <summary>Where the game last drew the locked enemy, every frame it moves; preferred to the glide when it is the enemy held.</summary>
@@ -573,6 +589,111 @@ public sealed class Mapper
     }
 
     /// <summary>
+    /// While the wheel is open and pointing at a slot, a button bound to another
+    /// slot exchanges the two, and the interact button opens the game's list of
+    /// what the slot can hold. None of those buttons act as they otherwise would
+    /// while the wheel is open, so nothing is cast by choosing.
+    /// </summary>
+    private List<InputIntent> TickWheelButtons(GamepadSnapshot snapshot, bool wheelOpen, HashSet<KeyCode> keys)
+    {
+        List<InputIntent> actions = new();
+        GamepadButtons pressed = snapshot.Buttons & ~wheelButtons;
+        wheelButtons = snapshot.Buttons;
+
+        if (!wheelOpen || Wheel is null)
+        {
+            return actions;
+        }
+
+        foreach (GamepadButtons button in Enum.GetValues<GamepadButtons>())
+        {
+            if (button == GamepadButtons.None || (snapshot.Buttons & button) == 0)
+            {
+                continue;
+            }
+
+            ButtonBinding? binding = Buttons.BindingFor(button, snapshot.LeftTrigger);
+            KeyCode? slot = null;
+
+            if (binding is KeyBinding bound && RadialMenu.HotSlot(bound.Key) is not null)
+            {
+                slot = bound.Key;
+                keys.Remove(bound.Key);
+            }
+            else if (binding is DodgeBinding dodge)
+            {
+                slot = dodge.Key;
+            }
+
+            if ((pressed & button) == 0 || Wheel.Selected is not int chosen)
+            {
+                continue;
+            }
+
+            KeyCode pointed = Wheel.Slots[chosen];
+
+            if (binding is InteractBinding)
+            {
+                OpenSlotList(pointed, actions);
+            }
+            else if (slot is KeyCode other && other != pointed && RadialMenu.HotSlot(pointed) is int first && RadialMenu.HotSlot(other) is int second)
+            {
+                actions.Add(new GameCommandIntent(new SwapSlotsCommand(first, second)));
+            }
+        }
+
+        return actions;
+    }
+
+    /// <summary>
+    /// The game's list of what a slot can hold opens on a right click of the slot,
+    /// once the cursor has rested on it: moved and clicked in one go, the click is
+    /// not taken, as seen live on 2026-11-05.
+    /// </summary>
+    private void OpenSlotList(KeyCode slot, List<InputIntent> actions)
+    {
+        if (HotbarSlot?.Invoke(slot) is not (int x, int y))
+        {
+            return;
+        }
+
+        Wheel?.Close();
+        cursorAt = null;
+        slotClickIn = SlotRest;
+        slotClickDown = false;
+        actions.Add(new PointerMoveTo(x, y));
+    }
+
+    private void TickSlotClick(TimeSpan elapsed, List<InputIntent> intents)
+    {
+        slotClickIn -= elapsed;
+
+        if (slotClickIn > TimeSpan.Zero)
+        {
+            return;
+        }
+
+        if (!slotClickDown)
+        {
+            slotClickDown = true;
+            slotClickIn = SlotPress;
+            intents.Add(new PointerDown(PointerButton.Right));
+            return;
+        }
+
+        slotClickIn = null;
+        SlotListOpened = true;
+        waitForStickCentre = true;
+        intents.Add(new PointerUp(PointerButton.Right));
+
+        // Left on the slot, a skill's tooltip would stand over the list and hide its rows from the D-pad.
+        if (GameBounds is ScreenRect bounds)
+        {
+            intents.Add(new PointerMoveTo(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 4));
+        }
+    }
+
+    /// <summary>
     /// With the right stick left alone, the camera turns gently toward where the
     /// left stick walks, the way an action game's camera settles behind its hero.
     /// Walking straight ahead or backing off turns nothing, and the turn is
@@ -624,14 +745,36 @@ public sealed class Mapper
         // The keys walk even while steering: the game only walks while one is down, and
         // the in-game part turns that walk to the stick's exact angle.
         keys.UnionWith(StickDirections.KeysFor(left, settings.WalkThreshold, settings.Movement));
+
+        // The slot's click is in hand: nothing else may touch the cursor or the buttons until it is done.
+        if (slotClickIn is not null)
+        {
+            List<InputIntent> clicking = differ.Update(StickDirections.KeysFor(left, settings.WalkThreshold, settings.Movement).ToHashSet(), new HashSet<PointerButton>());
+            TickSlotClick(elapsed, clicking);
+            return clicking;
+        }
+
         bool wheelOpen = TickWheel(snapshot, right, elapsed, keys);
+        List<InputIntent> wheelActions = TickWheelButtons(snapshot, wheelOpen, keys);
+
+        if (Wheel is not null && !Wheel.Open)
+        {
+            wheelOpen = false;
+        }
 
         List<InputIntent> intents = differ.Update(keys, pointerButtons);
+        intents.AddRange(wheelActions);
+
+        if (slotClickIn is not null)
+        {
+            return intents;
+        }
         Steer(left, elapsed, intents);
         TickLock(snapshot, right, elapsed, wheelOpen, intents);
 
         // While a click or a dodge's key is down the cursor stays on its spot, or it would land elsewhere.
-        if (TickInteract(snapshot, elapsed, intents) || TickDodge(snapshot, left, elapsed, intents))
+        // With the wheel open those buttons act on the wheel instead.
+        if (!wheelOpen && (TickInteract(snapshot, elapsed, intents) || TickDodge(snapshot, left, elapsed, intents)))
         {
             return intents;
         }
@@ -702,6 +845,13 @@ public sealed class Mapper
 
         cursorAt = null;
         SoftAim?.Forget();
+
+        if (waitForStickCentre && right.Magnitude > 0)
+        {
+            return intents;
+        }
+
+        waitForStickCentre = false;
         PointerMove? move = cursor.Step(right, elapsed);
 
         if (move is not null)

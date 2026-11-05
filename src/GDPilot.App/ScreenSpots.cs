@@ -45,6 +45,11 @@ internal sealed class ScreenSpots : ISpotSource
             return StarFinder.Find(pixel, area.Left, area.Top, area.Width, area.Height, area.Look.Spacing);
         }
 
+        if (area.Kind == SpotKind.SlotList)
+        {
+            return SlotListReader.Rows(pixel, area.Left, area.Top, area.Width, area.Height);
+        }
+
         if (area.Kind == SpotKind.Lines)
         {
             return RecipeReader.Lines(pixel, area.Left, area.Top, area.Width, area.Height);

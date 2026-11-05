@@ -103,3 +103,8 @@ Game.dll ?OnBegin@ControllerPlayerStateTalkToNpc@GAME@@UEAAXXZ
 Game.dll ?GetDialogManager@GameEngine@GAME@@QEAAAEAVDialogManager@2@XZ
 Game.dll ?GetNumDialog@DialogManager@GAME@@QEBAHXZ
 Game.dll ?GetItemClassification@Item@GAME@@UEBA?AW4ItemClassification@2@_N@Z
+
+# The hotbar's slots, for exchanging two from the skill wheel.
+Game.dll ?GetPlayerHotSlotCtrl@Player@GAME@@QEAAAEAVPlayerHotSlotCtrl@2@XZ
+Game.dll ?GetDisplayedSkillSet@PlayerHotSlotCtrl@GAME@@AEBAPEAUSkillSet@12@XZ
+Game.dll ?GetHotSlotOption@PlayerHotSlotCtrl@GAME@@QEBAPEAVHotSlotOption@2@I@Z
