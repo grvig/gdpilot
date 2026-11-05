@@ -89,13 +89,15 @@ public static class TabStrip
     }
 }
 
-/// <summary>A piece of a window's frame, a bright upright line, whose showing proves that window is the one on screen.</summary>
+/// <summary>A piece of a window's frame, a thin upright line, whose showing proves that window is the one on screen.</summary>
 public readonly record struct FrameLine(int X, int Top, int Bottom)
 {
-    /// <summary>The frames measured 120 and up along most of their length; what lies under them, far less.</summary>
-    private const double Bright = 90;
+    /// <summary>The frames stood 70 to 170 above what lies either side of them; the world rarely does, row after row.</summary>
+    private const double StandsOut = 45;
 
-    /// <summary>Whether the line is lit along most of its length. Frames run a pixel or two wide, so a small span either side is searched.</summary>
+    private const int Side = 3;
+
+    /// <summary>Whether the line stands out along most of its length. Frames run a pixel or two wide, so a small span is searched.</summary>
     public bool Seen(Func<int, int, (byte Red, byte Green, byte Blue)> pixel)
     {
         int lit = 0;
@@ -107,9 +109,9 @@ public readonly record struct FrameLine(int X, int Top, int Bottom)
 
             for (int x = X - 2; x <= X + 2; x++)
             {
-                (byte red, byte green, byte blue) = pixel(x, y);
+                double sides = (Brightness(pixel(x - Side, y)) + Brightness(pixel(x + Side, y))) / 2;
 
-                if ((red + green + blue) / 3.0 >= Bright)
+                if (Brightness(pixel(x, y)) - sides >= StandsOut)
                 {
                     lit++;
                     break;
@@ -118,5 +120,10 @@ public readonly record struct FrameLine(int X, int Top, int Bottom)
         }
 
         return lit * 10 >= rows * 8;
+    }
+
+    private static double Brightness((byte Red, byte Green, byte Blue) colour)
+    {
+        return (colour.Red + colour.Green + colour.Blue) / 3.0;
     }
 }

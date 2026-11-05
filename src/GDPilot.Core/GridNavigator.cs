@@ -155,7 +155,7 @@ public sealed class GridNavigator
             return intents;
         }
 
-        if (!readiness.Grids.TryGetValue(current + TabsSuffix, out GridSpec? strip))
+        if (!readiness.Grids.TryGetValue(StripOf(current), out GridSpec? strip))
         {
             Notice = $"No tabs are calibrated for {current}.";
             return intents;
@@ -253,7 +253,7 @@ public sealed class GridNavigator
             .ToList();
     }
 
-    /// <summary>The spots a surface stands for, or null when its frames are none of them on screen.</summary>
+    /// <summary>The spots a surface stands for: those whose frame is on screen, else the ones in use, as a tooltip may be over the frame.</summary>
     private SpotArea? AreaOf(Mode current, string name)
     {
         if (name != SpotsSurface)
@@ -261,6 +261,11 @@ public sealed class GridNavigator
             return readiness.Spots[name.Substring(SpotsSurface.Length)];
         }
 
+        return FramedArea(current) ?? snapping;
+    }
+
+    private SpotArea? FramedArea(Mode current)
+    {
         foreach ((string _, SpotArea area) in AreasOf(current))
         {
             if (area.When is FrameLine line && spotSource!.Shows(line))
@@ -270,6 +275,17 @@ public sealed class GridNavigator
         }
 
         return null;
+    }
+
+    /// <summary>The grid name of a mode's tab strip: its own, unless the screen showing has another.</summary>
+    private string StripOf(Mode current)
+    {
+        if (spotSource is not null && FramedArea(current)?.Tabs is string strip)
+        {
+            return strip;
+        }
+
+        return current + TabsSuffix;
     }
 
     /// <summary>

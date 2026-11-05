@@ -28,8 +28,23 @@ public sealed class SpotAreaConfig
     /// <summary>A frame line as [x, top, bottom] that must be on screen for these spots to apply, when a mode shows several screens.</summary>
     public int[] When { get; init; } = Array.Empty<int>();
 
+    /// <summary>The tab strip these spots' screen has, by its grid's name, when it is not the mode's own.</summary>
+    public string Tabs { get; init; } = "";
+
     /// <summary>The area, or null when it is empty or its look is not one GDPilot knows.</summary>
     public SpotArea? ToArea()
+    {
+        SpotArea? area = Parsed();
+
+        if (area is not null && Tabs.Length > 0)
+        {
+            return area with { Tabs = Tabs };
+        }
+
+        return area;
+    }
+
+    private SpotArea? Parsed()
     {
         List<ScreenPoint> places = Fixed.Where(pair => pair.Length == 2).Select(pair => new ScreenPoint(pair[0], pair[1])).ToList();
         FrameLine? when = null;
@@ -81,6 +96,9 @@ public sealed record SpotArea(int Left, int Top, int Width, int Height, SpotLook
 {
     /// <summary>The frame line that must be on screen for these spots to apply, or null when they always do.</summary>
     public FrameLine? When { get; init; }
+
+    /// <summary>The tab strip this screen has, by its grid's name, or null for the mode's own.</summary>
+    public string? Tabs { get; init; }
 }
 
 /// <summary>A grid as the configuration writes it, zeros meaning not yet calibrated.</summary>

@@ -259,13 +259,15 @@
         "Crafting.Bag2": { "originX": 1217, "originY": 645, "pitchX": 32, "pitchY": 32, "columns": 8, "rows": 8 },
         "Skills.Tabs": { "originX": 793, "originY": 247, "pitchX": 166, "pitchY": 32, "columns": 3, "rows": 1 },
         "Vendor.Tabs": { "originX": 505, "originY": 283, "pitchX": 61.25, "pitchY": 32, "columns": 5, "rows": 1 },
+        "Crafting.Inventor.Tabs": { "originX": 522, "originY": 270, "pitchX": 105, "pitchY": 32, "columns": 3, "rows": 1 },
         "Crafting.Tabs": { "originX": 505, "originY": 283, "pitchX": 61.25, "pitchY": 32, "columns": 5, "rows": 1 },
         "Devotion.Tabs": { "originX": 796, "originY": 21, "pitchX": 164, "pitchY": 20, "columns": 3, "rows": 1 },
         "Hotbar": { "originX": 717, "originY": 1059, "pitchX": 44.18, "pitchY": 1, "columns": 12, "rows": 1 }
       },
       "spots": {
         "Skills": { "left": 700, "top": 300, "width": 710, "height": 480, "look": "skillButton", "fixed": [[645, 847], [568, 803]] },
-        "Crafting": { "left": 470, "top": 330, "width": 320, "height": 230, "look": "recipeLine", "fixed": [[630, 846]] },
+        "Crafting": { "left": 470, "top": 330, "width": 320, "height": 230, "look": "recipeLine", "when": [478, 630, 745], "fixed": [[630, 846]] },
+        "Crafting.Inventor": { "look": "places", "when": [560, 400, 600], "tabs": "Crafting.Inventor.Tabs", "fixed": [[627, 500], [628, 795], [628, 848]] },
         "Crafting.Gear": { "look": "places", "fixed": [[862, 268], [930, 215], [930, 254], [999, 231], [1069, 215], [1069, 254], [1136, 268], [862, 400], [1136, 378], [1136, 455], [862, 517], [1136, 532], [931, 574], [999, 574], [1069, 574], [1250, 207], [1319, 207], [1389, 207], [837, 614], [1164, 614], [1231, 614], [1351, 614], [1375, 614]] },
         "Vendor.Gear": { "look": "places", "fixed": [[862, 268], [930, 215], [930, 254], [999, 231], [1069, 215], [1069, 254], [1136, 268], [862, 400], [1136, 378], [1136, 455], [862, 517], [1136, 532], [931, 574], [999, 574], [1069, 574], [1250, 207], [1319, 207], [1389, 207], [837, 614], [1164, 614], [1231, 614], [1351, 614], [1375, 614]] },
         "Stash.Gear": { "look": "places", "fixed": [[908, 268], [976, 215], [976, 254], [1045, 231], [1115, 215], [1115, 254], [1182, 268], [908, 400], [1182, 378], [1182, 455], [908, 517], [1182, 532], [977, 574], [1045, 574], [1115, 574], [1296, 207], [1365, 207], [1435, 207], [883, 614], [1210, 614], [1277, 614], [1397, 614], [1421, 614]] },

@@ -77,4 +77,22 @@ public sealed class DialogueFixtureTests
             Assert.Contains(found, spot => Math.Abs(spot.X - gate.X) <= 3 && Math.Abs(spot.Y - gate.Y) <= 3);
         }
     }
+
+    // Which crafter is up, and which of the Inventor's tabs: Darlet cropped from (450, 170), on the second tab, and Duncan from (460, 180).
+    [Fact]
+    public void TheFramesTellTheCraftersApartAndTheInventorsTabIsRead()
+    {
+        Frame inventor = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "inventor.png"));
+        Frame smith = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "blacksmith.png"));
+        (byte, byte, byte) AtInventor(int x, int y) => inventor.Pixel(x - 450, y - 170);
+        (byte, byte, byte) AtSmith(int x, int y) => smith.Pixel(x - 460, y - 180);
+        FrameLine inventorFrame = new(560, 400, 600);
+        FrameLine smithFrame = new(478, 630, 745);
+
+        Assert.True(inventorFrame.Seen(AtInventor));
+        Assert.False(smithFrame.Seen(AtInventor));
+        Assert.True(smithFrame.Seen(AtSmith));
+        Assert.False(inventorFrame.Seen(AtSmith));
+        Assert.Equal(1, TabStrip.Selected(AtInventor, new GridSpec(522, 270, 105, 32, 3, 1)));
+    }
 }

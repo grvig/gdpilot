@@ -17,6 +17,8 @@ public sealed class SnappingTests
         ["Skills.Tabs"] = new GridSpec(793, 247, 166, 32, 3, 1),
         ["Vendor"] = new GridSpec(483, 323, 32, 32, 10, 18),
         ["Vendor.Tabs"] = new GridSpec(505, 283, 61.25, 32, 5, 1),
+        ["Crafting.Tabs"] = new GridSpec(505, 283, 61.25, 32, 5, 1),
+        ["Crafting.Inventor.Tabs"] = new GridSpec(522, 270, 105, 32, 3, 1),
         ["Devotion.Tabs"] = new GridSpec(796, 21, 164, 20, 3, 1),
         ["Stash.Tabs"] = new GridSpec(473, 463, 38, 38, 1, 2),
     })
@@ -349,5 +351,56 @@ public sealed class SnappingTests
         // Only the lowest row can be read past this one's tooltip; the rows between are still there.
         spots.Showing = new List<ScreenPoint> { new(754, 1007) };
         Assert.Equal(new PointerMoveTo(754, 803), navigator.Act(Mode.Assign, "down"));
+    }
+
+    private static readonly FrameLine SmithFrame = new(478, 630, 745);
+    private static readonly FrameLine InventorFrame = new(560, 400, 600);
+
+    private static readonly GridReadiness TwoCrafters = Ready with
+    {
+        Spots = new Dictionary<string, SpotArea>
+        {
+            ["Crafting"] = new SpotArea(470, 330, 320, 230, null, new[] { new ScreenPoint(630, 846) }, SpotKind.Recipes) { When = SmithFrame },
+            ["Crafting.Inventor"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(627, 500) }, SpotKind.Places) { When = InventorFrame, Tabs = "Crafting.Inventor.Tabs" },
+        },
+    };
+
+    [Fact]
+    public void EachCrafterHasItsOwnStopsAndTabs()
+    {
+        FakeSpots spots = new() { Frame = InventorFrame, Showing = new List<ScreenPoint>() };
+        GridNavigator navigator = new(TwoCrafters, null, spots);
+
+        Assert.Equal(new PointerMoveTo(627, 500), navigator.Act(Mode.Crafting, "down"));
+        Assert.Equal(new PointerMoveTo(627, 270), navigator.Tab(Mode.Crafting, 1)[0]);
+
+        navigator.Forget();
+        spots.Frame = SmithFrame;
+
+        Assert.Equal(new PointerMoveTo(630, 846), navigator.Act(Mode.Crafting, "down"));
+        Assert.Equal(new PointerMoveTo(628, 283), navigator.Tab(Mode.Crafting, 1)[0]);
+    }
+
+    [Fact]
+    public void AFrameHiddenByATooltipKeepsTheStopsInUse()
+    {
+        FakeSpots spots = new() { Frame = InventorFrame };
+        GridNavigator navigator = new(TwoCrafters, null, spots);
+        navigator.Act(Mode.Crafting, "down");
+
+        spots.Frame = null;
+
+        Assert.Equal(new PointerMoveTo(627, 500), navigator.Act(Mode.Crafting, "up"));
+    }
+
+    [Fact]
+    public void ACrafterNotYetMeasuredSaysSoAndLeavesTheBagsInReach()
+    {
+        FakeSpots spots = new() { Frame = null };
+        GridNavigator navigator = new(TwoCrafters, null, spots);
+
+        Assert.Null(navigator.Act(Mode.Crafting, "down"));
+        Assert.NotNull(navigator.Notice);
+        Assert.Equal(new PointerMoveTo(824, 645), navigator.Act(Mode.Crafting, "next"));
     }
 }

@@ -75,7 +75,7 @@ internal sealed class ScreenSpots : ISpotSource
 
     public bool Shows(FrameLine line)
     {
-        const int Margin = 3;
+        const int Margin = 6;
         int left = line.X - Margin;
         CapturedFrame frame;
 
