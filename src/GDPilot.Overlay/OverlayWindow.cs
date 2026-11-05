@@ -126,7 +126,7 @@ public sealed class OverlayWindow : Window
             return line;
         }
 
-        line.Inlines.Add(new Run(text[..split]) { Foreground = GrimTheme.Gold, FontWeight = FontWeights.SemiBold });
+        GrimTheme.AddButton(line, text[..split]);
         line.Inlines.Add(new Run("   " + text[(split + 2)..]));
         return line;
     }

@@ -41,6 +41,20 @@ public sealed unsafe class SdlGamepadSource : IGamepadSource, IDisposable
         }
     }
 
+    /// <summary>What SDL calls the kind of pad connected, or an empty string when none is.</summary>
+    public string Kind
+    {
+        get
+        {
+            if (!IsConnected)
+            {
+                return "";
+            }
+
+            return SDL_GetGamepadType(pad).ToString();
+        }
+    }
+
     public GamepadSnapshot Read()
     {
         SDL_UpdateGamepads();

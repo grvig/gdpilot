@@ -130,6 +130,8 @@ internal static class Host
             bool wheelShown = false;
             bool markerShown = false;
             RumblePolicy rumble = new();
+            PadStyle padStyle = PadGlyphs.Chosen(config.Input.PadStyle) ?? PadGlyphs.StyleOf(sdl?.Kind ?? "", sdl?.Name);
+            Console.WriteLine($"Buttons read as on a {padStyle} pad.");
             CombatRumble fight = new();
             DropRumble drops = new();
             LegendFold fold = new();
@@ -233,11 +235,11 @@ internal static class Host
                         view = view with { Pictures = wheelPictures };
                     }
 
-                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson, locked, mapper.Steering, config.Input.TiltSpeed > 0) with
+                    OverlayState state = OverlayState.Build(loop.Mode, suspension.Reasons, layers[loop.Mode], modes.GridFellBack, link.ThirdPerson, locked, mapper.Steering, config.Input.TiltSpeed > 0, padStyle) with
                     {
                         Wheel = view,
                         Marker = LockMarker.For(locked, mapper.LockPoint),
-                        Prompt = OverlayState.PromptFor(mapper.Offered, layers[loop.Mode]),
+                        Prompt = OverlayState.PromptFor(mapper.Offered, layers[loop.Mode], padStyle),
                     };
                     state = state with { Folded = fold.Folded(state, now - lastDrawn) };
                     lastDrawn = now;

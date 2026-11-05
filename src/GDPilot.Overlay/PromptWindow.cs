@@ -45,7 +45,7 @@ public sealed class PromptWindow : Window
             return;
         }
 
-        text.Inlines.Add(new System.Windows.Documents.Run(prompt[..split]) { Foreground = GrimTheme.Gold, FontWeight = FontWeights.Bold });
+        GrimTheme.AddButton(text, prompt[..split]);
         text.Inlines.Add(new System.Windows.Documents.Run("  " + prompt[(split + 2)..]));
     }
 }

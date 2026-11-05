@@ -66,4 +66,28 @@ internal static class GrimTheme
         brush.Freeze();
         return brush;
     }
+
+    /// <summary>
+    /// A button's name as the pad prints it: gold, but for a face button, in the
+    /// colour it has on the pad. A chord's trigger stays gold ahead of it.
+    /// </summary>
+    public static void AddButton(System.Windows.Controls.TextBlock line, string name)
+    {
+        int chord = name.LastIndexOf('+');
+
+        if (chord > 0 && chord < name.Length - 1)
+        {
+            line.Inlines.Add(new System.Windows.Documents.Run(name[..(chord + 1)]) { Foreground = Gold, FontWeight = System.Windows.FontWeights.SemiBold });
+            name = name[(chord + 1)..];
+        }
+
+        System.Windows.Media.Brush colour = Gold;
+
+        if (GDPilot.Core.PadGlyphs.Colour(name) is string printed)
+        {
+            colour = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString(printed)!;
+        }
+
+        line.Inlines.Add(new System.Windows.Documents.Run(name) { Foreground = colour, FontWeight = System.Windows.FontWeights.Bold });
+    }
 }

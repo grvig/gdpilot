@@ -3,6 +3,9 @@ namespace GDPilot.Core;
 /// <summary>The "input" section of the configuration, with section 7's values as defaults.</summary>
 public sealed class InputConfig
 {
+    /// <summary>Whose names the buttons go by on the overlay: "auto" for the pad connected, or "xbox", "playstation" or "nintendo".</summary>
+    public string PadStyle { get; init; } = "auto";
+
     public int PollHz { get; init; } = 250;
     public DeadzoneConfig Deadzone { get; init; } = new();
 

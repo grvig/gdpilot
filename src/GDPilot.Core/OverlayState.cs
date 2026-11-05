@@ -42,7 +42,7 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     public string? Prompt { get; init; }
 
     /// <summary>The prompt for a thing on offer, named by the button that would act on it; null with nothing offered or no such button.</summary>
-    public static string? PromptFor(NearbyThing? offered, ButtonLayers layers)
+    public static string? PromptFor(NearbyThing? offered, ButtonLayers layers, PadStyle style = PadStyle.Xbox)
     {
         if (offered is null)
         {
@@ -53,7 +53,7 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
         {
             if (binding is InteractBinding && !chorded)
             {
-                return $"{ButtonName(button)}  {SmartInteract.Verb(offered.Kind)}";
+                return $"{ButtonName(button, style)}  {SmartInteract.Verb(offered.Kind)}";
             }
         }
 
@@ -80,7 +80,7 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     /// <param name="locked">The enemy held by lock-on, which changes it again.</param>
     /// <param name="steering">Whether the left stick walks in any direction through the game, rather than in eight.</param>
     /// <param name="tilting">Whether the right stick's up and down tilts the view, with the left trigger to zoom.</param>
-    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false, SeenTarget? locked = null, bool steering = false, bool tilting = false)
+    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false, SeenTarget? locked = null, bool steering = false, bool tilting = false, PadStyle style = PadStyle.Xbox)
     {
         List<string> legend = new();
 
@@ -111,11 +111,11 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
 
         foreach ((GamepadButtons button, ButtonBinding binding, bool chorded) in layers.Entries)
         {
-            string trigger = ButtonName(button);
+            string trigger = ButtonName(button, style);
 
             if (chorded)
             {
-                trigger = "LT+" + trigger;
+                trigger = PadGlyphs.Trigger(style) + "+" + trigger;
             }
 
             legend.Add($"{trigger}: {Describe(binding)}");
@@ -141,33 +141,9 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     }
 
     /// <summary>A button as players call it, as short as the card can carry: LB, R3, View, D-pad ↑.</summary>
-    public static string ButtonName(GamepadButtons button)
+    public static string ButtonName(GamepadButtons button, PadStyle style = PadStyle.Xbox)
     {
-        switch (button)
-        {
-            case GamepadButtons.LeftBumper:
-                return "LB";
-            case GamepadButtons.RightBumper:
-                return "RB";
-            case GamepadButtons.Back:
-                return "View";
-            case GamepadButtons.Start:
-                return "Menu";
-            case GamepadButtons.LeftStick:
-                return "L3";
-            case GamepadButtons.RightStick:
-                return "R3";
-            case GamepadButtons.DPadUp:
-                return "D-pad ↑";
-            case GamepadButtons.DPadDown:
-                return "D-pad ↓";
-            case GamepadButtons.DPadLeft:
-                return "D-pad ←";
-            case GamepadButtons.DPadRight:
-                return "D-pad →";
-            default:
-                return button.ToString();
-        }
+        return PadGlyphs.Name(button, style);
     }
 
     private static string ModifierName(KeyCode modifier)

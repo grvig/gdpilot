@@ -4,6 +4,7 @@
   "gameProcess": "Grim Dawn",
   "input": {
     "pollHz": 250,
+    "padStyle": "auto",
     "deadzone": {
       "left": 0.22,
       "right": 0.18
