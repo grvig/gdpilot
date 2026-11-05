@@ -295,7 +295,7 @@ public sealed class GridNavigator
         }
 
         // Buttons stay put while a tooltip hides them; a conversation's replies change with every step.
-        if (area.Kind == SpotKind.Buttons && area.Look is not null)
+        if (area.Kind is SpotKind.Buttons or SpotKind.Stars && area.Look is not null)
         {
             Remember(found, area.Look.Spacing);
         }
@@ -311,7 +311,7 @@ public sealed class GridNavigator
 
         if (action == "next" || !placed)
         {
-            target = SpotNavigator.First(spots);
+            target = FirstStop(area, spots);
         }
         else
         {
@@ -334,6 +334,17 @@ public sealed class GridNavigator
         Jumping = true;
         Notice = null;
         return new PointerMoveTo(spot.X, spot.Y);
+    }
+
+    /// <summary>A map starts from its middle, so the first press is near what the eye is on; anything else from its top left.</summary>
+    private static ScreenPoint? FirstStop(SpotArea area, List<ScreenPoint> spots)
+    {
+        if (area.Kind != SpotKind.Stars)
+        {
+            return SpotNavigator.First(spots);
+        }
+
+        return SpotNavigator.Nearest(spots, new ScreenPoint(area.Left + area.Width / 2, area.Top + area.Height / 2));
     }
 
     /// <summary>

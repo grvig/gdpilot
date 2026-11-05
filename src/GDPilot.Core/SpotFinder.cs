@@ -16,13 +16,152 @@ public sealed record SpotLook(int DiscRadius, int RingRadius, double MinimumCont
     /// </summary>
     public static SpotLook SkillButton { get; } = new(12, 26, 48, 45);
 
-    /// <summary>
-    /// A star of a constellation on the devotion map at 1920 by 1080, UI scale
-    /// 0.5: a point of light a few pixels across, glowing brighter once its
-    /// constellation is taken. The dust of tiny background stars falls short of
-    /// the contrast; stars of one constellation sit at least 20 pixels apart.
-    /// </summary>
+    /// <summary>How far apart a constellation's stars sit, for the star finder; its other sizes are its own.</summary>
     public static SpotLook DevotionStar { get; } = new(4, 12, 60, 20);
+}
+
+/// <summary>
+/// Finds the stars of the devotion map. A star not taken is a point of light,
+/// brighter at its middle than anything a few pixels out, dim or in a nebula;
+/// the outlines of a lit constellation run on past that as bright as they
+/// began. A star taken is a blaze, bright well out from its middle, which no
+/// outline is. Measured on 2026-11-05 at 1920 by 1080, UI scale 0.5, against
+/// lit and unlit constellations: points 126 and up at their middle with at most
+/// 0.87 of that seven pixels out, where outlines but one reached 1.05 and up;
+/// blazes 181 and up over a radius of four, with 170 and up seven out.
+/// </summary>
+public static class StarFinder
+{
+    private const double PointBrightest = 110;
+    private const double PointFrom = 120;
+    private const double PointStandsOut = 0.88;
+    private const double BlazeFrom = 175;
+    private const double BlazeRingFrom = 165;
+    private const int RingRadius = 7;
+    private const int RingPoints = 24;
+
+    public static List<ScreenPoint> Find(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, int spacing)
+    {
+        int margin = RingRadius + 1;
+        int spanX = width + margin * 2;
+        int spanY = height + margin * 2;
+        float[] brightness = new float[spanX * spanY];
+
+        for (int y = 0; y < spanY; y++)
+        {
+            for (int x = 0; x < spanX; x++)
+            {
+                (byte red, byte green, byte blue) = pixel(left - margin + x, top - margin + y);
+                brightness[y * spanX + x] = (red + green + blue) / 3f;
+            }
+        }
+
+        int[] inner = Disc(2, spanX);
+        int[] wide = Disc(4, spanX);
+        int[] ring = new int[RingPoints];
+
+        for (int index = 0; index < RingPoints; index++)
+        {
+            double angle = index * Math.PI * 2 / RingPoints;
+            ring[index] = (int)Math.Round(RingRadius * Math.Sin(angle)) * spanX + (int)Math.Round(RingRadius * Math.Cos(angle));
+        }
+
+        List<(double Score, int X, int Y)> candidates = new();
+        double[] around = new double[RingPoints];
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                int centre = (y + margin) * spanX + x + margin;
+
+                // Almost all of the map is far too dim to be the middle of anything.
+                if (brightness[centre] < PointBrightest)
+                {
+                    continue;
+                }
+
+                double middle = Mean(brightness, centre, inner);
+
+                if (middle < PointFrom)
+                {
+                    continue;
+                }
+
+                for (int index = 0; index < RingPoints; index++)
+                {
+                    around[index] = brightness[centre + ring[index]];
+                }
+
+                Array.Sort(around);
+                bool point = around[RingPoints - 1] <= middle * PointStandsOut;
+                bool blaze = Mean(brightness, centre, wide) >= BlazeFrom && around[RingPoints / 2] >= BlazeRingFrom;
+
+                if (point || blaze)
+                {
+                    candidates.Add((middle, left + x, top + y));
+                }
+            }
+        }
+
+        candidates.Sort((first, second) => second.Score.CompareTo(first.Score));
+        List<ScreenPoint> stars = new();
+        int apart = spacing * spacing;
+
+        foreach ((double _, int x, int y) in candidates)
+        {
+            bool clear = true;
+
+            foreach (ScreenPoint star in stars)
+            {
+                int dx = star.X - x;
+                int dy = star.Y - y;
+
+                if (dx * dx + dy * dy <= apart)
+                {
+                    clear = false;
+                    break;
+                }
+            }
+
+            if (clear)
+            {
+                stars.Add(new ScreenPoint(x, y));
+            }
+        }
+
+        return stars;
+    }
+
+    private static double Mean(float[] brightness, int centre, int[] offsets)
+    {
+        double sum = 0;
+
+        foreach (int offset in offsets)
+        {
+            sum += brightness[centre + offset];
+        }
+
+        return sum / offsets.Length;
+    }
+
+    private static int[] Disc(int radius, int stride)
+    {
+        List<int> offsets = new();
+
+        for (int dx = -radius; dx <= radius; dx++)
+        {
+            for (int dy = -radius; dy <= radius; dy++)
+            {
+                if (dx * dx + dy * dy <= radius * radius)
+                {
+                    offsets.Add(dy * stride + dx);
+                }
+            }
+        }
+
+        return offsets.ToArray();
+    }
 }
 
 /// <summary>

@@ -56,6 +56,28 @@ public static class SpotNavigator
         return best;
     }
 
+    /// <summary>The spot nearest a point, or null when there are none.</summary>
+    public static ScreenPoint? Nearest(IReadOnlyList<ScreenPoint> spots, ScreenPoint to)
+    {
+        ScreenPoint? best = null;
+        long bestDistance = long.MaxValue;
+
+        foreach (ScreenPoint spot in spots)
+        {
+            long dx = spot.X - to.X;
+            long dy = spot.Y - to.Y;
+            long distance = dx * dx + dy * dy;
+
+            if (distance < bestDistance)
+            {
+                best = spot;
+                bestDistance = distance;
+            }
+        }
+
+        return best;
+    }
+
     /// <summary>The nearest spot in a direction from a point, or null when nothing lies that way.</summary>
     public static ScreenPoint? Next(IReadOnlyList<ScreenPoint> spots, ScreenPoint from, GridDirection direction)
     {
