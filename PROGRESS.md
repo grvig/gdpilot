@@ -328,30 +328,30 @@ Nothing.
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
 
-Phase 7 is being finished. A pass on 2026-11-05 found faults in the first round
-of menu snapping and gaps against the plan. Done and checked live that day:
-conversations (a reply under the cursor, a goodbye, several replies), every
-tab of a trader, the journal, factions, achievements and loot filter, the
-game's menu with Options and Yes and No questions, and devotion opened from the
-D-pad with its stars told from lit outlines. `--spots` lists a menu's stops.
+Phase 7 is being finished; it is not done. Checked live on 2026-11-05:
+conversations, every tab of a trader, the journal, factions, achievements and
+loot filter, the game's menu with Options and Yes and No questions, devotion
+from the D-pad, exchanging skills on the wheel (it lasts across a restart), a
+slot's list opened from the wheel, rift travel by the D-pad and A, the gear
+slots' places, the Inventor's stops and tabs, soft aim among living enemies,
+the main menu's report and first stops, and button names on an Xbox pad and,
+by setting, PlayStation names.
 
 Still to do in Phase 7, in order:
 
-1. **Check live:** the gear slots beside the bags, which are measured from a
-   capture but not yet tried; the overlay's place in each new window.
-2. **Other windows from townsfolk:** the Inventor, the Spirit Guide, and how a
-   rift gate's map behaves; the world map's stops. Kory the Keeper and Captain
-   John Bourbon have not been tried either.
-3. **A new test character**, for the attributes' buttons, which show only with
-   points to spend, and for choosing a mastery.
-4. **Promised and not built:** swapping a skill from the wheel with a face
-   button, and rumble on a rare drop. The game now reports each loot's rarity;
-   what its numbers mean still has to be read.
-5. **Button icons matching the connected pad.**
-6. **Soft aim among living enemies, and a dodge with a skill in slot 4**, live.
-7. **The bug pass**, the remaining docs, and keeping the overlay's card from
-   being read as stops on the devotion map.
-8. **With someone at the pad:** the "Not yet verified" list above, and tuning.
+1. **Attributes and choosing a mastery.** A test character, "padtest", was
+   made for this; it is still level 1, and enemies were just reached north-east
+   of Devil's Crossing. Fight until it levels, measure the buttons, add stops.
+2. **Live checks not yet done:** a dodge with a movement skill (Evade is on the
+   test character's slot 4); the buttons along the bags' foot; the main menu's
+   Create and Difficulty dialogs, whose frames were measured by eye; the overlay's
+   place in each new window; Kory the Keeper, Captain John Bourbon and the Spirit
+   Guide.
+3. **Rare-drop rumble:** built on rarities read from items at hand, 0, 2, 3 and
+   9. No legendary was at hand to read, so that number is assumed.
+4. **Keep the overlay's card from being read as stops on the devotion map.**
+5. **The bug pass**, then the docs for the skill wheel's new buttons.
+6. **With someone at the pad:** the "Not yet verified" list above, and tuning.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
 done.
