@@ -1301,6 +1301,37 @@ bool QuestionUp()
     }
 }
 
+// At the main menu the game's interface is gone though its frames run on, and
+// the player's object stays, as read live on 2026-11-05. A load can take the
+// interface for a moment too, so it must be gone for half a second.
+constexpr int NoInterfaceChecks = 5;
+int noInterfaceChecks = 0;
+
+void ReportNoInterface()
+{
+    if (noInterfaceChecks < NoInterfaceChecks)
+    {
+        noInterfaceChecks++;
+        return;
+    }
+
+    std::string front = "[\"MainMenu\"";
+
+    if (QuestionUp())
+    {
+        front += ",\"Confirm\"";
+    }
+
+    front += "]";
+
+    if (panelsWanted.exchange(false) || front != lastPanels)
+    {
+        lastPanels = front;
+        Say("Panels open: %s", front.c_str());
+        Post(PanelsLine(front));
+    }
+}
+
 void CheckPanels(float elapsed)
 {
     sincePanelCheck += elapsed;
@@ -1311,12 +1342,16 @@ void CheckPanels(float elapsed)
     }
 
     sincePanelCheck = 0;
+
     unsigned char bytes[std::size(Panels) + 3]{};
 
     if (!ReadPanelBytes(bytes, std::size(bytes)))
     {
+        ReportNoInterface();
         return;
     }
+
+    noInterfaceChecks = 0;
 
     // The shared byte can follow the inventory flag by a frame or two, so the check as the flag
     // rises is left out rather than saying "the bags alone" of a crafter's window.

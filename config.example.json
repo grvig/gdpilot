@@ -153,6 +153,13 @@
       "B": "back",
       "Start": "back"
     },
+    "MainMenu": {
+      "DPadUp": "grid:up",
+      "DPadDown": "grid:down",
+      "DPadLeft": "grid:left",
+      "DPadRight": "grid:right",
+      "A": "mouse:left"
+    },
     "Assign": {
       "DPadUp": "grid:up",
       "DPadDown": "grid:down",
@@ -279,6 +286,9 @@
         "Menu": { "look": "places", "when": [837, 420, 660], "fixed": [[970, 452], [970, 512], [970, 573], [970, 633]] },
         "Menu.Options": { "look": "places", "when": [526, 300, 780], "fixed": [[718, 332], [798, 332], [878, 332], [958, 332], [1038, 332], [1118, 332], [1198, 332], [803, 790], [960, 790], [1115, 790]] },
         "WorldMap": { "left": 482, "top": 225, "width": 968, "height": 590, "look": "riftGate", "fixed": [[960, 803], [868, 803], [1053, 803]] },
+        "MainMenu": { "left": 20, "top": 560, "width": 240, "height": 150, "look": "textLine", "fixed": [[958, 985], [690, 985], [1228, 985], [80, 761], [142, 818], [142, 874], [142, 930], [142, 986]] },
+        "MainMenu.Create": { "look": "places", "when": [661, 425, 640], "fixed": [[813, 555], [813, 585], [1027, 555], [878, 655], [1037, 655]] },
+        "MainMenu.Difficulty": { "look": "places", "when": [1282, 310, 760], "fixed": [[1048, 676], [1152, 676], [880, 768], [1037, 768]] },
         "Assign": { "left": 680, "top": 300, "width": 760, "height": 730, "look": "slotList" },
         "Confirm": { "look": "places", "fixed": [[883, 593], [1036, 593]] },
         "Factions": { "look": "places", "fixed": [[590, 292], [590, 342], [590, 392], [590, 442], [590, 492], [590, 542], [590, 592]] },

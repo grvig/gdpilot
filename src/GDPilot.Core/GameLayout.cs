@@ -55,16 +55,26 @@ public static class GameLayout
     private static readonly ScreenArea FilterWindow = new(0.22, 0.18, 0.8, 0.9);
     private static readonly ScreenArea Question = new(0.4, 0.4, 0.6, 0.62);
 
+    // The game's tips for a new character come up top left, measured on 2026-11-05.
+    private static readonly ScreenArea Tips = new(0, 0.03, 0.21, 0.17);
+    private static readonly ScreenArea FrontMenu = new(0, 0.5, 0.15, 1);
+    private static readonly ScreenArea FrontButtons = new(0.28, 0.87, 0.72, 0.96);
+
     /// <summary>Everything the game draws in a mode, the world's own interface included.</summary>
     public static IReadOnlyList<ScreenArea> Reserved(Mode mode)
     {
+        if (mode == Mode.MainMenu)
+        {
+            return new List<ScreenArea> { FrontMenu, FrontButtons };
+        }
+
         // The devotion map covers the world's own interface along with the world.
         if (mode == Mode.Devotion)
         {
             return new List<ScreenArea> { Affinities, DevotionBar };
         }
 
-        List<ScreenArea> areas = new() { Minimap, Quests, Hotbar, Corner };
+        List<ScreenArea> areas = new() { Minimap, Quests, Hotbar, Corner, Tips };
 
         switch (mode)
         {

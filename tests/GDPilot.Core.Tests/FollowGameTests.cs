@@ -161,6 +161,33 @@ public sealed class FollowGameTests
     }
 
     [Fact]
+    public void TheMainMenuReplacesWhateverWasOpenAndLeavesWithTheNextReport()
+    {
+        ModeController modes = Controller();
+        modes.Follow(new[] { "Menu", "Confirm" });
+
+        modes.Follow(new[] { "MainMenu" });
+        Assert.Equal(Mode.MainMenu, modes.Current);
+        Assert.Equal(1, modes.Depth);
+
+        modes.Follow(Array.Empty<string>());
+        Assert.Equal(Mode.Combat, modes.Current);
+    }
+
+    [Fact]
+    public void AQuestionAtTheMainMenuTakesTheButtonsAndGivesThemBack()
+    {
+        ModeController modes = Controller();
+        modes.Follow(new[] { "MainMenu" });
+
+        modes.Follow(new[] { "MainMenu", "Confirm" });
+        Assert.Equal(Mode.Confirm, modes.Current);
+
+        modes.Follow(new[] { "MainMenu" });
+        Assert.Equal(Mode.MainMenu, modes.Current);
+    }
+
+    [Fact]
     public void ACraftersWindowTheGameNamesIsFollowed()
     {
         ModeController modes = Controller();

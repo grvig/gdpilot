@@ -21,6 +21,7 @@ public enum Mode
     Menu,
     Confirm,
     Assign,
+    MainMenu,
 }
 
 /// <summary>
