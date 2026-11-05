@@ -119,6 +119,31 @@ public sealed class FollowGameTests
     }
 
     [Fact]
+    public void AQuestionTakesTheButtonsAndAnsweringReturnsToTheMenuBeneath()
+    {
+        ModeController modes = Controller();
+        modes.Follow(new[] { "Menu" });
+
+        modes.Follow(new[] { "Menu", "Confirm" });
+        Assert.Equal(Mode.Confirm, modes.Current);
+
+        modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.B }, Tick);
+        Assert.Equal(Mode.Menu, modes.Current);
+    }
+
+    [Fact]
+    public void AQuestionOverNothingElseIsFollowedAndLeft()
+    {
+        ModeController modes = Controller();
+
+        modes.Follow(new[] { "Confirm" });
+        Assert.Equal(Mode.Confirm, modes.Current);
+
+        modes.Follow(Array.Empty<string>());
+        Assert.Equal(Mode.Combat, modes.Current);
+    }
+
+    [Fact]
     public void ACraftersWindowTheGameNamesIsFollowed()
     {
         ModeController modes = Controller();

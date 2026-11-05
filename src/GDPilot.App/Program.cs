@@ -89,6 +89,13 @@ internal static class Program
             return OccupancyMode.Run(config, args[occupancyAt + 1]);
         }
 
+        int spotsAt = Array.IndexOf(args, "--spots");
+
+        if (spotsAt >= 0 && spotsAt + 1 < args.Length)
+        {
+            return SpotsMode.Run(config, args[spotsAt + 1]);
+        }
+
         int calibrateAt = Array.IndexOf(args, "--calibrate");
 
         if (calibrateAt >= 0 && calibrateAt + 1 < args.Length)

@@ -173,6 +173,18 @@ public sealed class ModeController
             }
         }
 
+        // What a question was asked over stays beneath it, so answering returns there at once.
+        if (shown == Mode.Confirm)
+        {
+            foreach (Mode mode in modes)
+            {
+                if (mode != Mode.Confirm)
+                {
+                    stack.Toggle(mode);
+                }
+            }
+        }
+
         stack.Toggle(shown);
     }
 
