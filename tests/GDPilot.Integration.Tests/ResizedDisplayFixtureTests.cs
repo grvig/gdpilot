@@ -25,6 +25,18 @@ public sealed class ResizedDisplayFixtureTests
     }
 
     [Theory]
+    [InlineData(1024, 768, 0.5, "sized-1024-skills", 280, 170)]
+    [InlineData(1920, 1080, 1.0, "sized-1415-skills", 560, 170)]
+    public void EverySkillButtonIsFound(int width, int height, double uiScale, string file, int left, int top)
+    {
+        SpotArea area = At(width, height, uiScale).Spots["Skills"];
+
+        List<ScreenPoint> found = SpotFinder.Find(Screen(file, left, top), area.Left, area.Top, area.Width, area.Height, area.Look!);
+
+        Assert.Equal(32, found.Count);
+    }
+
+    [Theory]
     [InlineData(1024, 768, 0.5, "sized-1024-crafter", 100, 200, 232, 18)]
     [InlineData(1920, 1080, 1.0, "sized-1415-crafter", 240, 220, 263, 32)]
     public void EveryRecipeIsARowApart(int width, int height, double uiScale, string file, int left, int top, int firstY, int apart)
