@@ -28,11 +28,19 @@ public sealed record SpotLook(int DiscRadius, int RingRadius, double MinimumCont
 /// outline is. Measured on 2026-11-05 at 1920 by 1080, UI scale 0.5, against
 /// lit and unlit constellations: points 126 and up at their middle with at most
 /// 0.87 of that seven pixels out, where outlines but one reached 1.05 and up;
-/// blazes 181 and up over a radius of four, with 170 and up seven out.
+/// blazes 181 and up over a radius of four, with 170 and up seven out. A star
+/// flaring on an outline of its own, as the reachable constellations' do, keeps a
+/// solid core: 54 and up all round three pixels out, where a line's falls to 44.
 /// </summary>
 public static class StarFinder
 {
-    private const double PointBrightest = 110;
+    private const double PointBrightest = 100;
+    private const double FlareFrom = 100;
+    private const double FlareCoreFrom = 72;
+    private const double FlareStandsOut = 0.7;
+    private const int FlareCoreRadius = 3;
+    private const int ClumpReach = 70;
+    private const int ClumpMost = 2;
     private const double PointFrom = 120;
     private const double PointStandsOut = 0.88;
     private const double BlazeFrom = 175;
@@ -58,6 +66,7 @@ public static class StarFinder
 
         int[] inner = Disc(2, spanX);
         int[] wide = Disc(4, spanX);
+        int[] core = Circle(FlareCoreRadius, spanX);
         int[] ring = new int[RingPoints];
 
         for (int index = 0; index < RingPoints; index++)
@@ -66,7 +75,7 @@ public static class StarFinder
             ring[index] = (int)Math.Round(RingRadius * Math.Sin(angle)) * spanX + (int)Math.Round(RingRadius * Math.Cos(angle));
         }
 
-        List<(double Score, int X, int Y)> candidates = new();
+        List<(double Score, int X, int Y, bool FlareOnly)> candidates = new();
         double[] around = new double[RingPoints];
 
         for (int y = 0; y < height; y++)
@@ -83,7 +92,7 @@ public static class StarFinder
 
                 double middle = Mean(brightness, centre, inner);
 
-                if (middle < PointFrom)
+                if (middle < FlareFrom)
                 {
                     continue;
                 }
@@ -94,21 +103,23 @@ public static class StarFinder
                 }
 
                 Array.Sort(around);
-                bool point = around[RingPoints - 1] <= middle * PointStandsOut;
+                bool point = middle >= PointFrom && around[RingPoints - 1] <= middle * PointStandsOut;
+                bool flare = around[RingPoints / 2] <= middle * FlareStandsOut && Lowest(brightness, centre, core) >= FlareCoreFrom;
                 bool blaze = Mean(brightness, centre, wide) >= BlazeFrom && around[RingPoints / 2] >= BlazeRingFrom;
 
-                if (point || blaze)
+                if (point || flare || blaze)
                 {
-                    candidates.Add((middle, left + x, top + y));
+                    candidates.Add((middle, left + x, top + y, flare && !point && !blaze));
                 }
             }
         }
 
         candidates.Sort((first, second) => second.Score.CompareTo(first.Score));
         List<ScreenPoint> stars = new();
+        List<ScreenPoint> flares = new();
         int apart = spacing * spacing;
 
-        foreach ((double _, int x, int y) in candidates)
+        foreach ((double _, int x, int y, bool flareOnly) in candidates)
         {
             bool clear = true;
 
@@ -127,10 +138,56 @@ public static class StarFinder
             if (clear)
             {
                 stars.Add(new ScreenPoint(x, y));
+
+                if (flareOnly)
+                {
+                    flares.Add(new ScreenPoint(x, y));
+                }
+            }
+        }
+
+        // Stars stand apart, so finds of this weakest kind that crowd together are the detail of the artwork.
+        foreach (ScreenPoint flare in flares)
+        {
+            if (flares.Count(other => Within(flare, other, ClumpReach)) > ClumpMost)
+            {
+                stars.Remove(flare);
             }
         }
 
         return stars;
+    }
+
+    private static bool Within(ScreenPoint first, ScreenPoint second, int reach)
+    {
+        int dx = first.X - second.X;
+        int dy = first.Y - second.Y;
+        return dx * dx + dy * dy <= reach * reach;
+    }
+
+    private static double Lowest(float[] brightness, int centre, int[] offsets)
+    {
+        double lowest = double.MaxValue;
+
+        foreach (int offset in offsets)
+        {
+            lowest = Math.Min(lowest, brightness[centre + offset]);
+        }
+
+        return lowest;
+    }
+
+    private static int[] Circle(int radius, int stride)
+    {
+        int[] offsets = new int[12];
+
+        for (int index = 0; index < offsets.Length; index++)
+        {
+            double angle = index * Math.PI * 2 / offsets.Length;
+            offsets[index] = (int)Math.Round(radius * Math.Sin(angle)) * stride + (int)Math.Round(radius * Math.Cos(angle));
+        }
+
+        return offsets;
     }
 
     private static double Mean(float[] brightness, int centre, int[] offsets)
