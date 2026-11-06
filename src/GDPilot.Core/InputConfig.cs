@@ -85,6 +85,9 @@ public sealed class InputConfig
     /// step one cell at a time, which never depends on what the screen shows.
     /// </summary>
     public bool JumpToItems { get; init; } = true;
+
+    /// <summary>Whether to load the in-game part into the game by itself once the game has started.</summary>
+    public bool LoadInGame { get; init; } = true;
 }
 
 public sealed class DeadzoneConfig

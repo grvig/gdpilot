@@ -60,6 +60,7 @@ internal static class Host
         // Section 11: grids are worked out for the live display, and again whenever it changes.
         GridReadiness readiness = new(false, "The game is not running yet, so grid navigation is off.", new Dictionary<string, GridSpec>());
         DisplayWatch displayWatch = new();
+        InGameAutoLoad autoLoad = new();
         LiveDisplay? display = GameDisplay.Read(config);
 
         if (displayWatch.Changed(display))
@@ -177,6 +178,11 @@ internal static class Host
                         readiness = GridReadiness.Check(config, display!.Value);
                         navigator.Use(readiness);
                         Console.WriteLine($"Grids: {readiness.Message}");
+                    }
+
+                    if (config.Input.LoadInGame && !dryRun && replay is null)
+                    {
+                        LoadInGameWhenDue(config, autoLoad, gameHandle, link.Connected, now);
                     }
                 }
 
@@ -354,6 +360,22 @@ internal static class Host
         }
 
         return new Picture(pixels, side, side);
+    }
+
+    /// <summary>Off the loop's own thread, since loading takes as long as the game needs and the pad must not wait for it.</summary>
+    private static void LoadInGameWhenDue(GDPilotConfig config, InGameAutoLoad autoLoad, IntPtr gameHandle, bool connected, TimeSpan now)
+    {
+        int? process = null;
+
+        if (gameHandle != IntPtr.Zero)
+        {
+            process = GameWindow.ProcessId(gameHandle);
+        }
+
+        if (autoLoad.Due(process, connected, now))
+        {
+            Task.Run(() => LoadInGameMode.Run(config));
+        }
     }
 
     /// <summary>A replay is a test with an end of its own, so it leaves nothing beside the clock.</summary>

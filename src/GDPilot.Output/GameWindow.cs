@@ -24,6 +24,13 @@ public static class GameWindow
         return IntPtr.Zero;
     }
 
+    /// <summary>Which run of the game a window belongs to.</summary>
+    public static int ProcessId(IntPtr window)
+    {
+        GetWindowThreadProcessId(window, out uint id);
+        return (int)id;
+    }
+
     /// <summary>The game's client area in physical pixels, or null if it is not running or is minimised.</summary>
     public static ScreenRect? ClientBounds(string processName)
     {
@@ -68,6 +75,9 @@ public static class GameWindow
         internal int X;
         internal int Y;
     }
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
 
     [DllImport("user32.dll")]
     private static extern bool GetClientRect(IntPtr window, out Bounds bounds);
