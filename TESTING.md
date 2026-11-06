@@ -27,6 +27,14 @@ loader tests load a system DLL into a hidden `ping` process; neither touches
 the game. Close Grim Dawn before a full run anyway, since the loopback tests
 inject input into whichever window is in front.
 
+## Other displays
+
+`ResizedDisplayFixtureTests` moves the shipped profile to another display, as a run
+would, and reads a real capture of that display. Each crop keeps its place on the
+capture, so a wrong place fails as surely as a wrong reading. Named `sized-1024-*`,
+`sized-900-*`, `sized-720-*` and `sized-1415-*` for 1024x768, 1600x900, 1280x720
+and 1920x1080 at UI scale 1.0, the last being the factor it draws at.
+
 ## Checking against the game
 
 The in-game part is C++ and has no unit tests of its own; it is checked live,
@@ -35,8 +43,9 @@ in the game, with recorded pad traces:
 1. `src\GDPilot.InGame\build.cmd`, then `dotnet build`.
 2. Start Grim Dawn and enter the world. A new build of the in-game part needs a
    fresh game, because it is never unloaded from a running one.
-3. `GDPilot.exe --load-in-game`. What it found, and every switch it makes, goes
-   to `%LOCALAPPDATA%\GDPilot\in-game.log`.
+3. `GDPilot.exe --load-in-game`, since a replay does not load it by itself as a
+   normal run does. What it found, and every switch it makes, goes to
+   `%LOCALAPPDATA%\GDPilot\in-game.log`.
 4. `GDPilot.exe --replay tests/fixtures/traces/<trace>.json` plays a recorded
    pad performance through the whole program with the game in front.
 

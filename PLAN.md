@@ -671,6 +671,14 @@ Section 13's scope, plus profiles per character. Fast travel, quick-sell,
 portal and return, tray icon, first-run setup, feel tuning (HT-3), and a
 single release download using the drop-in loader.
 
+Done 2026-11-07: the tray icon, starting with Windows, a first run with its checks,
+the in-game part loading by itself, bindings per character, and `publish.cmd`. Other
+resolutions and UI scales, listed under Phase 9, were done too, as the largest piece
+of the setup a stranger would hit first. Fast travel and quick-sell turned out to
+need no shortcut: at a gate the map opens with the D-pad on its gates, and the game's
+own Quicksell answers X at a trader. Left: portal on one button, settings that change
+while playing, the drop-in loader, feel tuning and the release itself.
+
 ### The bar for "complete"
 
 The owner set it: playing on a controller must compare with a game made for

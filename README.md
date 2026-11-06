@@ -103,7 +103,7 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 | 5 | The in-game part and the action camera | **Done.** Third person with turning, zoom, collision and following, all from the pad. |
 | 6 | Lock-on, camera-relative movement, smart interact | **Done.** Lock-on, walking in any direction, twin-stick aiming, tilting, the dodge and smart interact, all checked in the game. |
 | 7 | Radial skills, rumble, snapping in every menu | **Done,** but for three windows not yet reached: the skill wheel, rumble, and snapping in the skill tree, devotion map, conversations, traders, both stashes, the journal and other windows, both menus and a blacksmith's window. |
-| 8 | Shortcuts, profiles, first run, tray, release | Not started |
+| 8 | Shortcuts, profiles, first run, tray, release | **Under way.** Any display, first run, tray, starting with Windows, loading by itself and bindings per character are done. |
 
 **Working today:**
 

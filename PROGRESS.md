@@ -21,7 +21,7 @@ holds the phases and the rules for the in-game part.
 | 5. In-game part and action camera | Done: camera, turning, zoom, collision, following, panel and item reports, all checked live |
 | 6. Lock-on, camera-relative movement, smart interact | Done: all checked live |
 | 7. Radial skills, rumble, snapping in every menu | Done and checked live, but for three windows not yet reached and feeling it at the pad |
-| 8. Shortcuts, profiles, first run, release | Not started |
+| 8. Shortcuts, profiles, first run, release | Under way: any display, first run, tray, starting with Windows, loading by itself, bindings per character and the package are done; see "Other displays and Phase 8, 2026-11-07" |
 | Souls-level feel (PLAN.md section 17) | Done, but for tuning with the owner at the pad |
 | 9. Hardening | Not started; a bug pass closes each phase meanwhile |
 
@@ -295,8 +295,10 @@ Not yet verified:
   bags, the stash and a trader's goods all come from the game.
 - The devotion map need not pan: fully zoomed out it all fits, and zoom is a stop.
   A few stars and a few points of artwork are still misjudged by the finder.
-- The spot looks are measured at UI scale 0.5; another scale needs their sizes
-  scaled.
+- A game window taller than the space above the taskbar, such as 1280x1024 on a
+  1080 screen, has its foot under the taskbar, and a click on a hotbar slot there
+  reaches the taskbar instead. Seen once, by the survey; no such window is usable
+  anyway, as the taskbar covers the game's own hotbar.
 - Collision does not stop for trees and some props; the game fades those itself.
 - With the panel closed but the tool still in a panel mode, the reading sees
   the world, which reads as all items, so presses step as they did in Phase 3.
@@ -324,6 +326,39 @@ Nothing.
 | Lock point every frame | Done, live |
 | Smart interact | Done: talk, travel and pick-up all worked live from A, with the prompt |
 
+## Other displays and Phase 8, 2026-11-07
+
+Any resolution and UI scale now works from the one measured profile; nothing is
+refused and nothing needs calibrating. How the game sizes its interface came from
+its own code (`UiFactor`), what each part is anchored to from captures
+(`UiAnchors`), and each reader takes the scale. `docs/calibration.md` has the
+sums and the table.
+
+Captured, every window that could be reached, at 1920x1080, 1600x900, 1366x768,
+1280x720, 1024x768 and 1280x1024 at UI scale 0.5, and 1920x1080 at 0.75 and 1.0;
+1280x720 at 1.0 and 1600x900 at 0.75 for the first batch of windows only. Every
+reader run over those captures, with crops of the extremes kept as fixtures in
+`ResizedDisplayFixtureTests`. Played live through `--replay` at 1280x720 in a
+window off the screen's corner and at 1920x1080 at UI scale 1.0: bags, skills,
+the devotion tab and stars, the map's rift gate, the menu, a conversation's reply.
+
+Found along the way: a thin line drawn at any other size falls across two pixels
+and loses up to half its contrast, which the frame lines and the slot list's edge
+now allow for; and the devotion map is not scaled at all.
+
+Also checked live: GDPilot started with no game, the game started after it, the
+in-game part loading itself at the main menu and reporting `Playing Semitarded`;
+the tray icon's menu opening, and Quit stopping everything cleanly; `--setup` from
+the published package, on a first run and after it.
+
+Not reached at other displays: the class screen, the Inventor, the Service windows
+and the attributes' plus buttons, which take the middle-of-the-window anchor
+unmeasured. Not possible on this machine: anything above 1920x1080, where the sums
+come from the game's code but no capture has checked them; and ultrawide. The slot
+list was not captured at 1024x768 or 1280x1024. Tray: Pause, Settings file, Log
+folder and Start with Windows have not been clicked; the last has its own tests
+against a key of its own.
+
 ## Next session starts here
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
@@ -341,7 +376,10 @@ Left of Phase 7:
 2. **With someone at the pad:** the "Not yet verified" list above, and tuning:
    the rumble, the real sticks and the speeds.
 
-Next: PLAN.md section 17, Phase 8.
+Next, in Phase 8: town portal on one button, settings that change while playing,
+the drop-in loader, a guided setting of the game's keys, the feel session with the
+owner, and a release, whose publishing is the owner's. Selling needs no shortcut:
+the game's own Quicksell answers X at a trader.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
 done.

@@ -864,3 +864,33 @@ the menu's or the bags' flags.
 **A conversation is left by walking away or with B.** The talk state outlives
 the conversation's box until the character moves, so after B the report is
 not followed back into until it stops.
+
+## 2026-11-07 — Places follow the display, rather than one calibration per display
+
+A profile used to be refused at any other resolution or UI
+scale, with `--calibrate` as the way forward: about two hundred numbers, by hand,
+for each display. The game's own code settles it instead.
+`GraphicsEngine::GetUIScaleFactor` gives how large the interface is drawn at any
+window size and setting, and captures at nine displays show every window keeping
+its shape and scaling about what it is anchored to. So the one measured profile is
+moved, and a profile named for a display still wins if anyone ever needs one.
+Each part of the interface has its anchor by name in `UiAnchors`, each reader takes
+the scale, and real captures at the smallest and largest displays pin all of it.
+
+The devotion map is the exception: drawn at one size, centred, whatever the
+display, so its stars are looked for at their own size across the whole window.
+
+## 2026-11-07 — A person's settings lie over the shipped ones
+
+A first run used to have nothing of its own, and a copied
+file would hold back every new window and button an update brought, since the
+measured places live beside the bindings. A person's `config.json` now holds only
+what they would edit, and is laid over the shipped file when read.
+
+## 2026-11-07 — The in-game part loads itself
+
+`--load-in-game` stays for anyone who wants to choose the
+moment, but having to run it was the last thing standing between starting the game
+and playing. GDPilot now loads it once for each run of the game, twenty seconds
+after the game's window appears, and does not try again if that fails, since the
+same game would fail the same way. `"loadInGame": false` turns this off.
