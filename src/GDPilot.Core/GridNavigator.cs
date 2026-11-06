@@ -19,6 +19,7 @@ public sealed record CameraToggleBinding : ButtonBinding;
 public sealed class GridNavigator
 {
     private const string TabsSuffix = ".Tabs";
+    private const int TransferCollections = 2;
     private const int RiftGateSpacing = 20;
 
     /// <summary>Which of a trader's sacks each of its tabs shows, in tab order.</summary>
@@ -53,6 +54,12 @@ public sealed class GridNavigator
 
     /// <summary>Whether jumping is on but the last press in this mode had to step, because the screen could not be trusted.</summary>
     public bool FellBack => occupancy is not null && placed && !Jumping;
+
+    /// <summary>The tab the game says a mode is showing, or null when it does not say.</summary>
+    public Func<Mode, int?>? ReportedTab { get; init; }
+
+    /// <summary>How many tabs the game says a mode has, or null when it does not say.</summary>
+    public Func<Mode, int?>? ReportedTabs { get; init; }
 
     /// <summary>Why the last grid press did nothing, or null when it worked.</summary>
     public string? Notice { get; private set; }
@@ -161,13 +168,21 @@ public sealed class GridNavigator
             return intents;
         }
 
+        // Only tabs the game says exist are ever clicked: past them lie the buttons that sell more.
+        strip = Owned(strip, current);
+
         // The stash draws its tabs as a column down its left edge; the skill window, as a row along its top.
         int count = Math.Max(strip.Columns, strip.Rows);
         Mode window = TabbedWindow(current);
         tabs.TryGetValue(window, out int tab);
 
-        // The game remembers each window's tab, and the cursor can change it, so the screen is believed first.
-        if (spotSource?.SelectedTab(strip) is int selected)
+        // The game remembers each window's tab, and the cursor can change it, so what it says comes
+        // first, then what the screen shows.
+        if (ReportedTab?.Invoke(current) is int said)
+        {
+            tab = said;
+        }
+        else if (spotSource?.SelectedTab(strip) is int selected)
         {
             tab = selected;
         }
@@ -364,8 +379,14 @@ public sealed class GridNavigator
     }
 
     /// <summary>A map starts from its middle, so the first press is near what the eye is on; anything else from its top left.</summary>
-    private static ScreenPoint? FirstStop(SpotArea area, List<ScreenPoint> spots)
+    private ScreenPoint? FirstStop(SpotArea area, List<ScreenPoint> spots)
     {
+        // A question may be whether to spend or to quit, so the cursor starts on the answer that does nothing.
+        if (mode == Mode.Confirm && area.Fixed.Count > 0)
+        {
+            return area.Fixed[^1];
+        }
+
         if (area.Kind != SpotKind.Stars)
         {
             return SpotNavigator.First(spots);
@@ -442,14 +463,38 @@ public sealed class GridNavigator
         return map;
     }
 
+    /// <summary>A column of tabs cut or grown to as many as the game says the window has.</summary>
+    private GridSpec Owned(GridSpec strip, Mode current)
+    {
+        if (strip.Columns == 1 && ReportedTabs?.Invoke(current) is int owned && owned > 0)
+        {
+            return strip with { Rows = owned };
+        }
+
+        return strip;
+    }
+
     /// <summary>
     /// The report a grid's items come under. Each of a trader's tabs is a sack of its
     /// own, and the screen says which tab shows. Measured at Kerrick's: each tab's
     /// cells matched its sack exactly. The last tab, the buyback, has no sack
-    /// reported, so it is read off the screen.
+    /// reported, so it is read off the screen. The Transfer stash's first two tabs are
+    /// collections, read off the screen too, and a sack is reported per tab after them.
     /// </summary>
     private string ReportName(string name)
     {
+        if (name == nameof(Mode.Transfer) && readiness.Grids.TryGetValue(name + TabsSuffix, out GridSpec? shared))
+        {
+            int shown = spotSource?.SelectedTab(Owned(shared, Mode.Transfer)) ?? tabs.GetValueOrDefault(Mode.Transfer);
+
+            if (shown < TransferCollections)
+            {
+                return name;
+            }
+
+            return $"{name}#{shown - TransferCollections}";
+        }
+
         if (name == nameof(Mode.Vendor) && readiness.Grids.TryGetValue(name + TabsSuffix, out GridSpec? strip) && spotSource?.SelectedTab(strip) is int tab && tab < TraderSacks.Length)
         {
             return $"{name}#{TraderSacks[tab]}";

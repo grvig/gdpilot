@@ -75,6 +75,17 @@ public abstract record GameReport
                 root["columns"] = layout.Columns;
                 root["rows"] = layout.Rows;
                 root["items"] = new JsonArray(layout.Items.Select(Item).ToArray());
+
+                if (layout.Tab is int tab)
+                {
+                    root["tab"] = tab;
+                }
+
+                if (layout.Tabs is int tabs)
+                {
+                    root["tabs"] = tabs;
+                }
+
                 break;
             case CameraReport camera:
                 root["type"] = "camera";
@@ -132,15 +143,17 @@ public abstract record GameReport
             JsonObject item = node?.AsObject() ?? throw new FormatException($"An empty item in the layout of {grid}.");
             ItemRect rect = new(Number(item, "id"), Number(item, "column"), Number(item, "row"), Number(item, "width"), Number(item, "height"));
 
-            if (rect.Id == 0 || rect.Width <= 0 || rect.Height <= 0)
+            // A sack the game has not laid out yet reports its items with no size. Refusing the report
+            // would leave the last one standing, perhaps another trader's, so it is kept and not believed.
+            if (rect.Id == 0 || rect.Width < 0 || rect.Height < 0)
             {
-                throw new FormatException($"An item in the layout of {grid} needs a non-zero id and a positive size.");
+                throw new FormatException($"An item in the layout of {grid} needs a non-zero id and a size.");
             }
 
             items.Add(rect);
         }
 
-        return new LayoutReport(grid, columns, rows, items);
+        return new LayoutReport(grid, columns, rows, items) { Tab = root["tab"]?.GetValue<int>(), Tabs = root["tabs"]?.GetValue<int>() };
     }
 
     private static TargetsReport Targets(JsonObject root)
@@ -307,7 +320,14 @@ public sealed record PanelsReport(IReadOnlyList<string> Open) : GameReport;
 public sealed record HealthReport(int Percent) : GameReport;
 
 /// <summary>Where every item sits in one grid, named as in the profiles, such as "Inventory.Bag2".</summary>
-public sealed record LayoutReport(string Grid, int Columns, int Rows, IReadOnlyList<ItemRect> Items) : GameReport;
+public sealed record LayoutReport(string Grid, int Columns, int Rows, IReadOnlyList<ItemRect> Items) : GameReport
+{
+    /// <summary>Which tab of its window this grid is showing, when it has tabs and the game says.</summary>
+    public int? Tab { get; init; }
+
+    /// <summary>How many tabs its window really has, past which lie the buttons that sell more.</summary>
+    public int? Tabs { get; init; }
+}
 
 /// <summary>
 /// One enemy near the player, as lock-on sees it: where the game draws it, as

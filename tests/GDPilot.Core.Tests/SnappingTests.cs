@@ -16,6 +16,8 @@ public sealed class SnappingTests
         ["Crafting.Bag1"] = new GridSpec(824, 645, 32, 32, 12, 8),
         ["Skills.Tabs"] = new GridSpec(793, 247, 166, 32, 3, 1),
         ["Vendor"] = new GridSpec(483, 323, 32, 32, 10, 18),
+        ["Transfer"] = new GridSpec(529, 293, 32, 32, 10, 19),
+        ["Transfer.Tabs"] = new GridSpec(473, 425, 1, 38, 1, 3),
         ["Vendor.Tabs"] = new GridSpec(505, 283, 61.25, 32, 5, 1),
         ["Crafting.Tabs"] = new GridSpec(505, 283, 61.25, 32, 5, 1),
         ["Crafting.Inventor.Tabs"] = new GridSpec(522, 270, 105, 32, 3, 1),
@@ -26,6 +28,7 @@ public sealed class SnappingTests
         Spots = new Dictionary<string, SpotArea>
         {
             ["Skills"] = Tree,
+            ["Confirm"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(883, 593), new ScreenPoint(1036, 593) }, SpotKind.Places),
             ["Assign"] = new SpotArea(680, 300, 760, 730, null, Array.Empty<ScreenPoint>(), SpotKind.SlotList),
             ["Crafting"] = new SpotArea(470, 330, 320, 230, null, Array.Empty<ScreenPoint>(), SpotKind.Recipes),
             ["Dialog"] = new SpotArea(773, 300, 477, 635, null, Array.Empty<ScreenPoint>(), SpotKind.Replies),
@@ -453,5 +456,61 @@ public sealed class SnappingTests
         spots.Lighted = new List<ScreenPoint>();
 
         Assert.Equal(new PointerMoveTo(645, 847), navigator.Act(Mode.Skills, "right"));
+    }
+
+    [Fact]
+    public void WhatTheGameSaysOfATabComesBeforeWhatTheScreenShows()
+    {
+        GridNavigator navigator = new(Ready, null, new FakeSpots { Selected = 1 }) { ReportedTab = mode => 0 };
+
+        Assert.Equal(new PointerMoveTo(959, 247), navigator.Tab(Mode.Skills, 1)[0]);
+    }
+
+    [Fact]
+    public void AQuestionStartsOnTheAnswerThatDoesNothing()
+    {
+        GridNavigator navigator = new(Ready, null, new FakeSpots());
+
+        Assert.Equal(new PointerMoveTo(1036, 593), navigator.Act(Mode.Confirm, "down"));
+        Assert.Equal(new PointerMoveTo(883, 593), navigator.Act(Mode.Confirm, "left"));
+    }
+
+    [Fact]
+    public void TabsPastWhatTheGameSaysExistAreNeverClicked()
+    {
+        GridNavigator navigator = new(Ready, null, new FakeSpots()) { ReportedTabs = mode => 2 };
+
+        Assert.Equal(new PointerMoveTo(473, 463), navigator.Tab(Mode.Transfer, 1)[0]);
+        Assert.Equal(new PointerMoveTo(473, 425), navigator.Tab(Mode.Transfer, 1)[0]);
+    }
+
+    [Fact]
+    public void MoreTabsThanCalibratedAreReachedWhenTheGameSaysSo()
+    {
+        GridNavigator navigator = new(Ready, null, new FakeSpots()) { ReportedTabs = mode => 4 };
+        navigator.Tab(Mode.Transfer, 1);
+        navigator.Tab(Mode.Transfer, 1);
+
+        Assert.Equal(new PointerMoveTo(473, 539), navigator.Tab(Mode.Transfer, 1)[0]);
+    }
+
+    [Fact]
+    public void TheTransferStashsItemsComeFromTheSackOfTheTabShowing()
+    {
+        ReportedOccupancy layouts = new(null);
+        layouts.Accept(new LayoutReport("Transfer#1", 10, 19, new[] { new ItemRect(7, 3, 2, 2, 2) }));
+        GridNavigator navigator = new(Ready, layouts, new FakeSpots { Selected = 3 });
+
+        Assert.Equal(new PointerMoveTo(625, 357), navigator.Act(Mode.Transfer, "down"));
+    }
+
+    [Fact]
+    public void TheTransferStashsCollectionsAreNoSackOfItems()
+    {
+        ReportedOccupancy layouts = new(null);
+        layouts.Accept(new LayoutReport("Transfer#0", 10, 19, new[] { new ItemRect(7, 3, 2, 2, 2) }));
+        GridNavigator navigator = new(Ready, layouts, new FakeSpots { Selected = 1 });
+
+        Assert.Equal(new PointerMoveTo(529, 293), navigator.Act(Mode.Transfer, "down"));
     }
 }

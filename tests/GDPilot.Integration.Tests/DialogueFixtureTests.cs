@@ -131,4 +131,16 @@ public sealed class DialogueFixtureTests
         Assert.True(frame.Seen((x, y) => window.Pixel(x - 450, y - 220)));
         Assert.False(frame.Seen((x, y) => tree.Pixel(x - 460, y - 225)));
     }
+
+    // The Transfer stash's three tabs with each selected in turn, cropped from (450, 400): it glows no red.
+    [Theory]
+    [InlineData(425, 0)]
+    [InlineData(463, 1)]
+    [InlineData(501, 2)]
+    public void TheTransferStashsTabIsReadFromItsDarkTop(int clicked, int tab)
+    {
+        Frame capture = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", $"transfer-tabs-{clicked}.png"));
+
+        Assert.Equal(tab, TabStrip.Selected((x, y) => capture.Pixel(x - 450, y - 400), new GridSpec(473, 425, 1, 38, 1, 3)));
+    }
 }

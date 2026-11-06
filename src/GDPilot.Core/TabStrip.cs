@@ -5,7 +5,8 @@ namespace GDPilot.Core;
 /// selected tab red in every window that has tabs, and remembers each window's
 /// tab across closing it and across clicks with the cursor, so counting presses
 /// would drift. A tab's own icon can hold a little red, so the winner must beat
-/// the rest clearly.
+/// the rest clearly. The Transfer stash glows nothing: there the selected tab's
+/// top edge goes dark, 41 to 49 against 78 to 83, measured on 2026-11-05.
 /// </summary>
 public static class TabStrip
 {
@@ -13,6 +14,7 @@ public static class TabStrip
     private const int FewestRed = 30;
 
     private const int ClearlyMore = 3;
+    private const double ClearlyDarker = 0.75;
 
     private const int RowHalfHeight = 11;
     private const int RowHalfWidthMost = 50;
@@ -51,6 +53,55 @@ public static class TabStrip
         }
 
         if (bestRed < FewestRed || bestRed < runnerUp * ClearlyMore)
+        {
+            if (column)
+            {
+                return DarkTopped(pixel, strip, count);
+            }
+
+            return null;
+        }
+
+        return best;
+    }
+
+    private static int? DarkTopped(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, GridSpec strip, int count)
+    {
+        int best = -1;
+        double darkest = double.MaxValue;
+        double next = double.MaxValue;
+
+        for (int tab = 0; tab < count; tab++)
+        {
+            (int centreX, int centreY) = strip.Centre(new GridCell(0, tab));
+            double sum = 0;
+            int pixels = 0;
+
+            for (int x = centreX - 20; x < centreX + 20; x++)
+            {
+                for (int y = centreY - 14; y < centreY - 11; y++)
+                {
+                    (byte r, byte g, byte b) = pixel(x, y);
+                    sum += (r + g + b) / 3.0;
+                    pixels++;
+                }
+            }
+
+            double mean = sum / pixels;
+
+            if (mean < darkest)
+            {
+                next = darkest;
+                darkest = mean;
+                best = tab;
+            }
+            else if (mean < next)
+            {
+                next = mean;
+            }
+        }
+
+        if (count < 2 || darkest > next * ClearlyDarker)
         {
             return null;
         }

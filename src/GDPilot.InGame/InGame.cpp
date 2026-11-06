@@ -738,16 +738,16 @@ int Cells(float units, float cell)
 }
 
 // The grids each bag is calibrated as: the inventory shows the same two bags
-// alone, beside a trader, beside the stash and beside a crafter.
+// alone, beside a trader, beside either stash and beside a crafter.
 struct SackNames
 {
     int sack;
-    const char* names[4];
+    const char* names[5];
 };
 
 constexpr SackNames Bags[] = {
-    {0, {"Inventory", "Vendor.Bag1", "Stash.Bag1", "Crafting.Bag1"}},
-    {1, {"Inventory.Bag2", "Vendor.Bag2", "Stash.Bag2", "Crafting.Bag2"}},
+    {0, {"Inventory", "Vendor.Bag1", "Stash.Bag1", "Transfer.Bag1", "Crafting.Bag1"}},
+    {1, {"Inventory.Bag2", "Vendor.Bag2", "Stash.Bag2", "Transfer.Bag2", "Crafting.Bag2"}},
 };
 
 std::string sentLayouts[std::size(Bags)];
@@ -965,19 +965,160 @@ void CheckMarket()
     }
 }
 
+// The Transfer stash, shared between characters, shows in the same window as
+// the private one, with a button between them. The engine records which is
+// showing, and keeps the sacks in a list at the offset in GetTransferSack's
+// bytes. Which tab shows it does not record where it can be read, as found live
+// on 2026-11-06, so every sack is reported, and GDPilot reads the tab off the
+// screen. The tabs' number is reported too, for past them lies the coin that
+// offers to sell more. The first two tabs are not sacks at all but the shared
+// collections of components and crystals; the sacks follow them.
+using EngineFlag = bool (*)(const void* engine);
+constexpr int TransferCollections = 2;
+EngineFlag transferOpen = nullptr;
+constexpr std::size_t TransferSacks = 0x36d78;
+constexpr int MostTransferTabs = 8;
+std::string sentTransfers[MostTransferTabs];
+
+void FindTransfer()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    void* open = reinterpret_cast<void*>(GetProcAddress(game, "?IsTransferOpen@GameEngine@GAME@@QEBA_NXZ"));
+    void* sack = reinterpret_cast<void*>(GetProcAddress(game, "?GetTransferSack@GameEngine@GAME@@QEAAPEAVInventorySack@2@H@Z"));
+
+    if (open == nullptr || sack == nullptr || !StartsWith(open, "0fb681716d0300c3") || !StartsWith(sack, "488b81786d03004863d2488b04d0c3") || privateStash == nullptr)
+    {
+        Say("The Transfer stash cannot be told from the private one: the engine has changed. Its items are read off the screen.");
+        return;
+    }
+
+    transferOpen = reinterpret_cast<EngineFlag>(open);
+}
+
+bool TransferShowing()
+{
+    if (transferOpen == nullptr)
+    {
+        return false;
+    }
+
+    __try
+    {
+        return transferOpen(*engineSlot);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+int TransferTabs()
+{
+    __try
+    {
+        const unsigned char* engine = static_cast<const unsigned char*>(*engineSlot);
+        void* const* first = *reinterpret_cast<void* const* const*>(engine + TransferSacks);
+        void* const* last = *reinterpret_cast<void* const* const*>(engine + TransferSacks + sizeof(void*));
+        std::ptrdiff_t count = last - first;
+
+        if (first == nullptr || count <= 0 || count > MostTransferTabs)
+        {
+            return 0;
+        }
+
+        return static_cast<int>(count);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return 0;
+    }
+}
+
+bool ReadTransfer(int tab, SackReading& reading)
+{
+    __try
+    {
+        const unsigned char* engine = static_cast<const unsigned char*>(*engineSlot);
+        void* const* first = *reinterpret_cast<void* const* const*>(engine + TransferSacks);
+        return ReadSackItems(first[tab], reading);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+// The private stash's tabs: which shows, and how many there are, or -1 for each.
+void PrivateTabs(int& selected, int& count)
+{
+    selected = -1;
+    count = -1;
+
+    __try
+    {
+        void* player = mainPlayer(*engineSlot);
+        void* const* sacks = privateStash(player);
+        count = static_cast<int>(static_cast<void* const*>(sacks[1]) - static_cast<void* const*>(sacks[0]));
+        selected = static_cast<int>(selectedStash(player));
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        selected = -1;
+        count = -1;
+    }
+}
+
+std::string WithField(std::string line, const char* name, int value)
+{
+    if (value >= 0)
+    {
+        line.insert(line.rfind('}'), std::string(",\"") + name + "\":" + std::to_string(value));
+    }
+
+    return line;
+}
+
 void CheckStash()
 {
+    if (TransferShowing())
+    {
+        int tabs = TransferTabs();
+
+        for (int tab = 0; tab < tabs; tab++)
+        {
+            if (!ReadTransfer(tab, bagReading))
+            {
+                continue;
+            }
+
+            std::string name = "Transfer#" + std::to_string(tab);
+            std::string shared = WithField(LayoutLine(name.c_str(), bagReading), "tabs", tabs + TransferCollections);
+
+            if (shared != sentTransfers[tab])
+            {
+                sentTransfers[tab] = shared;
+                Say("Transfer sack %d of %d: %d items.", tab + 1, tabs, bagReading.count);
+                Post(shared);
+            }
+        }
+
+        return;
+    }
+
     if (privateStash == nullptr || !ReadStash(bagReading))
     {
         return;
     }
 
-    std::string line = LayoutLine("Stash", bagReading);
+    int selected = -1;
+    int count = -1;
+    PrivateTabs(selected, count);
+    std::string line = WithField(WithField(LayoutLine("Stash", bagReading), "tab", selected), "tabs", count);
 
     if (line != sentStash)
     {
         sentStash = line;
-        Say("Stash tab: %d items in %u by %u cells.", bagReading.count, bagReading.columns, bagReading.rows);
+        Say("Stash tab %d of %d: %d items in %u by %u cells.", selected, count, bagReading.count, bagReading.columns, bagReading.rows);
         Post(line);
     }
 }
@@ -988,7 +1129,7 @@ void CheckLayouts(float elapsed)
 {
     sinceLayoutCheck += elapsed;
 
-    bool bagsShowing = lastPanels.find("Inventory") != std::string::npos || lastPanels.find("Stash") != std::string::npos || lastPanels.find("Vendor") != std::string::npos || lastPanels.find("Crafting") != std::string::npos;
+    bool bagsShowing = lastPanels.find("Inventory") != std::string::npos || lastPanels.find("Stash") != std::string::npos || lastPanels.find("Transfer") != std::string::npos || lastPanels.find("Vendor") != std::string::npos || lastPanels.find("Crafting") != std::string::npos;
 
     if (sackObject == nullptr || sinceLayoutCheck < 0.25f || !bagsShowing)
     {
@@ -1011,6 +1152,11 @@ void CheckLayouts(float elapsed)
         }
 
         sentStash.clear();
+
+        for (std::string& sent : sentTransfers)
+        {
+            sent.clear();
+        }
 
         for (std::string& sent : sentMarkets)
         {
@@ -1253,6 +1399,7 @@ bool ConversationShowing(bool windowOpen)
     return talking && !windowSinceTalk;
 }
 
+bool TransferShowing();
 bool bagsWereUp = false;
 
 // A question with Yes and No, such as quitting or buying more stash, is the
@@ -1394,7 +1541,11 @@ void CheckPanels(float elapsed)
 
             const char* mode = Panels[index].mode;
 
-            if (std::strcmp(mode, "Inventory") == 0 && stash)
+            if (std::strcmp(mode, "Inventory") == 0 && stash && TransferShowing())
+            {
+                mode = "Transfer";
+            }
+            else if (std::strcmp(mode, "Inventory") == 0 && stash)
             {
                 mode = "Stash";
             }
@@ -3674,6 +3825,7 @@ DWORD WINAPI Start(LPVOID)
             FindInventoryRoute();
             FindStash();
             FindCaravan();
+            FindTransfer();
             FindMarket();
             FindMarketSack();
             FindTalk();

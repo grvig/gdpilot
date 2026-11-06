@@ -83,4 +83,30 @@ public sealed class ReportedOccupancyTests
 
         Assert.Null(layouts.Read("Vendor#1", new GridSpec(483, 323, 32, 32, 10, 18), null));
     }
+
+    [Fact]
+    public void AnUnplacedSackIsParsedSoItReplacesTheLastTradersGoods()
+    {
+        ReportedOccupancy layouts = new(null);
+        layouts.Accept(new LayoutReport("Vendor#1", 10, 18, new[] { new ItemRect(1, 0, 0, 1, 1) }));
+
+        string line = """{"protocol":1,"type":"layout","grid":"Vendor#1","columns":10,"rows":18,"items":[{"id":9,"column":0,"row":0,"width":0,"height":0}]}""";
+        layouts.Accept((LayoutReport)GameReport.Parse(line)!);
+
+        Assert.Null(layouts.Read("Vendor#1", new GridSpec(483, 323, 32, 32, 10, 18), null));
+    }
+
+    [Fact]
+    public void TheTabALayoutSaysIsKeptAndSurvivesARoundTrip()
+    {
+        ReportedOccupancy layouts = new(null);
+        string line = """{"protocol":1,"type":"layout","grid":"Transfer","columns":10,"rows":19,"items":[],"tab":3}""";
+        LayoutReport report = (LayoutReport)GameReport.Parse(line)!;
+
+        layouts.Accept(report);
+
+        Assert.Equal(3, layouts.TabOf("Transfer"));
+        Assert.Null(layouts.TabOf("Stash"));
+        Assert.Equal(3, ((LayoutReport)GameReport.Parse(report.Write())!).Tab);
+    }
 }

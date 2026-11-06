@@ -7,6 +7,7 @@ public enum Mode
     Combat,
     Inventory,
     Stash,
+    Transfer,
     Character,
     Skills,
     Devotion,

@@ -25,6 +25,34 @@ public sealed class ReportedOccupancy : IOccupancySource
         }
     }
 
+    /// <summary>The tab the game last said a grid is showing, or null when it has not.</summary>
+    public int? TabOf(string grid)
+    {
+        lock (guard)
+        {
+            if (layouts.TryGetValue(grid, out LayoutReport? report))
+            {
+                return report.Tab;
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>How many tabs the game says a grid's window has, whether it reports them whole or one by one.</summary>
+    public int? TabsOf(string grid)
+    {
+        lock (guard)
+        {
+            if (layouts.TryGetValue(grid, out LayoutReport? report) || layouts.TryGetValue(grid + "#0", out report))
+            {
+                return report.Tabs;
+            }
+
+            return null;
+        }
+    }
+
     /// <summary>Drops every report, for when the in-game part disconnects and what it said can no longer be trusted.</summary>
     public void Forget()
     {

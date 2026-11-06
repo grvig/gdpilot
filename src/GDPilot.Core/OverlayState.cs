@@ -151,6 +151,8 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     {
         switch (mode)
         {
+            case Core.Mode.Transfer:
+                return "Transfer Stash";
             case Core.Mode.WorldMap:
                 return "World Map";
             case Core.Mode.LootFilter:
