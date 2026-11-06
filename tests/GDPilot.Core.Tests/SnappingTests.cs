@@ -42,6 +42,13 @@ public sealed class SnappingTests
 
         public int Reads { get; private set; }
 
+        public List<ScreenPoint> Lighted { get; set; } = new();
+
+        public List<ScreenPoint> LitOf(SpotArea area)
+        {
+            return area.Lit.Where(place => Lighted.Contains(place)).ToList();
+        }
+
         public FrameLine? Frame { get; set; }
 
         public int? Selected { get; set; }
@@ -402,5 +409,49 @@ public sealed class SnappingTests
         Assert.Null(navigator.Act(Mode.Crafting, "down"));
         Assert.NotNull(navigator.Notice);
         Assert.Equal(new PointerMoveTo(824, 645), navigator.Act(Mode.Crafting, "next"));
+    }
+
+    private static readonly FrameLine ClassFrame = new(805, 300, 800);
+
+    private static readonly GridReadiness WithClassScreen = Ready with
+    {
+        Spots = new Dictionary<string, SpotArea>
+        {
+            ["Skills"] = new SpotArea(700, 300, 710, 480, SpotLook.SkillButton, new[] { new ScreenPoint(645, 847) }) { Lit = new[] { new ScreenPoint(568, 766) } },
+            ["Skills.Class"] = new SpotArea(0, 0, 0, 0, null, new[] { new ScreenPoint(637, 325), new ScreenPoint(637, 386) }, SpotKind.Places) { When = ClassFrame },
+        },
+    };
+
+    [Fact]
+    public void TheClassScreenTakesOverFromTheTreeAndGivesWayOnceAClassIsChosen()
+    {
+        FakeSpots spots = new() { Frame = ClassFrame };
+        GridNavigator navigator = new(WithClassScreen, null, spots);
+
+        Assert.Equal(new PointerMoveTo(637, 325), navigator.Act(Mode.Skills, "down"));
+        Assert.Equal(new PointerMoveTo(637, 386), navigator.Act(Mode.Skills, "down"));
+
+        spots.Frame = null;
+
+        Assert.Equal(new PointerMoveTo(734, 326), navigator.Act(Mode.Skills, "down"));
+    }
+
+    [Fact]
+    public void ALitPlaceIsAStopOnlyWhileLit()
+    {
+        FakeSpots spots = new() { Showing = new List<ScreenPoint> { new(734, 326) } };
+        GridNavigator navigator = new(WithClassScreen, null, spots);
+        navigator.Act(Mode.Skills, "down");
+
+        Assert.Equal(new PointerMoveTo(645, 847), navigator.Act(Mode.Skills, "down"));
+        Assert.Equal(new PointerMoveTo(645, 847), navigator.Act(Mode.Skills, "left"));
+
+        spots.Lighted = new List<ScreenPoint> { new(568, 766) };
+
+        Assert.Equal(new PointerMoveTo(568, 766), navigator.Act(Mode.Skills, "left"));
+
+        spots.Lighted = new List<ScreenPoint>();
+
+        Assert.Equal(new PointerMoveTo(645, 847), navigator.Act(Mode.Skills, "right"));
     }
 }

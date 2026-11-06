@@ -219,12 +219,20 @@ public sealed class GridNavigator
 
     /// <summary>
     /// A mode's spots, named like "Crafting" and "Crafting.Gear", become surfaces
-    /// beside its grids. Spots with a frame are one surface, whichever screen shows.
+    /// beside its grids. Spots with a frame are one surface, whichever screen shows,
+    /// with any spots to read but no frame as what it falls back on.
     /// </summary>
     private void AddSpotsSurface(Mode current)
     {
         List<KeyValuePair<string, SpotArea>> areas = AreasOf(current);
         int front = 0;
+        bool framed = areas.Any(pair => pair.Value.When is not null);
+
+        if (framed)
+        {
+            surfaces.Insert(0, SpotsSurface);
+            front = 1;
+        }
 
         foreach ((string name, SpotArea area) in areas.Where(pair => pair.Value.When is null))
         {
@@ -232,16 +240,11 @@ public sealed class GridNavigator
             {
                 surfaces.Add(SpotsSurface + name);
             }
-            else
+            else if (!framed)
             {
                 surfaces.Insert(front, SpotsSurface + name);
                 front++;
             }
-        }
-
-        if (areas.Any(pair => pair.Value.When is not null))
-        {
-            surfaces.Insert(front, SpotsSurface);
         }
     }
 
@@ -261,7 +264,8 @@ public sealed class GridNavigator
             return readiness.Spots[name.Substring(SpotsSurface.Length)];
         }
 
-        return FramedArea(current) ?? snapping;
+        SpotArea? plain = AreasOf(current).Select(pair => pair.Value).FirstOrDefault(area => area.When is null && area.Kind != SpotKind.Places);
+        return FramedArea(current) ?? plain ?? snapping;
     }
 
     private SpotArea? FramedArea(Mode current)
@@ -329,6 +333,7 @@ public sealed class GridNavigator
 
         List<ScreenPoint> spots = new(seen);
         spots.AddRange(area.Fixed);
+        spots.AddRange(spotSource.LitOf(area));
         ScreenPoint? target;
 
         if (action == "next" || !placed)

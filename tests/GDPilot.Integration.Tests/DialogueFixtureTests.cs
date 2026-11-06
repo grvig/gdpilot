@@ -95,4 +95,28 @@ public sealed class DialogueFixtureTests
         Assert.False(inventorFrame.Seen(AtSmith));
         Assert.Equal(1, TabStrip.Selected(AtInventor, new GridSpec(522, 270, 105, 32, 3, 1)));
     }
+
+    // The character sheet of a level 2 character with a point to spend, cropped from (620, 170); and the class screen from (440, 180).
+    [Fact]
+    public void TheAttributesPlusesAreLitAndNothingElseBesideThemIs()
+    {
+        Frame capture = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "attributes.png"));
+        (byte, byte, byte) Pixel(int x, int y) => capture.Pixel(x - 620, y - 170);
+
+        Assert.True(LitPlaces.Lit(Pixel, new ScreenPoint(1051, 302)));
+        Assert.True(LitPlaces.Lit(Pixel, new ScreenPoint(1051, 318)));
+        Assert.True(LitPlaces.Lit(Pixel, new ScreenPoint(1051, 334)));
+        Assert.False(LitPlaces.Lit(Pixel, new ScreenPoint(1051, 380)));
+    }
+
+    [Fact]
+    public void TheClassScreensFrameIsSeenThereAndNotOnASkillTree()
+    {
+        Frame classes = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "selectclass.png"));
+        Frame tree = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "skills.png"));
+        FrameLine frame = new(805, 300, 800);
+
+        Assert.True(frame.Seen((x, y) => classes.Pixel(x - 440, y - 180)));
+        Assert.False(frame.Seen((x, y) => tree.Pixel(x - 460, y - 225)));
+    }
 }

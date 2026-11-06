@@ -10,6 +10,36 @@ namespace GDPilot.App;
 /// </summary>
 internal sealed class ScreenSpots : ISpotSource
 {
+    /// <summary>Where GDPilot's own card lies over the game right now, which is no part of what the game shows.</summary>
+    public Func<ScreenRect?>? Card { get; set; }
+
+    public List<ScreenPoint> LitOf(SpotArea area)
+    {
+        List<ScreenPoint> lit = new();
+
+        foreach (ScreenPoint place in area.Lit)
+        {
+            int left = place.X - LitPlaces.Reach;
+            int top = place.Y - LitPlaces.Reach;
+
+            try
+            {
+                CapturedFrame frame = ScreenCapture.Region(left, top, LitPlaces.Reach * 2 + 1, LitPlaces.Reach * 2 + 1);
+
+                if (LitPlaces.Lit((x, y) => Pixel(frame, x - left, y - top), place))
+                {
+                    lit.Add(place);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Not being able to see it means not offering it.
+            }
+        }
+
+        return lit;
+    }
+
     public List<ScreenPoint>? Read(SpotArea area)
     {
         if (area.Kind == SpotKind.Places)
@@ -38,7 +68,7 @@ internal sealed class ScreenSpots : ISpotSource
             return null;
         }
 
-        Func<int, int, (byte, byte, byte)> pixel = (x, y) => Pixel(frame, x - left, y - top);
+        Func<int, int, (byte, byte, byte)> pixel = LitPlaces.Without((x, y) => Pixel(frame, x - left, y - top), Card?.Invoke());
 
         if (area.Kind == SpotKind.Stars && area.Look is not null)
         {

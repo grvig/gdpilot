@@ -29,6 +29,10 @@ public sealed class OverlayHost : IDisposable
     private WheelWindow? wheel;
     private MarkerWindow? marker;
     private PromptWindow? prompt;
+    private object? cardBounds;
+
+    /// <summary>Where the card is on screen, for reading the screen without it, or null before it is first placed.</summary>
+    public ScreenRect? CardBounds => (ScreenRect?)Volatile.Read(ref cardBounds);
 
     // Where each window was last put, so one that has not moved costs nothing.
     // The stacking is re-asserted once a second and whenever another window
@@ -120,6 +124,7 @@ public sealed class OverlayHost : IDisposable
         (int x, int y) = GameLayout.Place(area, own.Right - own.Left, own.Bottom - own.Top, corner, state.Showing);
 
         Place(Handle, x, y);
+        Volatile.Write(ref cardBounds, new ScreenRect(x, y, own.Right - own.Left, own.Bottom - own.Top));
         window.Opacity = 1;
         ShowWheel(state.Wheel, area);
         ShowMarker(state.Marker);

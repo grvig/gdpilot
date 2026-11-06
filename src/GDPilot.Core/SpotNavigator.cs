@@ -8,6 +8,12 @@ public interface ISpotSource
 {
     List<ScreenPoint>? Read(SpotArea area);
 
+    /// <summary>Which of an area's places the game has lit now.</summary>
+    List<ScreenPoint> LitOf(SpotArea area)
+    {
+        return new List<ScreenPoint>();
+    }
+
     /// <summary>Whether a piece of a window's frame is on screen now.</summary>
     bool Shows(FrameLine line)
     {

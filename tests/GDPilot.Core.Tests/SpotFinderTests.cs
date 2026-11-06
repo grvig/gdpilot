@@ -85,4 +85,15 @@ public sealed class SpotFinderTests
 
         AssertFound(buttons, found);
     }
+
+    [Fact]
+    public void GDPilotsOwnCardIsLeftOutOfWhatTheScreenShows()
+    {
+        ScreenPoint[] buttons = { new(60, 60), new(300, 200) };
+        Func<int, int, (byte, byte, byte)> screen = LitPlaces.Without(Screen(buttons), new ScreenRect(30, 30, 60, 60));
+
+        List<ScreenPoint> found = SpotFinder.Find(screen, 0, 0, Width, Height, SpotLook.SkillButton);
+
+        AssertFound(new[] { new ScreenPoint(300, 200) }, found);
+    }
 }

@@ -31,12 +31,22 @@ public sealed class SpotAreaConfig
     /// <summary>The tab strip these spots' screen has, by its grid's name, when it is not the mode's own.</summary>
     public string Tabs { get; init; } = "";
 
+    /// <summary>Places, as [x, y] pairs, that are stops only while the game lights them.</summary>
+    public int[][] Lit { get; init; } = Array.Empty<int[]>();
+
     /// <summary>The area, or null when it is empty or its look is not one GDPilot knows.</summary>
     public SpotArea? ToArea()
     {
         SpotArea? area = Parsed();
 
-        if (area is not null && Tabs.Length > 0)
+        if (area is null)
+        {
+            return null;
+        }
+
+        area = area with { Lit = Lit.Where(pair => pair.Length == 2).Select(pair => new ScreenPoint(pair[0], pair[1])).ToList() };
+
+        if (Tabs.Length > 0)
         {
             return area with { Tabs = Tabs };
         }
@@ -99,6 +109,9 @@ public sealed record SpotArea(int Left, int Top, int Width, int Height, SpotLook
 
     /// <summary>The tab strip this screen has, by its grid's name, or null for the mode's own.</summary>
     public string? Tabs { get; init; }
+
+    /// <summary>Places that are stops only while the game lights them.</summary>
+    public IReadOnlyList<ScreenPoint> Lit { get; init; } = Array.Empty<ScreenPoint>();
 }
 
 /// <summary>A grid as the configuration writes it, zeros meaning not yet calibrated.</summary>

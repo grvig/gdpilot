@@ -112,6 +112,7 @@ internal static class Host
 
         ControlLoop loop = new(pad, modes, mapper, guarded, stall, new FocusWatcher(gameInFront, suspension), suspension);
         using OverlayHost? overlay = StartOverlay(config);
+        spots.Card = () => overlay?.CardBounds;
 
         // About ten redraws a second: enough to feel immediate, cheap enough to ignore.
         long overlayInterval = Math.Max(1, config.Input.PollHz / 10);
