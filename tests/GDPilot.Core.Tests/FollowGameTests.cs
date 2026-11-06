@@ -200,6 +200,17 @@ public sealed class FollowGameTests
     }
 
     [Fact]
+    public void AWindowTheGameReportsMeansASlotsListHasGone()
+    {
+        ModeController modes = Controller();
+        modes.OpenSlotList();
+
+        modes.Follow(new[] { "Inventory" });
+
+        Assert.Equal(Mode.Inventory, modes.Current);
+    }
+
+    [Fact]
     public void ACraftersWindowTheGameNamesIsFollowed()
     {
         ModeController modes = Controller();

@@ -121,7 +121,7 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
             legend.Add($"{trigger}: {Describe(binding)}");
         }
 
-        return new OverlayState(mode.ToString(), SuspendedText(reasons), legend) { Showing = mode, Statuses = statuses };
+        return new OverlayState(Title(mode), SuspendedText(reasons), legend) { Showing = mode, Statuses = statuses };
     }
 
     /// <summary>Null while injecting, otherwise why not. The kill switch is named first because it needs a press to clear.</summary>
@@ -144,6 +144,32 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     public static string ButtonName(GamepadButtons button, PadStyle style = PadStyle.Xbox)
     {
         return PadGlyphs.Name(button, style);
+    }
+
+    /// <summary>A mode's name as a player would say it.</summary>
+    public static string Title(Core.Mode mode)
+    {
+        switch (mode)
+        {
+            case Core.Mode.WorldMap:
+                return "World Map";
+            case Core.Mode.LootFilter:
+                return "Loot Filter";
+            case Core.Mode.MainMenu:
+                return "Main Menu";
+            case Core.Mode.Dialog:
+                return "Conversation";
+            case Core.Mode.Confirm:
+                return "Question";
+            case Core.Mode.Assign:
+                return "Hotbar Slot";
+            case Core.Mode.Vendor:
+                return "Trader";
+            case Core.Mode.Service:
+                return "Townsfolk";
+            default:
+                return mode.ToString();
+        }
     }
 
     private static string ModifierName(KeyCode modifier)
@@ -174,7 +200,7 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
             case PointerBinding pointer:
                 return $"{pointer.Button} click";
             case PanelBinding panel:
-                return panel.Mode.ToString();
+                return Title(panel.Mode);
             // The same presses walk bags, skill trees, stars and replies, so they are named for the move, not the cell.
             case GridBinding grid when grid.Action == "next":
                 return "Next list";

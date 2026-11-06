@@ -561,7 +561,8 @@ public sealed class Mapper
 
             foreach ((GamepadButtons button, ButtonBinding binding, bool chorded) in Buttons.Entries)
             {
-                if (binding is RadialBinding && !chorded && snapshot.IsPressed(button))
+                // With the trigger down the button is its chord's and opens no wheel; an open wheel stays, for the chord's skills to exchange.
+                if (binding is RadialBinding && !chorded && snapshot.IsPressed(button) && (Wheel.Open || Buttons.BindingFor(button, snapshot.LeftTrigger) is RadialBinding))
                 {
                     held = true;
                 }

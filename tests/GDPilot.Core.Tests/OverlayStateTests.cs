@@ -105,4 +105,15 @@ public sealed class OverlayStateTests
     {
         Assert.Equal("Camera: third person; right stick turns and tilts, LT zooms", OverlayState.Build(Mode.Combat, SuspendReason.None, Combat, thirdPerson: true, tilting: true).Legend[0]);
     }
+
+    [Theory]
+    [InlineData(Mode.WorldMap, "World Map")]
+    [InlineData(Mode.LootFilter, "Loot Filter")]
+    [InlineData(Mode.Dialog, "Conversation")]
+    [InlineData(Mode.Vendor, "Trader")]
+    [InlineData(Mode.Inventory, "Inventory")]
+    public void ModesAreTitledAsAPlayerWouldSayThem(Mode mode, string title)
+    {
+        Assert.Equal(title, OverlayState.Build(mode, SuspendReason.None, Combat).Mode);
+    }
 }

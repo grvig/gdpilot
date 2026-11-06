@@ -207,10 +207,10 @@ public sealed class ModeController
     /// </summary>
     private bool Agrees(List<Mode> open)
     {
-        // The game reports nothing for a slot's list, and a question could not arrive over one.
+        // The game reports nothing for a slot's list, but a window it does report means the list has gone.
         if (stack.Current == Mode.Assign)
         {
-            return true;
+            return open.Count == 0;
         }
 
         if (open.Count == 0)

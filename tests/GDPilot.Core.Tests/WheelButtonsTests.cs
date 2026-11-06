@@ -54,7 +54,8 @@ public sealed class WheelButtonsTests
     public void TheChordLayersSkillsExchangeToo()
     {
         Mapper mapper = Wheeled();
-        Hold(mapper, Pointing(GamepadButtons.None, 1));
+        Hold(mapper, Pointing());
+        mapper.Tick(Pointing(GamepadButtons.None, 1), Tick);
 
         Assert.Contains(new GameCommandIntent(new SwapSlotsCommand(0, 4)), mapper.Tick(Pointing(GamepadButtons.X, 1), Tick));
     }
@@ -133,5 +134,17 @@ public sealed class WheelButtonsTests
         Mapper mapper = Wheeled();
 
         Assert.Contains(new KeyDown(KeyCode.D2), mapper.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.X }, Tick));
+    }
+
+    [Fact]
+    public void WithTheTriggerDownTheWheelsButtonIsItsChordsAndTheWheelStaysShut()
+    {
+        ButtonLayers layers = BindingTable.Parse(new Dictionary<string, string> { ["Back"] = "radial:hotbar", ["LT+Back"] = "panel:Achievements" }, 0.5);
+        KeyCode[] slots = { KeyCode.D1, KeyCode.D2 };
+        Mapper mapper = new(new GDPilotConfig().Mapping(), layers) { Wheel = new RadialMenu(slots) };
+
+        mapper.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.Back, LeftTrigger = 1 }, Tick);
+
+        Assert.False(mapper.Wheel!.Open);
     }
 }
