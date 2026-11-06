@@ -13,6 +13,7 @@ public enum Mode
     WorldMap,
     Vendor,
     Crafting,
+    Service,
     Dialog,
     Journal,
     Factions,

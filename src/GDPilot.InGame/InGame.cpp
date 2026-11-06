@@ -377,12 +377,9 @@ constexpr std::size_t UiOffset = 0x19b0;
 constexpr std::size_t MenuFlag = 0x17a9;
 constexpr std::size_t MenuConfirmFlag = 0x9c5a;
 
-// The devotion map is a tab of the skill window, but showing it lowers the
-// skill window's flag and raises none of its own. A byte the skill window,
-// the devotion map, Escape's menu and the trader's and crafter's windows all
-// raise, and the bags alone and the world map do not, stays up, as read live
-// on 2026-11-04, so that byte without the skills', the menu's or the bags'
-// flag means the devotion map.
+// A byte every large window raises, and the bags alone and the world map do
+// not, read live on 2026-11-04. The devotion map, a tab of the skill window,
+// lowers the skills' flag and raises none of its own, so it shows only as this.
 constexpr std::size_t BigWindowFlag = 0x1ef1;
 
 // The stash raises the same inventory flag as the bags alone, but the game
@@ -1257,8 +1254,6 @@ bool ConversationShowing(bool windowOpen)
 }
 
 bool bagsWereUp = false;
-constexpr int DevotionChecks = 3;
-int devotionChecks = 0;
 
 // A question with Yes and No, such as quitting or buying more stash, is the
 // dialog manager's: it holds one for as long as the question is up, as read
@@ -1434,29 +1429,19 @@ void CheckPanels(float elapsed)
         }
     }
 
-    // A trader's and a crafter's windows raise the shared byte too, but always with the bags.
-    bool devotion = bytes[std::size(Panels)] == 1 && !skills && !menu && !bags;
-
-    // Closing the menu drops its flags a moment before the shared byte, which must not pass for
-    // the map; coming from the skill window it is the map at once, so its buttons never lapse.
-    if (devotion && lastPanels.find("Skills") == std::string::npos && lastPanels.find("Devotion") == std::string::npos && devotionChecks < DevotionChecks)
+    // The shared byte alone is one of two things. The devotion map is only ever reached from the
+    // skill window, which reopens on its own tree, as read live on 2026-11-06. Anything else came
+    // from talking to someone, as the Illusionist's window does.
+    if (bytes[std::size(Panels)] == 1 && !skills && !menu && !bags && open.size() == 1)
     {
-        devotionChecks++;
-        devotion = false;
-    }
-    else if (!devotion)
-    {
-        devotionChecks = 0;
-    }
-
-    if (devotion)
-    {
-        if (open.size() > 1)
+        if (lastPanels.find("Skills") != std::string::npos || lastPanels.find("Devotion") != std::string::npos)
         {
-            open += ",";
+            open += "\"Devotion\"";
         }
-
-        open += "\"Devotion\"";
+        else if (lastPanels.find("Service") != std::string::npos || Talking())
+        {
+            open += "\"Service\"";
+        }
     }
 
     if (menu)

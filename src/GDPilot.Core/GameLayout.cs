@@ -104,6 +104,7 @@ public static class GameLayout
                 break;
             case Mode.Factions:
             case Mode.Achievements:
+            case Mode.Service:
                 areas.Add(MiddleWindow);
                 break;
             case Mode.LootFilter:

@@ -119,4 +119,16 @@ public sealed class DialogueFixtureTests
         Assert.True(frame.Seen((x, y) => classes.Pixel(x - 440, y - 180)));
         Assert.False(frame.Seen((x, y) => tree.Pixel(x - 460, y - 225)));
     }
+
+    // The Illusionist's window with Paulia, cropped from (450, 220); no other window's capture shows its frame.
+    [Fact]
+    public void TheIllusionistsFrameIsSeenThereAndNotOnOtherWindows()
+    {
+        Frame window = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "illusionist.png"));
+        Frame tree = Frame.Load(Path.Combine(AppContext.BaseDirectory, "screens", "skills.png"));
+        FrameLine frame = new(1044, 320, 700);
+
+        Assert.True(frame.Seen((x, y) => window.Pixel(x - 450, y - 220)));
+        Assert.False(frame.Seen((x, y) => tree.Pixel(x - 460, y - 225)));
+    }
 }
