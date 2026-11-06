@@ -102,7 +102,7 @@ public static class TabStrip
             }
         }
 
-        if (count < 2 || darkest > next * ClearlyDarker)
+        if (count < 2 || darkest >= next * ClearlyDarker)
         {
             return null;
         }

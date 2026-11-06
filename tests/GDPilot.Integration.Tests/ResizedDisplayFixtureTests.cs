@@ -124,4 +124,45 @@ public sealed class ResizedDisplayFixtureTests
         Assert.Equal(rowX, found[8].X);
         Assert.Equal(lowestRow, found[8].Y);
     }
+
+    [Theory]
+    [InlineData(1024, 768, 0.5, "sized-1024-talk", 340, 480, 412, 617)]
+    [InlineData(1920, 1080, 1.0, "sized-1415-talk", 680, 680, 780, 805)]
+    public void AConversationsOneReplyIsFoundAtTheFootOfTheWindow(int width, int height, double uiScale, string file, int left, int top, int replyX, int replyY)
+    {
+        SpotArea area = At(width, height, uiScale).Spots["Dialog"];
+        Func<int, int, (byte Red, byte Green, byte Blue)> screen = Screen(file, left, top);
+
+        ScreenPoint reply = Assert.Single(DialogueReader.Choices(screen, area.Left, area.Top, area.Width, area.Height, area.Scale));
+
+        Assert.Equal(replyX, reply.X);
+        Assert.Equal(replyY, reply.Y);
+        Assert.True(DialogueReader.Showing(screen, area.Left, area.Top, area.Width, area.Height, area.Scale));
+    }
+
+    [Theory]
+    [InlineData(1024, 768, 0.5, "sized-1024-devotion", 380, 240, -448, -156)]
+    [InlineData(1920, 1080, 1.0, "sized-1415-devotion", 830, 400, 0, 0)]
+    public void TheCrossroadsStarsAreFoundAtTheirOwnSizeAboutTheMiddleOfTheWindow(int width, int height, double uiScale, string file, int left, int top, int shiftX, int shiftY)
+    {
+        SpotArea area = At(width, height, uiScale).Spots["Devotion"];
+        ScreenPoint[] stars = { new(959, 435), new(857, 507), new(1064, 508), new(896, 628), new(1023, 631) };
+
+        List<ScreenPoint> found = StarFinder.Find(Screen(file, left, top), area.Left, area.Top, area.Width, area.Height, area.Look!.Spacing, area.Scale);
+
+        foreach (ScreenPoint star in stars)
+        {
+            Assert.Contains(found, spot => Math.Abs(spot.X - (star.X + shiftX)) <= 8 && Math.Abs(spot.Y - (star.Y + shiftY)) <= 8);
+        }
+    }
+
+    [Theory]
+    [InlineData(1024, 768, 0.5, "sized-1024-stash-tabs", 100, 300)]
+    [InlineData(1920, 1080, 1.0, "sized-1415-stash-tabs", 260, 370)]
+    public void TheStashsSelectedTabIsRead(int width, int height, double uiScale, string file, int left, int top)
+    {
+        GridSpec strip = At(width, height, uiScale).Grids["Stash.Tabs"];
+
+        Assert.Equal(0, TabStrip.Selected(Screen(file, left, top), strip));
+    }
 }
