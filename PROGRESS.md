@@ -20,7 +20,7 @@ holds the phases and the rules for the in-game part.
 | 4. Occupancy detection | Done: exact item layouts from the game, checked live; screen reading as the fallback |
 | 5. In-game part and action camera | Done: camera, turning, zoom, collision, following, panel and item reports, all checked live |
 | 6. Lock-on, camera-relative movement, smart interact | Done: all checked live |
-| 7. Radial skills, rumble, snapping in every menu | In progress: most menus snap and were checked live; see "Next session starts here" for what is left |
+| 7. Radial skills, rumble, snapping in every menu | Done and checked live, but for three windows not yet reached and feeling it at the pad |
 | 8. Shortcuts, profiles, first run, release | Not started |
 | Souls-level feel (PLAN.md section 17) | Done, but for tuning with the owner at the pad |
 | 9. Hardening | Not started; a bug pass closes each phase meanwhile |
@@ -328,24 +328,20 @@ Nothing.
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
 
-Phase 7 is nearly finished; it is not done. Checked live by 2026-11-06, on top
-of the list in the decisions log: spending and undoing attribute points, choosing
-a class, Undo Class, mastery points, the Illusionist's window, a conversation of
-four replies, a dodge with Evade in both directions, rare-drop rumble firing, the
-overlay's card clear of every window tried, stars found at two zooms, the auto-sort
-button and its question, and the main menu's own stops.
+Phase 7's work is done, but for what cannot be reached or needs a person.
+Everything in it was checked live by 2026-11-06, the Transfer stash, the main
+menu's dialogs and a quest conversation played to its end last.
 
-Still to do in Phase 7, in order:
+Left of Phase 7:
 
-1. **The main menu's name and difficulty dialogs.** Their stops were corrected
-   but the live check was inconclusive: the cursor wandered through it, probably
-   the owner at the mouse. Replay it. Naming a character needs a keyboard.
-2. **Windows not met yet:** the Spirit Guide and the enchanter and potion crafters
-   are not in Devil's Crossing. An unmeasured one reports as Service or Crafting,
-   and the right stick's cursor still reaches everything in it.
-3. **Kory the Keeper and Captain John Bourbon**, as conversations.
-4. **The bug pass.**
-5. **With someone at the pad:** the "Not yet verified" list above, and tuning.
+1. **Windows not met:** the Spirit Guide and the enchanter and potion crafters are
+   not in Devil's Crossing. An unmeasured one reports as Service or Crafting, with
+   no stops or the wrong ones, and the right stick's cursor still reaches all of it.
+   Measure each the first time a character reaches it. Kory the Keeper was not found.
+2. **With someone at the pad:** the "Not yet verified" list above, and tuning:
+   the rumble, the real sticks and the speeds.
+
+Next: PLAN.md section 17, Phase 8.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
 done.

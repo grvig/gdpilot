@@ -659,9 +659,11 @@ skills, menus that snap to items, and controls that adapt to what is on screen.
 - **Snapping in every menu.** Skill tree nodes, devotion stars, dialogue
   choices, the blacksmith's recipe list. Done 2026-11-04, each found on screen
   by its look while the game says which window is open; traders are now seen
-  by themselves and their goods read from the game. The attributes' buttons
-  are left: they only show with points to spend.
-- **Button icons** matching the connected pad.
+  by themselves and their goods read from the game. The attributes, the classes,
+  the Transfer stash and the main menu followed by 2026-11-06. The Spirit Guide,
+  enchanter and potion crafters are left, not being in the first town.
+- **Button names** matching the connected pad. Done 2026-11-05, as text in the
+  printed colours rather than pictures.
 
 ### Phase 8 — Shortcuts, profiles and release
 
