@@ -131,7 +131,7 @@ public sealed class GridConfig
 }
 
 /// <summary>The display the game is actually running at, read at startup.</summary>
-public readonly record struct LiveDisplay(int Width, int Height, double UiScale)
+public readonly record struct LiveDisplay(int Width, int Height, double UiScale, int Left = 0, int Top = 0)
 {
     /// <summary>
     /// Profile names pair resolution with UI scale, because menu windows in this
