@@ -47,6 +47,7 @@ internal static class Host
         StallDetector stall = new(StallThreshold, () => clock.Elapsed);
         using Watchdog watchdog = new(stall, WatchdogPoll, guarded.ReleaseAll);
         using KillSwitchHook killSwitch = new(KeyChord.Parse(config.KillSwitch), () => Toggle(suspension));
+        using TrayIcon? tray = StartTray(replay, suspension, stop);
 
         // Parsed once up front, since the loop swaps tables on every mode change.
         Dictionary<Mode, ButtonLayers> layers = new();
@@ -353,6 +354,17 @@ internal static class Host
         }
 
         return new Picture(pixels, side, side);
+    }
+
+    /// <summary>A replay is a test with an end of its own, so it leaves nothing beside the clock.</summary>
+    private static TrayIcon? StartTray(GamepadTrace? replay, Suspension suspension, CancellationTokenSource stop)
+    {
+        if (replay is not null || ConfigFile.LoadedFrom is not string settings)
+        {
+            return null;
+        }
+
+        return new TrayIcon(() => Toggle(suspension), () => (suspension.Reasons & SuspendReason.KillSwitch) != 0, stop.Cancel, settings);
     }
 
     /// <summary>The middle of the game window, at the configured height, or null when the game is not running.</summary>

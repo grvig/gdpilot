@@ -6,6 +6,7 @@
     <RootNamespace>GDPilot.App</RootNamespace>
     <AssemblyName>GDPilot</AssemblyName>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +20,9 @@
   <ItemGroup>
     <!-- WPF drops this implicit using to avoid its own Path type; the host uses only the file system one. -->
     <Using Include="System.IO" />
+    <!-- Only the tray uses these, and they would clash with the rest. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
   </ItemGroup>
 
   <ItemGroup>
