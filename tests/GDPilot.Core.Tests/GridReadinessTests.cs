@@ -207,4 +207,46 @@ public sealed class GridReadinessTests
         Assert.Equal(new ScreenPoint(34, 84), readiness.Spots["Journal"].Fixed[0]);
         Assert.Equal(720 - (1080 - 1059) * 0.8, readiness.Grids["Hotbar"].OriginY, 3);
     }
+
+    private const string WithTheDevotionMap = """
+        {
+          "activeProfile": "p",
+          "profiles": {
+            "p": {
+              "resolution": [1920, 1080],
+              "uiScale": 0.5,
+              "grids": { "Devotion.Tabs": { "originX": 796, "originY": 21, "pitchX": 164, "pitchY": 20, "columns": 3, "rows": 1 } },
+              "spots": {
+                "Devotion": { "left": 240, "top": 110, "width": 1660, "height": 960, "look": "devotionStar", "fixed": [[648, 21], [891, 64], [230, 540]] },
+                "Dialog": { "left": 773, "top": 300, "width": 477, "height": 635, "look": "dialogueChoice" }
+              }
+            }
+          }
+        }
+        """;
+
+    [Fact]
+    public void TheDevotionMapsStarsKeepTheirSizeAndAreLookedForAcrossTheWholeWindow()
+    {
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(WithTheDevotionMap), new LiveDisplay(1024, 768, 0.5, 448, 156));
+        SpotArea map = readiness.Spots["Devotion"];
+
+        Assert.Equal(1, map.Scale);
+        Assert.Equal(SpotLook.DevotionStar, map.Look);
+        Assert.Equal(448 + 188, map.Left);
+        Assert.Equal(156 + 86, map.Top);
+        Assert.Equal(448 + 1024 - 16, map.Left + map.Width);
+        Assert.Equal(156 + 768 - 8, map.Top + map.Height);
+    }
+
+    [Fact]
+    public void WhatLiesOverTheDevotionMapKeepsToItsOwnEdges()
+    {
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(WithTheDevotionMap), new LiveDisplay(1024, 768, 0.5));
+        SpotArea map = readiness.Spots["Devotion"];
+
+        Assert.Equal(new ScreenPoint(267, 16), map.Fixed[0]);
+        Assert.Equal(new ScreenPoint(181, 384), map.Fixed[2]);
+        Assert.Equal(16, readiness.Grids["Devotion.Tabs"].OriginY, 0);
+    }
 }

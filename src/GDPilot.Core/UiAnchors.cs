@@ -15,6 +15,11 @@ public static class UiAnchors
             case "Hotbar":
             case "Assign":
                 return (UiEdge.Middle, UiEdge.End);
+            case "Devotion" when x < AffinitiesPane:
+                return (UiEdge.Start, UiEdge.Middle);
+            case "Devotion":
+            case "Devotion.Tabs":
+                return (UiEdge.Middle, UiEdge.Start);
             case "Journal":
                 return (UiEdge.Start, UiEdge.Middle);
             case "MainMenu" when x < MainMenuLeftPane:
@@ -28,6 +33,9 @@ public static class UiAnchors
 
     /// <summary>On the main menu, the list of characters and the buttons under it keep to the left corner, and the rest to the foot's middle.</summary>
     private const double MainMenuLeftPane = 300;
+
+    /// <summary>On the devotion map, the affinities keep to the left, and the bar of tabs and zoom to the top's middle.</summary>
+    private const double AffinitiesPane = 300;
 
     public static GridSpec Moved(GridSpec grid, string name, UiGeometry geometry)
     {
@@ -48,6 +56,11 @@ public static class UiAnchors
         (UiEdge across, UiEdge down) = Of(name, area.Left, area.Top);
         double scale = geometry.Scale;
 
+        if (area.Kind == SpotKind.Stars)
+        {
+            return OverTheWholeWindow(area, name, geometry);
+        }
+
         return area with
         {
             Left = (int)Math.Round(geometry.X(area.Left, across)),
@@ -60,6 +73,31 @@ public static class UiAnchors
             When = Moved(area.When, name, geometry),
             Scale = scale,
             Apart = (int)Math.Round(area.Apart * scale),
+        };
+    }
+
+    /// <summary>
+    /// The devotion map is drawn at one size whatever the display, centred, and shows
+    /// more of itself on a larger window, measured on 2026-11-07: only what lies over
+    /// it is scaled. Its stars are looked for everywhere that leaves clear.
+    /// </summary>
+    private static SpotArea OverTheWholeWindow(SpotArea area, string name, UiGeometry geometry)
+    {
+        double scale = geometry.Scale;
+        int left = (int)Math.Round(area.Left * scale);
+        int top = (int)Math.Round(area.Top * scale);
+        int right = (int)Math.Round((geometry.ReferenceWidth - area.Left - area.Width) * scale);
+        int bottom = (int)Math.Round((geometry.ReferenceHeight - area.Top - area.Height) * scale);
+
+        return area with
+        {
+            Left = geometry.Left + left,
+            Top = geometry.Top + top,
+            Width = Math.Max(0, geometry.Width - left - right),
+            Height = Math.Max(0, geometry.Height - top - bottom),
+            Fixed = area.Fixed.Select(place => Moved(place, name, geometry)).ToList(),
+            Lit = area.Lit.Select(place => Moved(place, name, geometry)).ToList(),
+            When = Moved(area.When, name, geometry),
         };
     }
 
