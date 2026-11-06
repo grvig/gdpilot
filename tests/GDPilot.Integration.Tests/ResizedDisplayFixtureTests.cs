@@ -109,4 +109,19 @@ public sealed class ResizedDisplayFixtureTests
 
         Assert.Equal(3, found.Count);
     }
+
+    [Theory]
+    [InlineData(1280, 720, 0.5, "sized-720-slotlist", 540, 400, 629, 661)]
+    [InlineData(1600, 900, 0.5, "sized-900-slotlist", 700, 560, 781, 837)]
+    [InlineData(1920, 1080, 1.0, "sized-1415-slotlist", 800, 540, 915, 977)]
+    public void EveryRowOfASlotsListIsFoundAndNotTheGroundAboveIt(int width, int height, double uiScale, string file, int left, int top, int rowX, int lowestRow)
+    {
+        SpotArea area = At(width, height, uiScale).Spots["Assign"];
+
+        List<ScreenPoint> found = SlotListReader.Rows(Screen(file, left, top), area.Left, area.Top, area.Width, area.Height, area.Scale);
+
+        Assert.Equal(9, found.Count);
+        Assert.Equal(rowX, found[8].X);
+        Assert.Equal(lowestRow, found[8].Y);
+    }
 }
