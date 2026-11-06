@@ -96,4 +96,17 @@ public sealed class ResizedDisplayFixtureTests
 
         Assert.Equal(0, TabStrip.Selected(Screen(file, left, top), strip));
     }
+
+    [Theory]
+    [InlineData(1920, 1080, 0.5, "sized-1000-characters", 0, 540)]
+    [InlineData(1024, 768, 0.5, "sized-1024-characters", 0, 340)]
+    [InlineData(1920, 1080, 1.0, "sized-1415-characters", 0, 330)]
+    public void EachCharacterOnTheMainMenuIsOneStopThoughTheChosenOneLightsTwoLines(int width, int height, double uiScale, string file, int left, int top)
+    {
+        SpotArea area = At(width, height, uiScale).Spots["MainMenu"];
+
+        List<ScreenPoint> found = RecipeReader.Lines(Screen(file, left, top), area.Left, area.Top, area.Width, area.Height, area.Scale, area.Apart);
+
+        Assert.Equal(3, found.Count);
+    }
 }

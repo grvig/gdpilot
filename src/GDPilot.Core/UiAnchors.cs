@@ -59,6 +59,7 @@ public static class UiAnchors
             Lit = area.Lit.Select(place => Moved(place, name, geometry)).ToList(),
             When = Moved(area.When, name, geometry),
             Scale = scale,
+            Apart = (int)Math.Round(area.Apart * scale),
         };
     }
 

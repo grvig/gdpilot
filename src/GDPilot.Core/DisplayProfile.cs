@@ -18,6 +18,9 @@ public sealed class ProfileConfig
 /// </summary>
 public sealed class SpotAreaConfig
 {
+    /// <summary>For lines of text: how near they may stand and be separate stops. Nearer ones belong to the line above.</summary>
+    public int Apart { get; init; }
+
     public int Left { get; init; }
     public int Top { get; init; }
     public int Width { get; init; }
@@ -44,7 +47,7 @@ public sealed class SpotAreaConfig
             return null;
         }
 
-        area = area with { Lit = Lit.Where(pair => pair.Length == 2).Select(pair => new ScreenPoint(pair[0], pair[1])).ToList() };
+        area = area with { Lit = Lit.Where(pair => pair.Length == 2).Select(pair => new ScreenPoint(pair[0], pair[1])).ToList(), Apart = Apart };
 
         if (Tabs.Length > 0)
         {
@@ -109,6 +112,9 @@ public sealed record SpotArea(int Left, int Top, int Width, int Height, SpotLook
 
     /// <summary>How large the game draws this area against where it was measured, for reading it at the right size.</summary>
     public double Scale { get; init; } = 1;
+
+    /// <summary>How near lines of text may stand and be separate stops; nearer ones belong to the line above.</summary>
+    public int Apart { get; init; }
 
     /// <summary>The tab strip this screen has, by its grid's name, or null for the mode's own.</summary>
     public string? Tabs { get; init; }

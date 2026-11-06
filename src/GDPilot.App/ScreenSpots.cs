@@ -90,7 +90,7 @@ internal sealed class ScreenSpots : ISpotSource
 
         if (area.Kind == SpotKind.Lines)
         {
-            return RecipeReader.Lines(pixel, area.Left, area.Top, area.Width, area.Height, area.Scale);
+            return RecipeReader.Lines(pixel, area.Left, area.Top, area.Width, area.Height, area.Scale, area.Apart);
         }
 
         if (area.Kind == SpotKind.Recipes)

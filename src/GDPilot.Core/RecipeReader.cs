@@ -21,12 +21,23 @@ public static class RecipeReader
     }
 
     /// <summary>Every line of a list of plain text, whatever its colour, as in the journal.</summary>
-    public static List<ScreenPoint> Lines(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, double scale = 1)
+    public static List<ScreenPoint> Lines(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, double scale = 1, int apart = 0)
     {
-        return TextLines.Find(pixel, left, top, width, height, IsBright, scale)
-            .Where(line => line.Last - line.First + 1 >= UiFactor.Sized(ShortestLine, scale))
-            .Select(line => new ScreenPoint(left + UiFactor.Sized(TextInset, scale), (line.First + line.Last) / 2))
-            .ToList();
+        List<ScreenPoint> lines = new();
+
+        foreach ((int first, int last) in TextLines.Find(pixel, left, top, width, height, IsBright, scale))
+        {
+            int middle = (first + last) / 2;
+
+            if (last - first + 1 < UiFactor.Sized(ShortestLine, scale) || (lines.Count > 0 && middle - lines[^1].Y < apart))
+            {
+                continue;
+            }
+
+            lines.Add(new ScreenPoint(left + UiFactor.Sized(TextInset, scale), middle));
+        }
+
+        return lines;
     }
 
     private static bool IsBright((byte Red, byte Green, byte Blue) colour)
