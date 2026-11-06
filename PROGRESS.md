@@ -294,7 +294,7 @@ Not yet verified:
   cell, as the screen reading cannot tell items apart reliably. With it, the
   bags, the stash and a trader's goods all come from the game.
 - The devotion map need not pan: fully zoomed out it all fits, and zoom is a stop.
-  A few bright stars and a few outline points are still misjudged by the finder.
+  A few stars and a few points of artwork are still misjudged by the finder.
 - The spot looks are measured at UI scale 0.5; another scale needs their sizes
   scaled.
 - Collision does not stop for trees and some props; the game fades those itself.
@@ -328,30 +328,24 @@ Nothing.
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
 
-Phase 7 is being finished; it is not done. Checked live on 2026-11-05:
-conversations, every tab of a trader, the journal, factions, achievements and
-loot filter, the game's menu with Options and Yes and No questions, devotion
-from the D-pad, exchanging skills on the wheel (it lasts across a restart), a
-slot's list opened from the wheel, rift travel by the D-pad and A, the gear
-slots' places, the Inventor's stops and tabs, soft aim among living enemies,
-the main menu's report and first stops, and button names on an Xbox pad and,
-by setting, PlayStation names.
+Phase 7 is nearly finished; it is not done. Checked live by 2026-11-06, on top
+of the list in the decisions log: spending and undoing attribute points, choosing
+a class, Undo Class, mastery points, the Illusionist's window, a conversation of
+four replies, a dodge with Evade in both directions, rare-drop rumble firing, the
+overlay's card clear of every window tried, stars found at two zooms, the auto-sort
+button and its question, and the main menu's own stops.
 
 Still to do in Phase 7, in order:
 
-1. **Attributes and choosing a mastery.** A test character, "padtest", was
-   made for this; it is still level 1, and enemies were just reached north-east
-   of Devil's Crossing. Fight until it levels, measure the buttons, add stops.
-2. **Live checks not yet done:** a dodge with a movement skill (Evade is on the
-   test character's slot 4); the buttons along the bags' foot; the main menu's
-   Create and Difficulty dialogs, whose frames were measured by eye; the overlay's
-   place in each new window; Kory the Keeper, Captain John Bourbon and the Spirit
-   Guide.
-3. **Rare-drop rumble:** built on rarities read from items at hand, 0, 2, 3 and
-   9. No legendary was at hand to read, so that number is assumed.
-4. **Keep the overlay's card from being read as stops on the devotion map.**
-5. **The bug pass**, then the docs for the skill wheel's new buttons.
-6. **With someone at the pad:** the "Not yet verified" list above, and tuning.
+1. **The main menu's name and difficulty dialogs.** Their stops were corrected
+   but the live check was inconclusive: the cursor wandered through it, probably
+   the owner at the mouse. Replay it. Naming a character needs a keyboard.
+2. **Windows not met yet:** the Spirit Guide and the enchanter and potion crafters
+   are not in Devil's Crossing. An unmeasured one reports as Service or Crafting,
+   and the right stick's cursor still reaches everything in it.
+3. **Kory the Keeper and Captain John Bourbon**, as conversations.
+4. **The bug pass.**
+5. **With someone at the pad:** the "Not yet verified" list above, and tuning.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
 done.
