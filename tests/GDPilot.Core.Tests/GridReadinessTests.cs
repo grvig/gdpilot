@@ -258,4 +258,14 @@ public sealed class GridReadinessTests
 
         Assert.Equal(768 - 145 * readiness.Spots["Dialog"].Scale, box.Top + box.Height, 0);
     }
+
+    [Fact]
+    public void AnAreaALargerInterfaceCarriesPastTheWindowStopsAtItsEdge()
+    {
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(WithTheDevotionMap), new LiveDisplay(1920, 1080, 1.0));
+        SpotArea box = readiness.Spots["Dialog"];
+
+        Assert.Equal(0, box.Top);
+        Assert.Equal(1080 - 145 * 1.415, box.Top + box.Height, 0);
+    }
 }

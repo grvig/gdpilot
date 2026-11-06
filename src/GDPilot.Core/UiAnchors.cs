@@ -62,12 +62,26 @@ public static class UiAnchors
             return OverTheWholeWindow(area, name, geometry);
         }
 
+        int left = (int)Math.Round(geometry.X(area.Left, across));
+        int top = (int)Math.Round(geometry.Y(area.Top, down));
+        int right = left + (int)Math.Round(area.Width * scale);
+        int bottom = top + (int)Math.Round(area.Height * scale);
+
+        // A larger interface can carry an area past the window, and what lies out there is no part of the game.
+        if (area.Width > 0 && area.Height > 0)
+        {
+            left = Math.Max(left, geometry.Left);
+            top = Math.Max(top, geometry.Top);
+            right = Math.Min(right, geometry.Left + geometry.Width);
+            bottom = Math.Min(bottom, geometry.Top + geometry.Height);
+        }
+
         return area with
         {
-            Left = (int)Math.Round(geometry.X(area.Left, across)),
-            Top = (int)Math.Round(geometry.Y(area.Top, down)),
-            Width = (int)Math.Round(area.Width * scale),
-            Height = (int)Math.Round(area.Height * scale),
+            Left = left,
+            Top = top,
+            Width = Math.Max(0, right - left),
+            Height = Math.Max(0, bottom - top),
             Look = area.Look?.At(scale),
             Fixed = area.Fixed.Select(place => Moved(place, name, geometry)).ToList(),
             Lit = area.Lit.Select(place => Moved(place, name, geometry)).ToList(),
