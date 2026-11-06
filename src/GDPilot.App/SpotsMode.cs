@@ -17,7 +17,8 @@ internal static class SpotsMode
             return 2;
         }
 
-        List<ScreenPoint>? found = new ScreenSpots().Read(area);
+        ScreenSpots spots = new();
+        List<ScreenPoint>? found = spots.Read(area);
 
         if (found is null)
         {
@@ -25,7 +26,7 @@ internal static class SpotsMode
             return 1;
         }
 
-        foreach (ScreenPoint spot in found.Concat(area.Fixed))
+        foreach (ScreenPoint spot in found.Concat(area.Fixed).Concat(spots.LitOf(area)))
         {
             Console.WriteLine($"{spot.X} {spot.Y}");
         }

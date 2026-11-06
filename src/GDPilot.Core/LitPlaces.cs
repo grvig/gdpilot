@@ -10,7 +10,8 @@ public static class LitPlaces
 {
     public const int Reach = 7;
 
-    private const int FewestRed = 30;
+    /// <summary>The faintest lit place, the character sheet's Undo, measured 22.</summary>
+    private const int FewestRed = 16;
 
     public static bool Lit(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, ScreenPoint place)
     {
