@@ -82,7 +82,7 @@ internal sealed class ScreenSpots : ISpotSource
 
         if (area.Kind == SpotKind.SlotList)
         {
-            return SlotListReader.Rows(pixel, area.Left, area.Top, area.Width, area.Height);
+            return SlotListReader.Rows(pixel, area.Left, area.Top, area.Width, area.Height, area.Scale);
         }
 
         if (area.Kind == SpotKind.Lines)

@@ -32,31 +32,39 @@ public static class SlotListReader
     private const int StopInset = 60;
 
     /// <param name="height">The area's last row is where the list's foot is looked for.</param>
-    public static List<ScreenPoint> Rows(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
+    public static List<ScreenPoint> Rows(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, double scale = 1)
     {
         List<ScreenPoint> rows = new();
         int foot = top + height - 1;
+        int listWidth = UiFactor.Sized(ListWidth, scale);
+        int halfHeight = UiFactor.Sized(TextHalfHeight, scale);
 
-        for (int edge = left + ListWidth; edge < left + width; edge++)
+        for (int edge = left + listWidth; edge < left + width; edge++)
         {
-            if (!IsEdge(pixel, edge, foot))
+            if (!IsEdge(pixel, edge, foot, scale))
             {
                 continue;
             }
 
-            int listLeft = edge - ListWidth;
+            int listLeft = edge - listWidth;
+            double edgeLook = Brightness(pixel(edge, foot - UiFactor.Sized(EdgeRowsAboveFoot, scale)));
 
-            double edgeLook = Brightness(pixel(edge, foot - EdgeRowsAboveFoot));
-
-            for (int y = foot - FirstRowAbove; y - TextHalfHeight >= top; y -= RowHeight)
+            for (int row = 0; ; row++)
             {
-                // Over bright ground, text alone cannot say where the list stops; its edge can.
-                if (Math.Abs(Brightness(pixel(edge, y)) - edgeLook) > EdgeSteadiness * 2 || !HasText(pixel, listLeft, y))
+                int y = foot - (int)Math.Round((FirstRowAbove + row * RowHeight) * scale);
+
+                if (y - halfHeight < top)
                 {
                     break;
                 }
 
-                rows.Insert(0, new ScreenPoint(listLeft + StopInset, y));
+                // Over bright ground, text alone cannot say where the list stops; its edge can.
+                if (Math.Abs(Brightness(pixel(edge, y)) - edgeLook) > EdgeSteadiness * 2 || !HasText(pixel, listLeft, y, scale))
+                {
+                    break;
+                }
+
+                rows.Insert(0, new ScreenPoint(listLeft + UiFactor.Sized(StopInset, scale), y));
             }
 
             return rows;
@@ -65,23 +73,24 @@ public static class SlotListReader
         return rows;
     }
 
-    private static bool IsEdge(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int x, int foot)
+    private static bool IsEdge(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int x, int foot, double scale)
     {
         double total = 0;
         double sides = 0;
-        int first = foot - EdgeRowsAboveFoot - EdgeRowsChecked;
-        double[] values = new double[EdgeRowsChecked];
+        int checkedRows = UiFactor.Sized(EdgeRowsChecked, scale);
+        int first = foot - UiFactor.Sized(EdgeRowsAboveFoot, scale) - checkedRows;
+        double[] values = new double[checkedRows];
 
-        for (int index = 0; index < EdgeRowsChecked; index++)
+        for (int index = 0; index < checkedRows; index++)
         {
             values[index] = Brightness(pixel(x, first + index));
             total += values[index];
             sides += (Brightness(pixel(x - 2, first + index)) + Brightness(pixel(x + 2, first + index))) / 2;
         }
 
-        double mean = total / EdgeRowsChecked;
+        double mean = total / checkedRows;
 
-        if (mean < EdgeDimmest || mean > EdgeBrightest || mean - sides / EdgeRowsChecked < EdgeAboveSides)
+        if (mean < EdgeDimmest || mean > EdgeBrightest || mean - sides / checkedRows < EdgeAboveSides)
         {
             return false;
         }
@@ -89,13 +98,14 @@ public static class SlotListReader
         return values.All(value => Math.Abs(value - mean) <= EdgeSteadiness);
     }
 
-    private static bool HasText(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int listLeft, int y)
+    private static bool HasText(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int listLeft, int y, double scale)
     {
         int bright = 0;
+        int halfHeight = UiFactor.Sized(TextHalfHeight, scale);
 
-        for (int x = listLeft + TextFrom; x < listLeft + TextTo; x++)
+        for (int x = listLeft + UiFactor.Sized(TextFrom, scale); x < listLeft + UiFactor.Sized(TextTo, scale); x++)
         {
-            for (int row = y - TextHalfHeight; row <= y + TextHalfHeight; row++)
+            for (int row = y - halfHeight; row <= y + halfHeight; row++)
             {
                 if (Brightness(pixel(x, row)) >= TextBright)
                 {
@@ -104,7 +114,7 @@ public static class SlotListReader
             }
         }
 
-        return bright >= TextPixelsAtLeast;
+        return bright >= TextPixelsAtLeast * scale * scale;
     }
 
     private static double Brightness((byte Red, byte Green, byte Blue) colour)
