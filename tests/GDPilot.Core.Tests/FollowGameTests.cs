@@ -188,6 +188,18 @@ public sealed class FollowGameTests
     }
 
     [Fact]
+    public void BackAtTheMainMenuTapsEscapeAndStaysThere()
+    {
+        ModeController modes = Controller();
+        modes.Follow(new[] { "MainMenu" });
+
+        List<InputIntent> intents = modes.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.B }, Tick);
+
+        Assert.Contains(new KeyDown(KeyCode.Escape), intents);
+        Assert.Equal(Mode.MainMenu, modes.Current);
+    }
+
+    [Fact]
     public void ACraftersWindowTheGameNamesIsFollowed()
     {
         ModeController modes = Controller();

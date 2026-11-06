@@ -324,6 +324,13 @@ public sealed class ModeController
         }
         else if (binding is BackBinding)
         {
+            // At the main menu Escape only closes its dialogs, and there is no world to fall back to.
+            if (stack.Current == Mode.MainMenu)
+            {
+                taps.Enqueue(KeyCode.Escape);
+                return;
+            }
+
             // Escape with nothing open brings up the game's menu.
             if (!stack.Pop())
             {
