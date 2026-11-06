@@ -56,13 +56,14 @@ internal static class Host
             layers[mode] = config.ButtonsFor(mode.ToString());
         }
 
-        // Section 11: grids are checked against the live display once, at startup,
-        // and refused with a reason rather than clicking the wrong pixels.
-        GridReadiness readiness = new(false, "The game was not running when GDPilot started, so grid navigation is off.", new Dictionary<string, GridSpec>());
+        // Section 11: grids are worked out for the live display, and again whenever it changes.
+        GridReadiness readiness = new(false, "The game is not running yet, so grid navigation is off.", new Dictionary<string, GridSpec>());
+        DisplayWatch displayWatch = new();
+        LiveDisplay? display = GameDisplay.Read(config);
 
-        if (GameDisplay.Read(config) is LiveDisplay live)
+        if (displayWatch.Changed(display))
         {
-            readiness = GridReadiness.Check(config, live);
+            readiness = GridReadiness.Check(config, display!.Value);
         }
 
         Console.WriteLine($"Grids: {readiness.Message}");
@@ -89,7 +90,8 @@ internal static class Host
         }
 
         ScreenSpots spots = new();
-        ModeController modes = new(config.PanelKeys(), mode => layers[mode], new GridNavigator(readiness, jumping, spots) { ReportedTab = mode => occupancy.TabOf(mode.ToString()), ReportedTabs = mode => occupancy.TabsOf(mode.ToString()) });
+        GridNavigator navigator = new(readiness, jumping, spots) { ReportedTab = mode => occupancy.TabOf(mode.ToString()), ReportedTabs = mode => occupancy.TabsOf(mode.ToString()) };
+        ModeController modes = new(config.PanelKeys(), mode => layers[mode], navigator);
         ConversationWatch conversation = new(() => ConversationShowing(readiness, spots));
         Mapper mapper = new(config.Mapping(), layers[Mode.Combat]) { Wheel = config.Wheel(), Lock = config.LockOn(), SoftAim = config.SoftAim(), TwinStick = config.Input.TwinStick, InteractReach = config.Input.InteractReach, HotbarSlot = key => HotbarSlot(readiness, key) };
 
@@ -167,6 +169,14 @@ internal static class Host
                     gameBounds = GameWindow.ClientBounds(config.GameProcess);
                     gameHandle = GameWindow.Handle(config.GameProcess);
                     mapper.GameBounds = gameBounds;
+                    display = GameDisplay.Read(gameBounds);
+
+                    if (displayWatch.Changed(display))
+                    {
+                        readiness = GridReadiness.Check(config, display!.Value);
+                        navigator.Use(readiness);
+                        Console.WriteLine($"Grids: {readiness.Message}");
+                    }
                 }
 
                 // With the in-game part connected, the game says which panels are open; without it, presses are tracked.

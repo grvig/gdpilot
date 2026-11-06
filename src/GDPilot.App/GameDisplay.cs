@@ -6,6 +6,9 @@ namespace GDPilot.App;
 /// <summary>Reads what the game is running at right now: its window size and its UI scale setting.</summary>
 internal static class GameDisplay
 {
+    private static DateTime settingsWritten;
+    private static double uiScale;
+
     internal static string SettingsPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
         "My Games",
@@ -20,20 +23,41 @@ internal static class GameDisplay
     /// </summary>
     internal static LiveDisplay? Read(GDPilotConfig config)
     {
-        ScreenRect? game = GameWindow.ClientBounds(config.GameProcess);
+        return Read(GameWindow.ClientBounds(config.GameProcess));
+    }
 
+    /// <summary>The same, for a window already found.</summary>
+    internal static LiveDisplay? Read(ScreenRect? game)
+    {
         if (game is not ScreenRect bounds || !File.Exists(SettingsPath))
         {
             return null;
         }
 
-        (int Width, int Height, double UiScale)? settings = GameSettings.Parse(File.ReadAllText(SettingsPath));
+        // This is asked several times a second, and the file seldom changes.
+        DateTime written = File.GetLastWriteTimeUtc(SettingsPath);
 
-        if (settings is null)
+        if (written != settingsWritten)
         {
-            return null;
+            try
+            {
+                (int Width, int Height, double UiScale)? settings = GameSettings.Parse(File.ReadAllText(SettingsPath));
+
+                if (settings is null)
+                {
+                    return null;
+                }
+
+                uiScale = settings.Value.UiScale;
+                settingsWritten = written;
+            }
+            catch (IOException)
+            {
+                // The game may be writing it this moment; the next look will do.
+                return null;
+            }
         }
 
-        return new LiveDisplay(bounds.Width, bounds.Height, settings.Value.UiScale, bounds.X, bounds.Y);
+        return new LiveDisplay(bounds.Width, bounds.Height, uiScale, bounds.X, bounds.Y);
     }
 }

@@ -28,7 +28,7 @@ public sealed class GridNavigator
     /// <summary>Marks a surface as spots rather than a grid: alone, the spots whose frame shows; before a name, those spots.</summary>
     private const string SpotsSurface = "@";
 
-    private readonly GridReadiness readiness;
+    private GridReadiness readiness;
     private readonly IOccupancySource? occupancy;
     private readonly ISpotSource? spotSource;
     private readonly Dictionary<string, OccupancyMap> known = new();
@@ -230,6 +230,15 @@ public sealed class GridNavigator
     public void Forget()
     {
         mode = Mode.Suspended;
+    }
+
+    /// <summary>Moves to where the game now draws everything, as when it starts late or changes its display. Nothing placed before still stands.</summary>
+    public void Use(GridReadiness moved)
+    {
+        readiness = moved;
+        known.Clear();
+        seen.Clear();
+        Forget();
     }
 
     /// <summary>

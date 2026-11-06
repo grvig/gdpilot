@@ -77,4 +77,27 @@ public sealed class GridNavigatorTests
         Assert.Equal(Mode.Inventory, modes.Current);
         Assert.Equal(new InputIntent[] { new PointerMoveTo(652, 645) }, sent);
     }
+
+    [Fact]
+    public void GivenANewDisplayItLandsWhereTheGameNowDraws()
+    {
+        GridNavigator navigator = new(Ready);
+        navigator.Act(Mode.Inventory, "right");
+        navigator.Act(Mode.Inventory, "right");
+
+        navigator.Use(new GridReadiness(true, "ready", new Dictionary<string, GridSpec> { ["Inventory"] = new GridSpec(100, 200, 25, 25, 12, 8) }));
+
+        Assert.Equal(new PointerMoveTo(100, 200), navigator.Act(Mode.Inventory, "right"));
+    }
+
+    [Fact]
+    public void AGameThatStartedLateIsPickedUp()
+    {
+        GridNavigator navigator = new(new GridReadiness(false, "not running", new Dictionary<string, GridSpec>()));
+        Assert.Null(navigator.Act(Mode.Inventory, "right"));
+
+        navigator.Use(Ready);
+
+        Assert.Equal(new PointerMoveTo(652, 645), navigator.Act(Mode.Inventory, "right"));
+    }
 }
