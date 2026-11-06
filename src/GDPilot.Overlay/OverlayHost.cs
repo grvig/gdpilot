@@ -60,12 +60,12 @@ public sealed class OverlayHost : IDisposable
 
     /// <summary>Shows the state in the chosen corner of the game, or of the screen when there is no game window.</summary>
     /// <param name="gameHandle">The game's window, so the overlay can stack itself with it; zero when unknown.</param>
-    public void Update(OverlayState state, ScreenRect? game, OverlayCorner corner, IntPtr gameHandle)
+    public void Update(OverlayState state, ScreenRect? game, OverlayCorner corner, IntPtr gameHandle, LiveDisplay? display = null)
     {
         window?.Dispatcher.BeginInvoke(() =>
         {
             gameWindow = gameHandle;
-            Apply(state, game, corner);
+            Apply(state, game, corner, display);
         });
     }
 
@@ -99,7 +99,7 @@ public sealed class OverlayHost : IDisposable
         Dispatcher.Run();
     }
 
-    private void Apply(OverlayState state, ScreenRect? game, OverlayCorner corner)
+    private void Apply(OverlayState state, ScreenRect? game, OverlayCorner corner, LiveDisplay? display)
     {
         window!.Display(state);
 
@@ -121,7 +121,7 @@ public sealed class OverlayHost : IDisposable
             area = bounds;
         }
 
-        (int x, int y) = GameLayout.Place(area, own.Right - own.Left, own.Bottom - own.Top, corner, state.Showing);
+        (int x, int y) = GameLayout.Place(area, own.Right - own.Left, own.Bottom - own.Top, corner, state.Showing, display);
 
         Place(Handle, x, y);
         Volatile.Write(ref cardBounds, new ScreenRect(x, y, own.Right - own.Left, own.Bottom - own.Top));

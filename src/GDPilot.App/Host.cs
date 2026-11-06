@@ -255,7 +255,7 @@ internal static class Host
                     };
                     state = state with { Folded = fold.Folded(state, now - lastDrawn) };
                     lastDrawn = now;
-                    overlay.Update(state.Floating(), gameBounds, config.Overlay.Corner, gameHandle);
+                    overlay.Update(state.Floating(), gameBounds, config.Overlay.Corner, gameHandle, display);
                     wheelShown = wheelOpen;
                     markerShown = locked is not null;
                 }

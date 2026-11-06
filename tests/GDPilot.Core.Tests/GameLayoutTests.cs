@@ -67,4 +67,44 @@ public sealed class GameLayoutTests
         Assert.Contains(reserved, area => area.Top == 0 && area.Left > 0.3 && area.Right < 0.7);
         Assert.Equal(2, reserved.Count);
     }
+
+    [Fact]
+    public void AWindowTakesMoreOfASmallerDisplay()
+    {
+        ScreenArea measured = GameLayout.Reserved(Mode.Skills)[^1];
+        ScreenArea small = GameLayout.Reserved(Mode.Skills, new LiveDisplay(1280, 720, 0.5))[^1];
+
+        Assert.Equal(0.5 + (measured.Left - 0.5) * 1.2, small.Left, 3);
+        Assert.Equal(0.5 + (measured.Bottom - 0.5) * 1.2, small.Bottom, 3);
+    }
+
+    [Fact]
+    public void TheHotbarStaysAtTheFootHoweverLargeItIsDrawn()
+    {
+        ScreenArea large = GameLayout.Reserved(Mode.Combat, new LiveDisplay(1920, 1080, 1.0))[2];
+
+        Assert.Equal(1, large.Bottom, 3);
+        Assert.True(large.Top < GameLayout.Reserved(Mode.Combat)[2].Top);
+    }
+
+    [Fact]
+    public void TheMinimapStaysInItsCornerOnAnyShapeOfWindow()
+    {
+        ScreenArea square = GameLayout.Reserved(Mode.Combat, new LiveDisplay(1024, 768, 0.5))[0];
+
+        Assert.Equal(1, square.Right, 3);
+        Assert.Equal(0, square.Top, 3);
+    }
+
+    [Fact]
+    public void ACardStillClearsTheGamesInterfaceAtASmallerDisplay()
+    {
+        ScreenRect game = new(0, 0, 1280, 720);
+        LiveDisplay live = new(1280, 720, 0.5);
+
+        (int x, int y) = GameLayout.Place(game, 200, 170, OverlayCorner.TopRight, Mode.Inventory, live);
+        ScreenArea card = new((double)x / 1280, (double)y / 720, (double)(x + 200) / 1280, (double)(y + 170) / 720);
+
+        Assert.DoesNotContain(GameLayout.Reserved(Mode.Inventory, live), area => card.Overlaps(area));
+    }
 }

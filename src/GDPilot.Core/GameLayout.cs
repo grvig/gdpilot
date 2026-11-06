@@ -3,6 +3,16 @@ namespace GDPilot.Core;
 /// <summary>A part of the game window, as fractions of its width and height from the top left.</summary>
 public readonly record struct ScreenArea(double Left, double Top, double Right, double Bottom)
 {
+    /// <summary>This area, measured at the reference display, where the game draws it at another. Which edges it keeps to are the part's own.</summary>
+    public ScreenArea At(UiGeometry geometry, UiEdge across, UiEdge down)
+    {
+        return new ScreenArea(
+            (geometry.X(Left * geometry.ReferenceWidth, across) - geometry.Left) / geometry.Width,
+            (geometry.Y(Top * geometry.ReferenceHeight, down) - geometry.Top) / geometry.Height,
+            (geometry.X(Right * geometry.ReferenceWidth, across) - geometry.Left) / geometry.Width,
+            (geometry.Y(Bottom * geometry.ReferenceHeight, down) - geometry.Top) / geometry.Height);
+    }
+
     public bool Overlaps(ScreenArea other)
     {
         return Left < other.Right && other.Left < Right && Top < other.Bottom && other.Top < Bottom;
@@ -60,7 +70,46 @@ public static class GameLayout
     private static readonly ScreenArea FrontMenu = new(0, 0.5, 0.15, 1);
     private static readonly ScreenArea FrontButtons = new(0.28, 0.87, 0.72, 0.96);
 
-    /// <summary>Everything the game draws in a mode, the world's own interface included.</summary>
+    private const int MeasuredWidth = 1920;
+    private const int MeasuredHeight = 1080;
+    private const double MeasuredUiScale = 0.5;
+
+    /// <summary>Everything the game draws in a mode at the given display, as fractions of its window.</summary>
+    public static IReadOnlyList<ScreenArea> Reserved(Mode mode, LiveDisplay? display)
+    {
+        if (display is not LiveDisplay live || live.Width <= 0 || live.Height <= 0)
+        {
+            return Reserved(mode);
+        }
+
+        UiGeometry geometry = UiGeometry.Between(MeasuredWidth, MeasuredHeight, MeasuredUiScale, live);
+        return Reserved(mode).Select(area => At(area, geometry)).ToList();
+    }
+
+    private static ScreenArea At(ScreenArea area, UiGeometry geometry)
+    {
+        return area.At(geometry, EdgeOf(area.Left, area.Right), EdgeOf(area.Top, area.Bottom));
+    }
+
+    /// <summary>An area up against one side of the window stays there; the rest stand in the middle, as the game's windows do.</summary>
+    private static UiEdge EdgeOf(double from, double to)
+    {
+        if (from <= NearTheSide)
+        {
+            return UiEdge.Start;
+        }
+
+        if (to >= 1 - NearTheSide)
+        {
+            return UiEdge.End;
+        }
+
+        return UiEdge.Middle;
+    }
+
+    private const double NearTheSide = 0.05;
+
+    /// <summary>Everything the game draws in a mode, the world's own interface included, at the display these were measured at.</summary>
     public static IReadOnlyList<ScreenArea> Reserved(Mode mode)
     {
         if (mode == Mode.MainMenu)
@@ -124,9 +173,9 @@ public static class GameLayout
     /// would cover nothing of the game's there, else the first other corner
     /// that covers nothing, else the corner that covers least.
     /// </summary>
-    public static (int X, int Y) Place(ScreenRect game, int width, int height, OverlayCorner preferred, Mode mode)
+    public static (int X, int Y) Place(ScreenRect game, int width, int height, OverlayCorner preferred, Mode mode, LiveDisplay? display = null)
     {
-        IReadOnlyList<ScreenArea> reserved = Reserved(mode);
+        IReadOnlyList<ScreenArea> reserved = Reserved(mode, display);
         List<OverlayCorner> corners = new() { preferred };
 
         foreach (OverlayCorner corner in Enum.GetValues<OverlayCorner>())
