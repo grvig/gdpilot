@@ -145,9 +145,9 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 - In the bags, the stash and while trading, the D-pad jumps from item to item
   over empty cells, the bumpers switch stash tabs, and LT+A splits stacks. With
   the in-game part, the stash and a trader open their own buttons by
-  themselves and their items come from the game. This is calibrated for
-  1920×1080 at UI scale 0.5; see [docs/calibration.md](docs/calibration.md),
-  and `--calibrate` for any other display.
+  themselves and their items come from the game. Measured at 1920×1080 at UI
+  scale 0.5, and moved to whatever display the game runs at; see
+  [docs/calibration.md](docs/calibration.md).
 - In the skill tree, on the devotion map, in a conversation, at a blacksmith
   and in the game's menu, the D-pad snaps to the nearest skill, star, reply,
   recipe or entry in its direction, and each window brings up its own buttons
@@ -176,15 +176,29 @@ Other commands:
 
 | Command | What it does |
 | --- | --- |
-| `--load-in-game` | Loads the in-game part into the running game, for the third-person camera; see [docs/camera.md](docs/camera.md) |
+| `--setup` | Says what is ready to play and what to do about the rest; shown by itself on a first run |
+| `--load-in-game` | Loads the in-game part into the running game now, rather than waiting for GDPilot to do it; see [docs/camera.md](docs/camera.md) |
 | `--check-game` | Checks an installed game version still has everything the in-game part needs |
 | `--targets` | Prints the enemies the in-game part sees and which one lock-on would take, and what A would interact with |
-| `--calibrate <Grid>` | Measures a menu grid for a new resolution or UI scale |
+| `--calibrate <Grid>` | Measures a menu grid by hand, should a display ever need its own |
 | `--occupancy <Grid>` | Prints which cells of an open grid hold items |
 | `--replay <trace>` | Plays a recorded pad performance instead of reading the pad |
 
-Settings live in `config.json` beside the executable or in the working
-directory. Copy [config.example.json](config.example.json) as a starting point.
+Settings live in `config.json`, in the working directory, beside the executable
+or in `%LOCALAPPDATA%\GDPilot`, where a first run puts a copy for you to edit; the
+tray icon opens it. Yours are laid over the shipped
+[config.example.json](config.example.json), so an update's new windows and buttons
+reach you without losing what you changed. A character can have bindings of their
+own, named as in the game:
+
+```json
+"characters": { "Semitarded": { "bindings": { "Combat": { "X": "key:5" } } } }
+```
+
+GDPilot starts by hand or with Windows, from a tick in the tray icon's menu, which
+also pauses it and quits it. When Grim Dawn starts, GDPilot loads the in-game part
+by itself once the game has settled; `"loadInGame": false` under `input` leaves it
+to `--load-in-game`.
 
 GDPilot expects the game set up like this:
 

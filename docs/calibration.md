@@ -22,11 +22,47 @@ both, for example `1920x1080@0.5`, and records them:
 }
 ```
 
-At startup GDPilot reads the game's window size, and the UI scale from the
-game's own `options.txt`. It compares both with the active profile. If either
-differs, grid navigation is refused, and the console says why and which
-profile to calibrate. A mismatch means clicking the wrong cells, so it never
-navigates on one.
+GDPilot reads the game's window size, and the UI scale from the game's own
+`options.txt`, when it starts and again whenever either changes. A profile named
+for exactly that display is used as it stands. Any other display uses the active
+profile, moved to where the game draws everything there, so nothing needs
+calibrating by hand.
+
+## How the game sizes its interface
+
+This comes from the game's own code, `GraphicsEngine::GetUIScaleFactor`, and was
+checked against captures at nine displays (`UiFactor`):
+
+```text
+setting = (uiScale - 0.5) * 2
+if setting < 0:      factor = setting * 0.3 + 1
+area = min(1, width * height / 4608000)
+if area > 0.75:      factor = setting + 1
+otherwise:           byArea = area * 0.5 + 0.7, or 1 when within 0.1 of it
+                     factor = (area * 0.7 + 0.1) * setting + byArea
+```
+
+So 1920x1080 at 0.5 draws at 1, 1600x900 at 0.86, 1280x720 at 0.8, and
+1920x1080 at UI scale 1 at 1.415. A place then moves by what it is anchored to
+(`UiAnchors`), while keeping its shape:
+
+| Part | Across | Down |
+| --- | --- | --- |
+| Windows in the middle: bags, trader, stash, crafter, skills, map, filter, menu | middle | middle |
+| Hotbar, the slot list on it, a conversation's box | middle | foot |
+| Devotion map's bar of tabs and zoom | middle | top |
+| Devotion map's affinities | left | middle |
+| Journal | left | middle |
+| Main menu's list and buttons down the left | left | foot |
+| Main menu's Start row | middle | foot |
+
+Sizes follow too: a grid's pitch, each reader's rings, line heights and text
+insets, and how many pixels make a lit place. A game smaller than the screen
+runs as a window, and everything moves with the window's corner.
+
+The devotion map alone is no part of this. It is drawn at one size whatever the
+display, centred, showing more of itself on a larger window, so its stars are
+looked for at their own size across the whole window.
 
 ## How a grid is described
 
