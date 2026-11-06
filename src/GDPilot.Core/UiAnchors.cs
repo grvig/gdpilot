@@ -14,6 +14,7 @@ public static class UiAnchors
         {
             case "Hotbar":
             case "Assign":
+            case "Dialog":
                 return (UiEdge.Middle, UiEdge.End);
             case "Devotion" when x < AffinitiesPane:
                 return (UiEdge.Start, UiEdge.Middle);

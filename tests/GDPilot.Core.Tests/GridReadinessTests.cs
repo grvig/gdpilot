@@ -249,4 +249,13 @@ public sealed class GridReadinessTests
         Assert.Equal(new ScreenPoint(181, 384), map.Fixed[2]);
         Assert.Equal(16, readiness.Grids["Devotion.Tabs"].OriginY, 0);
     }
+
+    [Fact]
+    public void AConversationsBoxKeepsToTheFootOfTheWindow()
+    {
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(WithTheDevotionMap), new LiveDisplay(1024, 768, 0.5));
+        SpotArea box = readiness.Spots["Dialog"];
+
+        Assert.Equal(768 - 145 * readiness.Spots["Dialog"].Scale, box.Top + box.Height, 0);
+    }
 }
