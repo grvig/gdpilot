@@ -11,6 +11,12 @@ public static class UiFactor
     /// <summary>The pixels at which the window stops counting: 2400 by 1920.</summary>
     private const double FullArea = 4608000;
 
+    /// <summary>A size in pixels measured where the scale was 1, as the game draws it at this scale, never down to nothing.</summary>
+    public static int Sized(int pixels, double scale)
+    {
+        return Math.Max(1, (int)Math.Round(pixels * scale));
+    }
+
     public static double Of(int width, int height, double uiScale)
     {
         double setting = (uiScale - 0.5) * 2;

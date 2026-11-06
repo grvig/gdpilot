@@ -14,9 +14,11 @@ public static class TextLines
     private const int Gap = 3;
 
     /// <summary>Each line's first and last rows, from the top.</summary>
-    public static List<(int First, int Last)> Find(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, Func<(byte Red, byte Green, byte Blue), bool> isText)
+    public static List<(int First, int Last)> Find(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, Func<(byte Red, byte Green, byte Blue), bool> isText, double scale = 1)
     {
         List<(int First, int Last)> lines = new();
+        int perRow = UiFactor.Sized(PerRow, scale);
+        int gap = UiFactor.Sized(Gap, scale);
         int first = -1;
         int last = -1;
 
@@ -32,7 +34,7 @@ public static class TextLines
                 }
             }
 
-            if (count >= PerRow)
+            if (count >= perRow)
             {
                 if (first < 0)
                 {
@@ -41,7 +43,7 @@ public static class TextLines
 
                 last = y;
             }
-            else if (first >= 0 && y - last > Gap)
+            else if (first >= 0 && y - last > gap)
             {
                 lines.Add((first, last));
                 first = -1;

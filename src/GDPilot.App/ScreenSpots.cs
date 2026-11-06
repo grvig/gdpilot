@@ -97,7 +97,7 @@ internal sealed class ScreenSpots : ISpotSource
 
         if (area.Kind == SpotKind.Replies || area.Look is null)
         {
-            return DialogueReader.Choices(pixel, area.Left, area.Top, area.Width, area.Height);
+            return DialogueReader.Choices(pixel, area.Left, area.Top, area.Width, area.Height, area.Scale);
         }
 
         return SpotFinder.Find(pixel, area.Left, area.Top, area.Width, area.Height, area.Look);
@@ -156,7 +156,7 @@ internal sealed class ScreenSpots : ISpotSource
             return true;
         }
 
-        return DialogueReader.Showing((x, y) => Pixel(frame, x - area.Left, y - area.Top), area.Left, area.Top, area.Width, area.Height);
+        return DialogueReader.Showing((x, y) => Pixel(frame, x - area.Left, y - area.Top), area.Left, area.Top, area.Width, area.Height, area.Scale);
     }
 
     private static (byte, byte, byte) Pixel(CapturedFrame frame, int x, int y)

@@ -23,30 +23,33 @@ public static class DialogueReader
 
     /// <param name="left">Where the name and reply text start, just right of their icons.</param>
     /// <param name="width">Twice as wide as the text to read.</param>
-    public static List<ScreenPoint> Choices(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
+    public static List<ScreenPoint> Choices(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, double scale = 1)
     {
-        List<(int First, int Last)> lines = BoxLines(pixel, left, top, width, height);
+        List<(int First, int Last)> lines = BoxLines(pixel, left, top, width, height, scale);
         List<ScreenPoint> choices = new();
 
         // The first gold line is the speaker's name.
         for (int index = 1; index < lines.Count; index++)
         {
-            choices.Add(new ScreenPoint(left + TextInset, (lines[index].First + lines[index].Last) / 2));
+            choices.Add(new ScreenPoint(left + UiFactor.Sized(TextInset, scale), (lines[index].First + lines[index].Last) / 2));
         }
 
         return choices;
     }
 
     /// <summary>Whether a conversation's box is on screen at all, which is whether its speaker's name is.</summary>
-    public static bool Showing(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
+    public static bool Showing(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, double scale = 1)
     {
-        return BoxLines(pixel, left, top, width, height).Count > 0;
+        return BoxLines(pixel, left, top, width, height, scale).Count > 0;
     }
 
-    private static List<(int First, int Last)> BoxLines(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
+    private static List<(int First, int Last)> BoxLines(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, double scale)
     {
         int span = width / 2;
-        List<(int First, int Last)> all = TextLines.Find(pixel, left, top, span, height, IsGold);
+        int shortest = UiFactor.Sized(ShortestLine, scale);
+        int tallest = UiFactor.Sized(TallestLine, scale);
+        int startsWithin = UiFactor.Sized(StartsWithin, scale);
+        List<(int First, int Last)> all = TextLines.Find(pixel, left, top, span, height, IsGold, scale);
         List<(int First, int Last)> lines = new();
 
         // Upwards from the bottom, past the trim: nothing but the box's own lines lie between its
@@ -55,12 +58,12 @@ public static class DialogueReader
         {
             int tall = all[index].Last - all[index].First + 1;
 
-            if (tall < ShortestLine && lines.Count == 0)
+            if (tall < shortest && lines.Count == 0)
             {
                 continue;
             }
 
-            if (tall < ShortestLine || tall > TallestLine || Start(pixel, left, span, all[index]) > StartsWithin)
+            if (tall < shortest || tall > tallest || Start(pixel, left, span, all[index]) > startsWithin)
             {
                 break;
             }

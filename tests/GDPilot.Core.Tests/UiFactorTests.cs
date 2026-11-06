@@ -34,4 +34,14 @@ public sealed class UiFactorTests
         Assert.Equal(1.415, UiFactor.Of(1920, 1080, 1.0), 3);
         Assert.Equal(1.04, UiFactor.Of(1280, 720, 1.0), 3);
     }
+
+    [Theory]
+    [InlineData(12, 1.0, 12)]
+    [InlineData(12, 0.8, 10)]
+    [InlineData(12, 1.415, 17)]
+    [InlineData(1, 0.7, 1)]
+    public void ASizeFollowsTheScaleButNeverVanishes(int pixels, double scale, int sized)
+    {
+        Assert.Equal(sized, UiFactor.Sized(pixels, scale));
+    }
 }
