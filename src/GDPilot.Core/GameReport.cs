@@ -52,6 +52,8 @@ public abstract record GameReport
                 return new LockPointReport(root["id"]?.GetValue<uint>() ?? 0, root["x"]?.GetValue<double>() ?? -1, root["y"]?.GetValue<double>() ?? -1);
             case "interactables":
                 return Interactables(root);
+            case "character":
+                return new CharacterReport(root["name"]?.GetValue<string>() ?? string.Empty);
             case "abilities":
                 return new AbilitiesReport(root["analog"]?.GetValue<bool>() ?? false);
             default:
@@ -94,6 +96,10 @@ public abstract record GameReport
             case HealthReport health:
                 root["type"] = "health";
                 root["percent"] = health.Percent;
+                break;
+            case CharacterReport character:
+                root["type"] = "character";
+                root["name"] = character.Name;
                 break;
             case LockPointReport point:
                 root["type"] = "lockpoint";
@@ -318,6 +324,9 @@ public sealed record PanelsReport(IReadOnlyList<string> Open) : GameReport;
 
 /// <summary>The player's life as a whole percentage of its limit, sent whenever it moves.</summary>
 public sealed record HealthReport(int Percent) : GameReport;
+
+/// <summary>Who is being played, as the game names them, for bindings of their own.</summary>
+public sealed record CharacterReport(string Name) : GameReport;
 
 /// <summary>Where every item sits in one grid, named as in the profiles, such as "Inventory.Bag2".</summary>
 public sealed record LayoutReport(string Grid, int Columns, int Rows, IReadOnlyList<ItemRect> Items) : GameReport

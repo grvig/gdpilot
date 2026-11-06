@@ -11,6 +11,7 @@ Game.dll ?Shake@GameCamera@GAME@@QEAAXAEBVViewport@2@HMAEBVWorldVec3@2@_N@Z
 Game.dll ?GetPlayer@GameCamera@GAME@@QEAAPEAVPlayer@2@XZ
 Game.dll ?GetInputMode@GameEngine@GAME@@QEBA?AW4InputMode@2@XZ
 Game.dll ?GetMainPlayer@GameEngine@GAME@@QEBAPEAVPlayer@2@XZ
+Game.dll ?GetPlayerName@Player@GAME@@QEBAPEBGXZ
 Game.dll ?AdjustYaw@GameCamera@GAME@@QEAAXM@Z
 Game.dll ?SetCameraYaw@GameCamera@GAME@@UEAAXM@Z
 Game.dll ?SetZoom@GameCamera@GAME@@QEAAXM@Z

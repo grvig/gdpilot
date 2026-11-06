@@ -1248,6 +1248,104 @@ double HealthFraction()
     }
 }
 
+// Who is being played, for bindings of their own. Asked about once a second, since it only changes on a load.
+using PlayerName = const wchar_t* (*)(const void* player);
+PlayerName playerName = nullptr;
+float sinceNameCheck = 0;
+std::wstring sentName;
+std::atomic<bool> nameWanted{true};
+
+void FindPlayerName()
+{
+    HMODULE game = GetModuleHandleW(L"Game.dll");
+    playerName = reinterpret_cast<PlayerName>(GetProcAddress(game, "?GetPlayerName@Player@GAME@@QEBAPEBGXZ"));
+
+    if (playerName == nullptr)
+    {
+        Say("Character reports off: the name function is no longer exported.");
+    }
+}
+
+// Copied out under the guard, since the string belongs to a player that a load can take away.
+bool CopyPlayerName(wchar_t* name, int room)
+{
+    __try
+    {
+        const void* player = mainPlayer(*engineSlot);
+
+        if (player == nullptr)
+        {
+            return false;
+        }
+
+        const wchar_t* held = playerName(player);
+
+        if (held == nullptr || held[0] == 0)
+        {
+            return false;
+        }
+
+        wcsncpy_s(name, room, held, _TRUNCATE);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+std::string JsonText(const wchar_t* text)
+{
+    int size = WideCharToMultiByte(CP_UTF8, 0, text, -1, nullptr, 0, nullptr, nullptr);
+    std::string plain(size, 0);
+    WideCharToMultiByte(CP_UTF8, 0, text, -1, plain.data(), size, nullptr, nullptr);
+    std::string quoted = "\"";
+
+    for (char letter : plain)
+    {
+        if (letter == 0)
+        {
+            break;
+        }
+
+        if (letter == '"' || letter == '\\')
+        {
+            quoted += '\\';
+        }
+
+        if (static_cast<unsigned char>(letter) >= 0x20)
+        {
+            quoted += letter;
+        }
+    }
+
+    return quoted + "\"";
+}
+
+void CheckCharacter(float elapsed)
+{
+    sinceNameCheck += elapsed;
+
+    if (playerName == nullptr || mainPlayer == nullptr || sinceNameCheck < 1)
+    {
+        return;
+    }
+
+    sinceNameCheck = 0;
+    wchar_t name[64];
+
+    if (!CopyPlayerName(name, 64))
+    {
+        return;
+    }
+
+    if (sentName != name || nameWanted.exchange(false))
+    {
+        sentName = name;
+        Post("{\"protocol\":1,\"type\":\"character\",\"name\":" + JsonText(name) + "}\n");
+    }
+}
+
 void CheckHealth(float elapsed)
 {
     sinceHealthCheck += elapsed;
@@ -3538,6 +3636,7 @@ void Work(void* camera, float elapsed)
     CheckPanels(elapsed);
     CheckLayouts(elapsed);
     CheckHealth(elapsed);
+    CheckCharacter(elapsed);
     CheckTargets(camera, elapsed);
     CheckThings(camera, elapsed);
     ReportLockPoint(camera);
@@ -3714,6 +3813,7 @@ void Converse(HANDLE pipe)
     targetsWanted = true;
     thingsWanted = true;
     sentHealth = -1;
+    nameWanted = true;
 
     while (healthy)
     {
@@ -3833,6 +3933,7 @@ DWORD WINAPI Start(LPVOID)
             FindHotSlots();
             FindCollision();
             FindHealth();
+    FindPlayerName();
             FindTargets();
             FindMovement();
             FindInteractables();

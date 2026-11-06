@@ -120,4 +120,12 @@ public sealed class GameReportTests
     {
         Assert.Throws<FormatException>(() => GameReport.Parse(line));
     }
+
+    [Fact]
+    public void TheCharacterBeingPlayedIsReadWithItsName()
+    {
+        GameReport? report = GameReport.Parse("""{"protocol":1,"type":"character","name":"Sémi \"the\" Bold"}""");
+
+        Assert.Equal("Sémi \"the\" Bold", Assert.IsType<CharacterReport>(report).Name);
+    }
 }

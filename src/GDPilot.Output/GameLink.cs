@@ -42,11 +42,16 @@ public sealed class GameLink : IDisposable
 
     public bool Connected { get; private set; }
 
+    private string? character;
+
     /// <summary>The panels the game last said were open, or null when it has not said or has gone.</summary>
     public PanelsReport? Panels => Volatile.Read(ref panels);
 
     /// <summary>The player's life in percent, as last reported, or -1 when unknown.</summary>
     public int Health => health;
+
+    /// <summary>Who the game says is being played, or null before it has said.</summary>
+    public string? Character => Volatile.Read(ref character);
 
     /// <summary>The enemies near the player as last reported, or none once the game has gone.</summary>
     public IReadOnlyList<SeenTarget> Targets => Volatile.Read(ref near).Targets;
@@ -196,6 +201,9 @@ public sealed class GameLink : IDisposable
                 break;
             case HealthReport life:
                 health = life.Percent;
+                break;
+            case CharacterReport playing:
+                Volatile.Write(ref character, playing.Name);
                 break;
             case LockPointReport point:
                 Volatile.Write(ref lockPoint, point);
