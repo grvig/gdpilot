@@ -31,19 +31,56 @@ public sealed class GridReadinessTests
     }
 
     [Fact]
-    public void ADifferentUiScaleIsRefusedWithAReason()
+    public void ADifferentUiScaleMovesTheGridsToWhereTheGameDrawsThem()
     {
         GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(Calibrated), new LiveDisplay(1920, 1080, 1.0));
 
-        Assert.False(readiness.Ready);
-        Assert.Empty(readiness.Grids);
-        Assert.Contains("Recalibrate", readiness.Message);
+        Assert.True(readiness.Ready);
+        Assert.Equal(40 * 1.415, readiness.Grids["inventory"].PitchX, 3);
     }
 
     [Fact]
-    public void ADifferentResolutionIsRefused()
+    public void ADifferentResolutionMovesThemToo()
     {
-        Assert.False(GridReadiness.Check(GDPilotConfig.Parse(Calibrated), new LiveDisplay(2560, 1440, 0.5)).Ready);
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(Calibrated), new LiveDisplay(1280, 720, 0.5));
+
+        Assert.True(readiness.Ready);
+        Assert.Equal(40 * 0.8, readiness.Grids["inventory"].PitchX, 3);
+        Assert.Equal(640 + (520 - 960) * 0.8, readiness.Grids["inventory"].OriginX, 3);
+    }
+
+    [Fact]
+    public void AWindowedGameCarriesItsPlacesWithIt()
+    {
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(Calibrated), new LiveDisplay(1280, 720, 0.5, 320, 180));
+
+        Assert.Equal(320 + 640 + (520 - 960) * 0.8, readiness.Grids["inventory"].OriginX, 3);
+    }
+
+    [Fact]
+    public void AProfileMadeForThisDisplayComesBeforeTheActiveOne()
+    {
+        const string two = """
+            {
+              "activeProfile": "a",
+              "profiles": {
+                "a": { "resolution": [1920, 1080], "uiScale": 0.5, "grids": { "inventory": { "originX": 500, "originY": 500, "pitchX": 40, "pitchY": 40, "columns": 2, "rows": 2 } } },
+                "1280x720@0.5": { "resolution": [1280, 720], "uiScale": 0.5, "grids": { "inventory": { "originX": 111, "originY": 222, "pitchX": 30, "pitchY": 30, "columns": 2, "rows": 2 } } }
+              }
+            }
+            """;
+
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(two), new LiveDisplay(1280, 720, 0.5));
+
+        Assert.Equal(111, readiness.Grids["inventory"].OriginX);
+    }
+
+    [Fact]
+    public void AProfileThatDoesNotSayItsDisplayIsRefused()
+    {
+        const string blank = """{ "activeProfile": "a", "profiles": { "a": { "grids": { "inventory": { "originX": 5, "originY": 5, "pitchX": 40, "pitchY": 40, "columns": 2, "rows": 2 } } } } }""";
+
+        Assert.False(GridReadiness.Check(GDPilotConfig.Parse(blank), new LiveDisplay(1920, 1080, 0.5)).Ready);
     }
 
     [Fact]
@@ -135,5 +172,39 @@ public sealed class GridReadinessTests
         Assert.Equal(SpotLook.DevotionStar, readiness.Spots["Devotion"].Look);
         Assert.Equal(2, readiness.Spots["Menu"].Fixed.Count);
         Assert.False(readiness.Spots.ContainsKey("WorldMap"));
+    }
+
+    [Fact]
+    public void SpotsMoveWithTheEdgeTheyAreAnchoredToAndCarryTheirScale()
+    {
+        const string withSpots = """
+            {
+              "activeProfile": "p",
+              "profiles": {
+                "p": {
+                  "resolution": [1920, 1080],
+                  "uiScale": 0.5,
+                  "grids": { "Hotbar": { "originX": 717, "originY": 1059, "pitchX": 44, "pitchY": 1, "columns": 12, "rows": 1 } },
+                  "spots": {
+                    "Skills": { "left": 700, "top": 300, "width": 710, "height": 480, "look": "skillButton", "lit": [[568, 766]], "fixed": [[645, 847]], "when": [805, 300, 800] },
+                    "Journal": { "left": 20, "top": 545, "width": 320, "height": 350, "look": "textLine", "fixed": [[43, 195]] }
+                  }
+                }
+              }
+            }
+            """;
+
+        GridReadiness readiness = GridReadiness.Check(GDPilotConfig.Parse(withSpots), new LiveDisplay(1280, 720, 0.5));
+        SpotArea skills = readiness.Spots["Skills"];
+
+        Assert.Equal(0.8, skills.Scale, 3);
+        Assert.Equal(568, skills.Width);
+        Assert.Equal(640 + (700 - 960) * 0.8, skills.Left, 1);
+        Assert.Equal(new ScreenPoint(388, 606), skills.Fixed[0]);
+        Assert.Equal(new ScreenPoint(326, 541), skills.Lit[0]);
+        Assert.Equal(new FrameLine(516, 168, 568), skills.When);
+        Assert.Equal(10, skills.Look!.DiscRadius);
+        Assert.Equal(new ScreenPoint(34, 84), readiness.Spots["Journal"].Fixed[0]);
+        Assert.Equal(720 - (1080 - 1059) * 0.8, readiness.Grids["Hotbar"].OriginY, 3);
     }
 }

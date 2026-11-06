@@ -34,6 +34,6 @@ internal static class GameDisplay
             return null;
         }
 
-        return new LiveDisplay(bounds.Width, bounds.Height, settings.Value.UiScale);
+        return new LiveDisplay(bounds.Width, bounds.Height, settings.Value.UiScale, bounds.X, bounds.Y);
     }
 }

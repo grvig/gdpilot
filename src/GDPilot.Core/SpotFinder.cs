@@ -7,6 +7,17 @@ namespace GDPilot.Core;
 /// </summary>
 public sealed record SpotLook(int DiscRadius, int RingRadius, double MinimumContrast, int Spacing)
 {
+    /// <summary>The same look as the game draws it at another size.</summary>
+    public SpotLook At(double scale)
+    {
+        return this with
+        {
+            DiscRadius = Math.Max(1, (int)Math.Round(DiscRadius * scale)),
+            RingRadius = Math.Max(2, (int)Math.Round(RingRadius * scale)),
+            Spacing = Math.Max(1, (int)Math.Round(Spacing * scale)),
+        };
+    }
+
     /// <summary>
     /// A skill button at 1920 by 1080, UI scale 0.5: an icon about 36 pixels
     /// across in a dark tree. The darkest button seen, an unlearned Shaman

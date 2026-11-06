@@ -107,6 +107,9 @@ public sealed record SpotArea(int Left, int Top, int Width, int Height, SpotLook
     /// <summary>The frame line that must be on screen for these spots to apply, or null when they always do.</summary>
     public FrameLine? When { get; init; }
 
+    /// <summary>How large the game draws this area against where it was measured, for reading it at the right size.</summary>
+    public double Scale { get; init; } = 1;
+
     /// <summary>The tab strip this screen has, by its grid's name, or null for the mode's own.</summary>
     public string? Tabs { get; init; }
 
@@ -155,19 +158,18 @@ public sealed record GridReadiness(bool Ready, string Message, IReadOnlyDictiona
     {
         Dictionary<string, GridSpec> none = new();
 
-        if (!config.Profiles.TryGetValue(config.ActiveProfile, out ProfileConfig? profile))
+        // A profile made for this very display comes first; any other is moved to it.
+        if (!config.Profiles.TryGetValue(live.ProfileKey, out ProfileConfig? profile) && !config.Profiles.TryGetValue(config.ActiveProfile, out profile))
         {
             return new GridReadiness(false, $"No profile named \"{config.ActiveProfile}\". Calibrate one for {live.ProfileKey}.", none);
         }
 
-        bool sameResolution = profile.Resolution.Length == 2 && profile.Resolution[0] == live.Width && profile.Resolution[1] == live.Height;
-        bool sameScale = Math.Abs(profile.UiScale - live.UiScale) < 0.001;
-
-        if (!sameResolution || !sameScale)
+        if (profile.Resolution.Length != 2 || profile.Resolution[0] <= 0 || profile.Resolution[1] <= 0)
         {
-            string calibrated = string.Join("x", profile.Resolution);
-            return new GridReadiness(false, $"Grids were calibrated at {calibrated}, UI scale {profile.UiScale}, but the game runs {live.Width}x{live.Height}, UI scale {live.UiScale}. Recalibrate.", none);
+            return new GridReadiness(false, $"The profile for {live.ProfileKey} does not say the display it was measured at. Calibrate one.", none);
         }
+
+        UiGeometry geometry = UiGeometry.Between(profile.Resolution[0], profile.Resolution[1], profile.UiScale, live);
 
         Dictionary<string, GridSpec> grids = new();
 
@@ -177,7 +179,7 @@ public sealed record GridReadiness(bool Ready, string Message, IReadOnlyDictiona
 
             if (spec.IsCalibrated)
             {
-                grids[name] = spec;
+                grids[name] = UiAnchors.Moved(spec, name, geometry);
             }
         }
 
@@ -187,7 +189,7 @@ public sealed record GridReadiness(bool Ready, string Message, IReadOnlyDictiona
         {
             if (area.ToArea() is SpotArea ready)
             {
-                spots[name] = ready;
+                spots[name] = UiAnchors.Moved(ready, name, geometry);
             }
         }
 
