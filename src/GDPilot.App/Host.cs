@@ -194,6 +194,7 @@ internal static class Host
 
                 if (sdl is not null && config.Input.Rumble && drops.Update(link.Things) is Rumble drop)
                 {
+                    Console.WriteLine("A fine drop has come into reach.");
                     sdl.Rumble(drop.Heavy, drop.Light, drop.Length);
                 }
 

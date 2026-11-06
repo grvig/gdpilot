@@ -2,12 +2,12 @@ namespace GDPilot.Core;
 
 /// <summary>
 /// A shiver of the pad when something worth stopping for comes into reach. The
-/// game's own numbers, read from dropped items on 2026-11-05: 0 for common and
-/// magic, 2 for rare, 3 for epic, and 9 for the class of purple oddities in the
-/// bags that are not gear. Rares fall too often to be news, so it starts at
-/// epic; anything above that but below that last class is felt more strongly,
-/// as no legendary was at hand to read. Each thing is felt once, and what is
-/// already lying around as the report first arrives is not news at all.
+/// game's own numbers: 1 magic, 2 rare, 3 epic and 4 legendary, as its function
+/// naming them has them, with 2 and 3 confirmed on dropped items on 2026-11-05;
+/// materials read 0, and the purple oddities in the bags that are not gear 9.
+/// Rares fall too often to be news, so it starts at epic, and a legendary is
+/// felt more strongly. Each thing is felt once, and what is already lying around
+/// as the report first arrives is not news at all.
 /// </summary>
 public sealed class DropRumble
 {
