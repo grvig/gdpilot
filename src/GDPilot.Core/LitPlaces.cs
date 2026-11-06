@@ -13,13 +13,14 @@ public static class LitPlaces
     /// <summary>The faintest lit place, the character sheet's Undo, measured 22.</summary>
     private const int FewestRed = 16;
 
-    public static bool Lit(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, ScreenPoint place)
+    public static bool Lit(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, ScreenPoint place, double scale = 1)
     {
         int red = 0;
+        int reach = UiFactor.Sized(Reach, scale);
 
-        for (int x = place.X - Reach; x <= place.X + Reach; x++)
+        for (int x = place.X - reach; x <= place.X + reach; x++)
         {
-            for (int y = place.Y - Reach; y <= place.Y + Reach; y++)
+            for (int y = place.Y - reach; y <= place.Y + reach; y++)
             {
                 (byte r, byte g, byte b) = pixel(x, y);
 
@@ -30,7 +31,7 @@ public static class LitPlaces
             }
         }
 
-        return red >= FewestRed;
+        return red >= FewestRed * scale * scale;
     }
 
     /// <summary>A screen with the given rectangle blacked out, as GDPilot's own card lies over the game but is no part of it.</summary>

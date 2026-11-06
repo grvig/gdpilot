@@ -19,14 +19,15 @@ internal sealed class ScreenSpots : ISpotSource
 
         foreach (ScreenPoint place in area.Lit)
         {
-            int left = place.X - LitPlaces.Reach;
-            int top = place.Y - LitPlaces.Reach;
+            int reach = UiFactor.Sized(LitPlaces.Reach, area.Scale);
+            int left = place.X - reach;
+            int top = place.Y - reach;
 
             try
             {
-                CapturedFrame frame = ScreenCapture.Region(left, top, LitPlaces.Reach * 2 + 1, LitPlaces.Reach * 2 + 1);
+                CapturedFrame frame = ScreenCapture.Region(left, top, reach * 2 + 1, reach * 2 + 1);
 
-                if (LitPlaces.Lit((x, y) => Pixel(frame, x - left, y - top), place))
+                if (LitPlaces.Lit((x, y) => Pixel(frame, x - left, y - top), place, area.Scale))
                 {
                     lit.Add(place);
                 }
