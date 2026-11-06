@@ -72,7 +72,7 @@ internal sealed class ScreenSpots : ISpotSource
 
         if (area.Kind == SpotKind.Stars && area.Look is not null)
         {
-            return StarFinder.Find(pixel, area.Left, area.Top, area.Width, area.Height, area.Look.Spacing);
+            return StarFinder.Find(pixel, area.Left, area.Top, area.Width, area.Height, area.Look.Spacing, area.Scale);
         }
 
         if (area.Kind == SpotKind.RiftGates)

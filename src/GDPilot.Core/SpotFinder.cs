@@ -59,9 +59,10 @@ public static class StarFinder
     private const int RingRadius = 7;
     private const int RingPoints = 24;
 
-    public static List<ScreenPoint> Find(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, int spacing)
+    public static List<ScreenPoint> Find(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, int spacing, double scale = 1)
     {
-        int margin = RingRadius + 1;
+        int ringRadius = UiFactor.Sized(RingRadius, scale);
+        int margin = ringRadius + 1;
         int spanX = width + margin * 2;
         int spanY = height + margin * 2;
         float[] brightness = new float[spanX * spanY];
@@ -75,15 +76,15 @@ public static class StarFinder
             }
         }
 
-        int[] inner = Disc(2, spanX);
-        int[] wide = Disc(4, spanX);
-        int[] core = Circle(FlareCoreRadius, spanX);
+        int[] inner = Disc(UiFactor.Sized(2, scale), spanX);
+        int[] wide = Disc(UiFactor.Sized(4, scale), spanX);
+        int[] core = Circle(UiFactor.Sized(FlareCoreRadius, scale), spanX);
         int[] ring = new int[RingPoints];
 
         for (int index = 0; index < RingPoints; index++)
         {
             double angle = index * Math.PI * 2 / RingPoints;
-            ring[index] = (int)Math.Round(RingRadius * Math.Sin(angle)) * spanX + (int)Math.Round(RingRadius * Math.Cos(angle));
+            ring[index] = (int)Math.Round(ringRadius * Math.Sin(angle)) * spanX + (int)Math.Round(ringRadius * Math.Cos(angle));
         }
 
         List<(double Score, int X, int Y, bool FlareOnly)> candidates = new();
@@ -160,7 +161,7 @@ public static class StarFinder
         // Stars stand apart, so finds of this weakest kind that crowd together are the detail of the artwork.
         foreach (ScreenPoint flare in flares)
         {
-            if (flares.Count(other => Within(flare, other, ClumpReach)) > ClumpMost)
+            if (flares.Count(other => Within(flare, other, UiFactor.Sized(ClumpReach, scale))) > ClumpMost)
             {
                 stars.Remove(flare);
             }
