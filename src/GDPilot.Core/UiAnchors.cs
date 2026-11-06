@@ -76,6 +76,6 @@ public static class UiAnchors
         }
 
         (UiEdge across, UiEdge down) = Of(name, frame.X, frame.Top);
-        return new FrameLine((int)Math.Round(geometry.X(frame.X, across)), (int)Math.Round(geometry.Y(frame.Top, down)), (int)Math.Round(geometry.Y(frame.Bottom, down)));
+        return new FrameLine((int)Math.Round(geometry.X(frame.X, across)), (int)Math.Round(geometry.Y(frame.Top, down)), (int)Math.Round(geometry.Y(frame.Bottom, down)), geometry.Scale);
     }
 }

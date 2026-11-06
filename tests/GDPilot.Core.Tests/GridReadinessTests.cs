@@ -202,7 +202,7 @@ public sealed class GridReadinessTests
         Assert.Equal(640 + (700 - 960) * 0.8, skills.Left, 1);
         Assert.Equal(new ScreenPoint(388, 606), skills.Fixed[0]);
         Assert.Equal(new ScreenPoint(326, 541), skills.Lit[0]);
-        Assert.Equal(new FrameLine(516, 168, 568), skills.When);
+        Assert.Equal(new FrameLine(516, 168, 568, skills.Scale), skills.When);
         Assert.Equal(10, skills.Look!.DiscRadius);
         Assert.Equal(new ScreenPoint(34, 84), readiness.Spots["Journal"].Fixed[0]);
         Assert.Equal(720 - (1080 - 1059) * 0.8, readiness.Grids["Hotbar"].OriginY, 3);

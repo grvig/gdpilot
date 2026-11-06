@@ -142,10 +142,13 @@ public static class TabStrip
 }
 
 /// <summary>A piece of a window's frame, a thin upright line, whose showing proves that window is the one on screen.</summary>
-public readonly record struct FrameLine(int X, int Top, int Bottom)
+public readonly record struct FrameLine(int X, int Top, int Bottom, double Scale = 1)
 {
     /// <summary>The frames stood 70 to 170 above what lies either side of them; the world rarely does, row after row.</summary>
     private const double StandsOut = 45;
+
+    /// <summary>Drawn at any other size, a line a pixel wide falls across two and loses up to half its height, measured on 2026-11-07.</summary>
+    private const double StandsOutResized = 30;
 
     private const int Side = 3;
 
@@ -154,6 +157,12 @@ public readonly record struct FrameLine(int X, int Top, int Bottom)
     {
         int lit = 0;
         int rows = 0;
+        double standsOut = StandsOut;
+
+        if (Scale != 1)
+        {
+            standsOut = StandsOutResized;
+        }
 
         for (int y = Top; y <= Bottom; y += 2)
         {
@@ -163,7 +172,7 @@ public readonly record struct FrameLine(int X, int Top, int Bottom)
             {
                 double sides = (Brightness(pixel(x - Side, y)) + Brightness(pixel(x + Side, y))) / 2;
 
-                if (Brightness(pixel(x, y)) - sides >= StandsOut)
+                if (Brightness(pixel(x, y)) - sides >= standsOut)
                 {
                     lit++;
                     break;

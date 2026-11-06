@@ -77,6 +77,17 @@ public sealed class ResizedDisplayFixtureTests
     }
 
     [Theory]
+    [InlineData(1024, 768, 0.5, "sized-1024-crafter", 100, 200)]
+    [InlineData(1600, 900, 0.5, "sized-900-crafter", 360, 250)]
+    [InlineData(1920, 1080, 1.0, "sized-1415-crafter", 240, 220)]
+    public void TheCraftersFrameShowsThoughItsLineIsSmeared(int width, int height, double uiScale, string file, int left, int top)
+    {
+        FrameLine line = At(width, height, uiScale).Spots["Crafting"].When!.Value;
+
+        Assert.True(line.Seen(Screen(file, left, top)));
+    }
+
+    [Theory]
     [InlineData(1024, 768, 0.5, "sized-1024-tabs", 80, 80)]
     [InlineData(1920, 1080, 1.0, "sized-1415-tabs", 150, 120)]
     public void TheTradersSelectedTabIsRead(int width, int height, double uiScale, string file, int left, int top)
