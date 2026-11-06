@@ -77,7 +77,7 @@ internal sealed class ScreenSpots : ISpotSource
 
         if (area.Kind == SpotKind.RiftGates)
         {
-            return RiftGateFinder.Find(pixel, area.Left, area.Top, area.Width, area.Height);
+            return RiftGateFinder.Find(pixel, area.Left, area.Top, area.Width, area.Height, area.Scale);
         }
 
         if (area.Kind == SpotKind.SlotList)

@@ -24,10 +24,14 @@ public static class RiftGateFinder
         (-7, 9, 65, 93, 54), (-5, 9, 110, 143, 93), (-3, 9, 46, 71, 57), (-1, 9, 3, 3, 2), (1, 9, 3, 3, 2), (3, 9, 25, 34, 15), (5, 9, 84, 115, 50), (7, 9, 82, 108, 50),
     };
 
-    public static List<ScreenPoint> Find(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
+    public static List<ScreenPoint> Find(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, double scale = 1)
     {
         List<(double Difference, int X, int Y)> matches = new();
         double allowed = MostDifference * Picture.Length * 3;
+        (int X, int Y, byte Red, byte Green, byte Blue)[] picture = Picture
+            .Select(sample => ((int)Math.Round(sample.X * scale), (int)Math.Round(sample.Y * scale), sample.Red, sample.Green, sample.Blue))
+            .ToArray();
+        int spacing = UiFactor.Sized(Spacing, scale);
 
         for (int y = top; y < top + height; y++)
         {
@@ -35,7 +39,7 @@ public static class RiftGateFinder
             {
                 double difference = 0;
 
-                foreach ((int dx, int dy, byte red, byte green, byte blue) in Picture)
+                foreach ((int dx, int dy, byte red, byte green, byte blue) in picture)
                 {
                     (byte r, byte g, byte b) = pixel(x + dx, y + dy);
                     difference += Math.Abs(r - red) + Math.Abs(g - green) + Math.Abs(b - blue);
@@ -59,7 +63,7 @@ public static class RiftGateFinder
 
         foreach ((double _, int x, int y) in matches)
         {
-            if (!gates.Any(gate => (gate.X - x) * (gate.X - x) + (gate.Y - y) * (gate.Y - y) <= Spacing * Spacing))
+            if (!gates.Any(gate => (gate.X - x) * (gate.X - x) + (gate.Y - y) * (gate.Y - y) <= spacing * spacing))
             {
                 gates.Add(new ScreenPoint(x, y));
             }

@@ -337,7 +337,7 @@ public sealed class GridNavigator
         }
         else if (area.Kind == SpotKind.RiftGates)
         {
-            Remember(found, RiftGateSpacing);
+            Remember(found, UiFactor.Sized(RiftGateSpacing, area.Scale));
         }
         else if (area.Kind != SpotKind.SlotList || found.Count > seen.Count)
         {

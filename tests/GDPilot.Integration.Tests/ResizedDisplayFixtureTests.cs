@@ -51,6 +51,20 @@ public sealed class ResizedDisplayFixtureTests
     }
 
     [Theory]
+    [InlineData(1024, 768, 0.5, "sized-1024-gate", 525, 341, 575, 391)]
+    [InlineData(1920, 1080, 1.0, "sized-1415-gate", 1014, 495, 1074, 555)]
+    public void TheRiftGateIsFoundOnTheMap(int width, int height, double uiScale, string file, int left, int top, int gateX, int gateY)
+    {
+        double scale = At(width, height, uiScale).Spots["WorldMap"].Scale;
+
+        List<ScreenPoint> found = RiftGateFinder.Find(Screen(file, left, top), left, top, 100, 100, scale);
+
+        ScreenPoint gate = Assert.Single(found);
+        Assert.InRange(gate.X, gateX - 2, gateX + 2);
+        Assert.InRange(gate.Y, gateY - 2, gateY + 2);
+    }
+
+    [Theory]
     [InlineData(1024, 768, 0.5, "sized-1024-journal", 0, 380)]
     [InlineData(1920, 1080, 1.0, "sized-1415-journal", 0, 530)]
     public void EveryLineOfTheJournalIsFound(int width, int height, double uiScale, string file, int left, int top)
