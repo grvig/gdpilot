@@ -39,6 +39,7 @@ public static class UiAnchors
             OriginY = geometry.Y(grid.OriginY, down),
             PitchX = grid.PitchX * geometry.Scale,
             PitchY = grid.PitchY * geometry.Scale,
+            Scale = geometry.Scale,
         };
     }
 

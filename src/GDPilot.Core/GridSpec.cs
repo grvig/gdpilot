@@ -17,6 +17,9 @@ public readonly record struct GridCell(int Column, int Row);
 /// </summary>
 public sealed record GridSpec(double OriginX, double OriginY, double PitchX, double PitchY, int Columns, int Rows)
 {
+    /// <summary>How large the game draws this grid against where it was measured, for reading its tabs at the right size.</summary>
+    public double Scale { get; init; } = 1;
+
     /// <summary>A grid whose numbers are still the configuration's zero placeholders.</summary>
     public bool IsCalibrated => Columns > 0 && Rows > 0 && PitchX > 0 && PitchY > 0;
 

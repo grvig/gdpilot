@@ -13,6 +13,8 @@ internal sealed class ScreenSpots : ISpotSource
     /// <summary>Where GDPilot's own card lies over the game right now, which is no part of what the game shows.</summary>
     public Func<ScreenRect?>? Card { get; set; }
 
+    private const int TabMargin = 60;
+
     public List<ScreenPoint> LitOf(SpotArea area)
     {
         List<ScreenPoint> lit = new();
@@ -124,16 +126,16 @@ internal sealed class ScreenSpots : ISpotSource
 
     public int? SelectedTab(GridSpec strip)
     {
-        const int Margin = 60;
+        int margin = UiFactor.Sized(TabMargin, Math.Max(1, strip.Scale));
         (int firstX, int firstY) = strip.Centre(new GridCell(0, 0));
         (int lastX, int lastY) = strip.Centre(new GridCell(strip.Columns - 1, strip.Rows - 1));
-        int left = firstX - Margin;
-        int top = Math.Max(0, firstY - Margin);
+        int left = firstX - margin;
+        int top = Math.Max(0, firstY - margin);
         CapturedFrame frame;
 
         try
         {
-            frame = ScreenCapture.Region(left, top, lastX - firstX + Margin * 2, lastY + Margin - top);
+            frame = ScreenCapture.Region(left, top, lastX - firstX + margin * 2, lastY + margin - top);
         }
         catch (InvalidOperationException)
         {

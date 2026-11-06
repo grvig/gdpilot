@@ -52,7 +52,7 @@ public static class TabStrip
             }
         }
 
-        if (bestRed < FewestRed || bestRed < runnerUp * ClearlyMore)
+        if (bestRed < FewestRed * strip.Scale * strip.Scale || bestRed < runnerUp * ClearlyMore)
         {
             if (column)
             {
@@ -76,10 +76,11 @@ public static class TabStrip
             (int centreX, int centreY) = strip.Centre(new GridCell(0, tab));
             double sum = 0;
             int pixels = 0;
+            int across = UiFactor.Sized(20, strip.Scale);
 
-            for (int x = centreX - 20; x < centreX + 20; x++)
+            for (int x = centreX - across; x < centreX + across; x++)
             {
-                for (int y = centreY - 14; y < centreY - 11; y++)
+                for (int y = centreY - UiFactor.Sized(14, strip.Scale); y < centreY - UiFactor.Sized(11, strip.Scale); y++)
                 {
                     (byte r, byte g, byte b) = pixel(x, y);
                     sum += (r + g + b) / 3.0;
@@ -112,13 +113,13 @@ public static class TabStrip
     private static int RedIn(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, GridSpec strip, GridCell cell, bool column)
     {
         (int centreX, int centreY) = strip.Centre(cell);
-        int halfWidth = ColumnHalfWidth;
+        int halfWidth = UiFactor.Sized(ColumnHalfWidth, strip.Scale);
         int halfHeight = (int)(strip.PitchY * 0.4);
 
         if (!column)
         {
-            halfWidth = Math.Min((int)(strip.PitchX * 0.4), RowHalfWidthMost);
-            halfHeight = RowHalfHeight;
+            halfWidth = Math.Min((int)(strip.PitchX * 0.4), UiFactor.Sized(RowHalfWidthMost, strip.Scale));
+            halfHeight = UiFactor.Sized(RowHalfHeight, strip.Scale);
         }
 
         int red = 0;

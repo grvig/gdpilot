@@ -75,4 +75,14 @@ public sealed class ResizedDisplayFixtureTests
 
         Assert.Equal(8, found.Count);
     }
+
+    [Theory]
+    [InlineData(1024, 768, 0.5, "sized-1024-tabs", 80, 80)]
+    [InlineData(1920, 1080, 1.0, "sized-1415-tabs", 150, 120)]
+    public void TheTradersSelectedTabIsRead(int width, int height, double uiScale, string file, int left, int top)
+    {
+        GridSpec strip = At(width, height, uiScale).Grids["Vendor.Tabs"];
+
+        Assert.Equal(0, TabStrip.Selected(Screen(file, left, top), strip));
+    }
 }
