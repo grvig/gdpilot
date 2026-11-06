@@ -9,6 +9,22 @@ namespace GDPilot.Core;
 /// </summary>
 public static class GameSettings
 {
+    /// <summary>The value of one line, or null if the file has none.</summary>
+    public static string? Value(string text, string name)
+    {
+        foreach (string line in text.Split('\n'))
+        {
+            string[] halves = line.Split('=', 2, StringSplitOptions.TrimEntries);
+
+            if (halves.Length == 2 && halves[0] == name)
+            {
+                return halves[1];
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>The resolution and UI scale, or null if either line is missing or unreadable.</summary>
     public static (int Width, int Height, double UiScale)? Parse(string text)
     {

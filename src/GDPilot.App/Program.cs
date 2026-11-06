@@ -63,6 +63,11 @@ internal static class Program
             return TargetsMode.Run(config, duration);
         }
 
+        if (args.Contains("--setup"))
+        {
+            return SetupMode.Run(config);
+        }
+
         if (args.Contains("--load-in-game"))
         {
             return LoadInGameMode.Run(config);
@@ -101,6 +106,11 @@ internal static class Program
         if (calibrateAt >= 0 && calibrateAt + 1 < args.Length)
         {
             return CalibrateMode.Run(config, args[calibrateAt + 1], Numbers(args, "--at", 4), Counts(args));
+        }
+
+        if (ConfigFile.FirstRun)
+        {
+            SetupMode.Run(config);
         }
 
         Console.WriteLine($"GDPilot. Kill switch: {config.KillSwitch}. Press Ctrl+C to quit.");
