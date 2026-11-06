@@ -172,6 +172,13 @@ At a rift gate the map opens with the D-pad on the gates: A travels. The buttons
 on the overlay read as your pad prints them; `padStyle` under `input` can name
 another family than the one connected.
 
+## Attributes and choosing a class
+
+With points to spend, a red plus shows beside each attribute on the character
+sheet. Back moves from the bags to the gear, and the D-pad reaches the pluses and
+Undo from there; A spends. A new character's skill window lists the classes: the
+D-pad moves down them, A chooses, and Undo Class is a stop until a point goes in.
+
 ## The journal and other windows
 
 In the journal, the factions, the achievements and the loot filter, the D-pad

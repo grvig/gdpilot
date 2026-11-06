@@ -30,7 +30,9 @@ them against an installed game.
 | Crafter | The inventory flag with the shared large-window byte, and neither a market nor a caravan |
 | Conversation | The player's talk state, with no window opened since the talk began; GDPilot also needs its box on screen |
 | Yes or No question | The game's dialog manager holding one |
-| Devotion map | A byte every large window raises, without the skills', the menu's or the bags' flag |
+| Devotion map | A byte every large window raises, without the skills', the menu's or the bags' flag, straight after the skill window |
+| Illusionist and other service windows | That same byte while talking to someone |
+| Main menu | The game's interface gone for half a second |
 
 The talk state lasts until the character next moves, long after a goodbye, so
 GDPilot counts it only while the box shows. A trader's goods are reported sack

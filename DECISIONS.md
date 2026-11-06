@@ -811,6 +811,20 @@ when a trader's window opens. Rather than guess, LT and D-pad up in the bags
 tells GDPilot a trader is open, and the mode holds while the game reports the
 inventory.
 
+## 2026-11-06 — Finishing the menus
+
+**Stops that exist only sometimes are lit places.** The attributes' pluses and
+the Undo buttons show only when they can act, and the game lights them red, so
+they count only while red and a character with nothing to spend has no dead stops.
+
+**Devotion comes only from the skill window.** The shared byte alone also rises
+for the Illusionist. The skill window always reopens on its tree, so the map can
+only follow it; the same byte during a talk is a service window instead.
+
+**GDPilot's card is hidden from its own screen reading,** as it lies over the
+game. The rarities come from the function that names them: 1 magic, 2 rare,
+3 epic, 4 legendary. Rumble starts at epic.
+
 ## 2026-11-04 — Snapping in the menus
 
 **Menu buttons are found on screen, not read from the game.** None of the
