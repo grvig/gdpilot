@@ -26,6 +26,7 @@ them against an installed game.
 | Inventory, skills, world map, journal, factions, achievements, loot filter | A flag of the game's own for each |
 | Escape's menu | Two flags raised together |
 | Stash | The inventory flag, while the engine records the caravan showing |
+| Transfer stash | The same, with the engine's flag for that view |
 | Trader | The inventory flag rising just after the game opens a market |
 | Crafter | The inventory flag with the shared large-window byte, and neither a market nor a caravan |
 | Conversation | The player's talk state, with no window opened since the talk began; GDPilot also needs its box on screen |
@@ -37,7 +38,9 @@ them against an installed game.
 The talk state lasts until the character next moves, long after a goodbye, so
 GDPilot counts it only while the box shows. A trader's goods are reported sack
 by sack, as `Vendor#1` and so on, and the red glow of the tab on screen says
-which sack is showing.
+which sack is showing. The Transfer stash reports its sacks the same way, as
+`Transfer#0` and so on, after its two collection pages, and both stashes report
+how many tabs they have, so GDPilot never clicks past them.
 
 ## Spots found on screen
 

@@ -811,6 +811,19 @@ when a trader's window opens. Rather than guess, LT and D-pad up in the bags
 tells GDPilot a trader is open, and the mode holds while the game reports the
 inventory.
 
+## 2026-11-06 — Never near the coin
+
+The stash's column of tabs runs on into a coin and padlocks that offer to sell more
+for iron bits, and the column differs by view and by character. A fixed count of
+tabs reached the coin in testing, opening the offer; it was declined and nothing
+spent. So the game now reports how many tabs each stash has and nothing past them
+is ever clicked, and every Yes or No question starts on No, so that a stray press
+of A cannot spend or quit.
+
+The Transfer stash's selected tab is not in the engine's field for it, which stayed
+at zero, and its first two tabs are collections rather than sacks, so its tab is
+read from the screen by the dark top edge of the selected one.
+
 ## 2026-11-06 — Finishing the menus
 
 **Stops that exist only sometimes are lit places.** The attributes' pluses and

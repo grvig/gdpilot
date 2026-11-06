@@ -114,7 +114,9 @@ character. [camera.md](camera.md) has the details and the settings.
 | B or Start | Close the panel |
 
 At the stash and with a trader the bumpers switch tabs instead, and Back moves
-between the goods, the bags and the gear. An item larger than one cell is a single stop when the in-game
+between the goods, the bags and the gear. The gear's stops include the button
+that changes between the private and Transfer stashes, and the bumpers only ever
+reach tabs you own, never the coin that sells more. An item larger than one cell is a single stop when the in-game
 part is loaded, since the game then says exactly where each item sits.
 
 With the in-game part loaded, GDPilot sees the stash and a trader's window
@@ -158,7 +160,8 @@ buttons by itself. The D-pad moves between the replies, A picks one, and B
 leaves the conversation. Walking away ends it too. In the game's menu, from
 Start, the D-pad moves between its entries and A picks one; in Options it moves
 between the tabs and buttons, the right stick's cursor reaching the settings
-themselves. A Yes or No question takes the buttons wherever it appears.
+themselves. A Yes or No question takes the buttons wherever it appears, and the first press
+lands on No.
 
 ## Changing the hotbar from the wheel
 
