@@ -13,19 +13,19 @@ public static class RecipeReader
     /// <summary>Text stands at least 10 rows tall; thinner is a frame's trim.</summary>
     private const int ShortestLine = 8;
 
-    public static List<ScreenPoint> Recipes(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
+    public static List<ScreenPoint> Recipes(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, double scale = 1)
     {
-        return TextLines.Find(pixel, left, top, width, height, IsCyan)
-            .Select(line => new ScreenPoint(left + TextInset, (line.First + line.Last) / 2))
+        return TextLines.Find(pixel, left, top, width, height, IsCyan, scale)
+            .Select(line => new ScreenPoint(left + UiFactor.Sized(TextInset, scale), (line.First + line.Last) / 2))
             .ToList();
     }
 
     /// <summary>Every line of a list of plain text, whatever its colour, as in the journal.</summary>
-    public static List<ScreenPoint> Lines(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height)
+    public static List<ScreenPoint> Lines(Func<int, int, (byte Red, byte Green, byte Blue)> pixel, int left, int top, int width, int height, double scale = 1)
     {
-        return TextLines.Find(pixel, left, top, width, height, IsBright)
-            .Where(line => line.Last - line.First + 1 >= ShortestLine)
-            .Select(line => new ScreenPoint(left + TextInset, (line.First + line.Last) / 2))
+        return TextLines.Find(pixel, left, top, width, height, IsBright, scale)
+            .Where(line => line.Last - line.First + 1 >= UiFactor.Sized(ShortestLine, scale))
+            .Select(line => new ScreenPoint(left + UiFactor.Sized(TextInset, scale), (line.First + line.Last) / 2))
             .ToList();
     }
 
