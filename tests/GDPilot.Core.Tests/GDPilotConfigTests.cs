@@ -116,4 +116,42 @@ public sealed class GDPilotConfigTests
         Assert.IsType<LockBinding>(config.ButtonsFor("Combat").BindingFor(GamepadButtons.RightStick, 0));
         Assert.IsType<CameraToggleBinding>(config.ButtonsFor("Combat").BindingFor(GamepadButtons.RightStick, 1));
     }
+
+    private const string WithACharacter = """
+        {
+          "bindings": { "Combat": { "A": "key:1", "B": "key:2" } },
+          "characters": { "Semitarded": { "bindings": { "Combat": { "A": "key:9" } } } }
+        }
+        """;
+
+    [Fact]
+    public void ACharactersBindingsChangeWhatTheyNameAndNothingElse()
+    {
+        GDPilotConfig config = GDPilotConfig.Parse(WithACharacter);
+
+        ButtonLayers anyone = config.ButtonsFor("Combat");
+        ButtonLayers theirs = config.ButtonsFor("Combat", "Semitarded");
+
+        Assert.Equal(new KeyBinding(KeyCode.D1), anyone.BindingFor(GamepadButtons.A, 0));
+        Assert.Equal(new KeyBinding(KeyCode.D9), theirs.BindingFor(GamepadButtons.A, 0));
+        Assert.Equal(anyone.BindingFor(GamepadButtons.B, 0), theirs.BindingFor(GamepadButtons.B, 0));
+    }
+
+    [Fact]
+    public void ACharacterWithNothingOfTheirOwnPlaysLikeAnyone()
+    {
+        GDPilotConfig config = GDPilotConfig.Parse(WithACharacter);
+
+        Assert.Equal(config.ButtonsFor("Combat").BindingFor(GamepadButtons.A, 0), config.ButtonsFor("Combat", "Someone").BindingFor(GamepadButtons.A, 0));
+    }
+
+    [Fact]
+    public void AnUnknownModeInACharactersBindingsIsRefusedByName()
+    {
+        const string wrong = """{ "characters": { "Semitarded": { "bindings": { "Nowhere": { "A": "key:9" } } } } }""";
+
+        FormatException problem = Assert.Throws<FormatException>(() => GDPilotConfig.Parse(wrong));
+
+        Assert.Contains("characters.Semitarded", problem.Message);
+    }
 }

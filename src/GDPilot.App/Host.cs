@@ -61,6 +61,7 @@ internal static class Host
         GridReadiness readiness = new(false, "The game is not running yet, so grid navigation is off.", new Dictionary<string, GridSpec>());
         DisplayWatch displayWatch = new();
         InGameAutoLoad autoLoad = new();
+        string? character = null;
         LiveDisplay? display = GameDisplay.Read(config);
 
         if (displayWatch.Changed(display))
@@ -178,6 +179,18 @@ internal static class Host
                         readiness = GridReadiness.Check(config, display!.Value);
                         navigator.Use(readiness);
                         Console.WriteLine($"Grids: {readiness.Message}");
+                    }
+
+                    if (link.Character is string playing && playing != character)
+                    {
+                        character = playing;
+
+                        foreach (Mode mode in Enum.GetValues<Mode>())
+                        {
+                            layers[mode] = config.ButtonsFor(mode.ToString(), character);
+                        }
+
+                        Console.WriteLine($"Playing {character}.");
                     }
 
                     if (config.Input.LoadInGame && !dryRun && replay is null)

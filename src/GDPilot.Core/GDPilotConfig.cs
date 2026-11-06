@@ -3,6 +3,12 @@ using System.Text.Json.Serialization;
 
 namespace GDPilot.Core;
 
+/// <summary>What one character does differently: their bindings, by mode and button.</summary>
+public sealed class CharacterConfig
+{
+    public Dictionary<string, Dictionary<string, string>> Bindings { get; init; } = new();
+}
+
 /// <summary>
 /// The configuration file from section 7. Anything left out takes the default
 /// shown here, so a file only needs to state what it changes. Fields not used
@@ -21,6 +27,10 @@ public sealed class GDPilotConfig
     };
 
     public string KillSwitch { get; init; } = "Ctrl+Alt+Pause";
+
+    /// <summary>Bindings of each character's own, by their name in the game, over the ones for everyone.</summary>
+    public Dictionary<string, CharacterConfig> Characters { get; init; } = new();
+
     public string GameProcess { get; init; } = "Grim Dawn";
     public InputConfig Input { get; init; } = new();
     public OverlayConfig Overlay { get; init; } = new();
@@ -95,13 +105,24 @@ public sealed class GDPilotConfig
         return new LockOn(new LockSettings(Input.LockRange, Input.LockRange * 4 / 3));
     }
 
-    public ButtonLayers ButtonsFor(string mode)
+    public ButtonLayers ButtonsFor(string mode, string? character = null)
     {
         Dictionary<string, string>? section;
 
         if (!Bindings.TryGetValue(mode, out section) && !Bindings.TryGetValue(nameof(Mode.Combat), out section))
         {
             section = new Dictionary<string, string>();
+        }
+
+        // A character's bindings change what they name, and the rest stay as for anyone.
+        if (character is not null && Characters.TryGetValue(character, out CharacterConfig? own) && own.Bindings.TryGetValue(mode, out Dictionary<string, string>? changed))
+        {
+            section = new Dictionary<string, string>(section);
+
+            foreach ((string button, string action) in changed)
+            {
+                section[button] = action;
+            }
         }
 
         return BindingTable.Parse(section, Input.ChordTrigger);
@@ -143,6 +164,15 @@ public sealed class GDPilotConfig
         foreach (string mode in Bindings.Keys)
         {
             ButtonsFor(mode);
+        }
+
+        foreach ((string character, CharacterConfig own) in Characters)
+        {
+            foreach (string mode in own.Bindings.Keys)
+            {
+                Require(Enum.TryParse(mode, false, out Mode parsed) && parsed != Mode.Suspended, $"characters.{character}.bindings.{mode} is not a mode.");
+                ButtonsFor(mode, character);
+            }
         }
     }
 
