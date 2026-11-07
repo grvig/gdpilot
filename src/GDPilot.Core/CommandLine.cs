@@ -11,8 +11,8 @@ public static class CommandLine
 {
     public static readonly IReadOnlyList<string> Options = new[]
     {
-        "--at", "--calibrate", "--capture", "--check-game", "--counts", "--detect", "--dry-run", "--load-in-game",
-        "--occupancy", "--replay", "--rumble-test", "--seconds", "--setup", "--spots", "--targets", "--to",
+        "--at", "--calibrate", "--capture", "--check-game", "--counts", "--detect", "--dry-run", "--install-loader", "--load-in-game",
+        "--occupancy", "--remove-loader", "--replay", "--rumble-test", "--seconds", "--setup", "--spots", "--targets", "--to",
     };
 
     /// <summary>The first option given that GDPilot does not know, or null when all are known.</summary>

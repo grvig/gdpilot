@@ -61,6 +61,11 @@ internal static class Host
         GridReadiness readiness = new(false, "The game is not running yet, so grid navigation is off.", new Dictionary<string, GridSpec>());
         DisplayWatch displayWatch = new();
         InGameAutoLoad autoLoad = new();
+
+        if (replay is null)
+        {
+            InGamePart.PointLoaderAtCurrent();
+        }
         string? character = null;
         SettingsWatch? settingsWatch = WatchSettings();
         string? settingsProblem = null;

@@ -8,6 +8,8 @@ public sealed class CommandLineTests
     public void KnownOptionsAndTheirValuesPass()
     {
         Assert.Null(CommandLine.Unknown(new[] { "--replay", "trace.json", "--seconds", "4", "--dry-run" }));
+        Assert.Null(CommandLine.Unknown(new[] { "--install-loader" }));
+        Assert.Null(CommandLine.Unknown(new[] { "--remove-loader" }));
     }
 
     [Theory]

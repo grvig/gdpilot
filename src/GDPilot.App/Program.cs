@@ -75,6 +75,16 @@ internal static class Program
             return TargetsMode.Run(config, duration);
         }
 
+        if (args.Contains("--install-loader"))
+        {
+            return LoaderMode.Install(config);
+        }
+
+        if (args.Contains("--remove-loader"))
+        {
+            return LoaderMode.Remove(config);
+        }
+
         if (args.Contains("--setup"))
         {
             return SetupMode.Run(config);

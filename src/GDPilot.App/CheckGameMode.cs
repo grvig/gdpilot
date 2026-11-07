@@ -66,7 +66,7 @@ internal static class CheckGameMode
     }
 
     /// <summary>The running game's folder, or Steam's install of it.</summary>
-    private static string? FindGame(GDPilotConfig config)
+    internal static string? FindGame(GDPilotConfig config)
     {
         foreach (Process process in Process.GetProcessesByName(config.GameProcess))
         {
