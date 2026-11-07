@@ -128,4 +128,19 @@ public sealed class GameReportTests
 
         Assert.Equal("Sémi \"the\" Bold", Assert.IsType<CharacterReport>(report).Name);
     }
+
+    [Theory]
+    [InlineData("[1, 2]")]
+    [InlineData("""{"protocol":"1","type":"health","percent":5}""")]
+    [InlineData("""{"protocol":1,"type":7}""")]
+    [InlineData("""{"protocol":1,"type":"health","percent":"lots"}""")]
+    [InlineData("""{"protocol":1,"type":"panels","open":"Inventory"}""")]
+    [InlineData("""{"protocol":1,"type":"layout","grid":"Inventory","columns":"x","rows":2,"items":[]}""")]
+    [InlineData("""{"protocol":1,"type":"interactables","list":{"id":1}}""")]
+    [InlineData("""{"protocol":1,"type":"character","name":5}""")]
+    [InlineData("null")]
+    public void ALineOfTheWrongShapeIsABadLineThatTheLinkCanSkip(string line)
+    {
+        Assert.Throws<FormatException>(() => GameReport.Parse(line));
+    }
 }

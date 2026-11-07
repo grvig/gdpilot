@@ -16,7 +16,29 @@ public abstract record GameReport
     private static readonly JsonSerializerOptions Writing = new() { WriteIndented = false };
 
     /// <summary>The report on one line, or null for a line of a kind this version does not know.</summary>
+    /// <exception cref="FormatException">The line is not a report: not JSON, another protocol, or a value of the wrong kind.</exception>
     public static GameReport? Parse(string line)
+    {
+        // A value of the wrong kind throws from deep inside the JSON reader; read as a bad line, it can never stop the link.
+        try
+        {
+            return Read(line);
+        }
+        catch (InvalidOperationException problem)
+        {
+            throw new FormatException($"A report with a value of the wrong kind: {problem.Message}");
+        }
+        catch (ArgumentException problem)
+        {
+            throw new FormatException($"A report that does not read: {problem.Message}");
+        }
+        catch (FormatException)
+        {
+            throw;
+        }
+    }
+
+    private static GameReport? Read(string line)
     {
         JsonObject root;
 
