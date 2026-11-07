@@ -429,6 +429,13 @@ turned off the same stick left it on bare ground 84 pixels away. Swinging that
 way killed it, and the cursor went on to the next one in reach and killed that
 too, then back to the ground with none left near.
 
+Last, on the night's final build: a second copy of the in-game part, loaded by
+hand into a game that had one, stood idle and the first carried on; the taskbar
+taking focus mid-walk still let go of the walk and the game taking it back
+pressed it again, with the window lookups now kept per process; and sixteen
+traces, every camera, lock, aim, wheel, dodge, walk, bag, skill, devotion and
+menu one, replayed on Burial Hill with nothing held after any of them.
+
 The loader was taken back out of the game's folder at the end of the night, so the
 game is exactly as it was; `GDPilot.exe --install-loader` puts it back.
 
