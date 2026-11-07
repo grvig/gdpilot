@@ -6,10 +6,18 @@ namespace GDPilot.Output;
 /// <summary>
 /// Answers whether a named process owns the window in front. The focus watcher
 /// polls this rather than hooking focus events, because a poll cannot miss an
-/// event and the cost of one call every few hundred milliseconds is nothing.
+/// event. It is asked every tick, and naming a window's process takes a snapshot
+/// of every process on the machine, which measured at about a tenth of a core
+/// idle on 2026-11-08; so the answer is kept for as long as the same window stays
+/// in front, which cannot change whose it is.
 /// </summary>
 public static class ForegroundProbe
 {
+    private static readonly object Gate = new();
+    private static IntPtr lastWindow;
+    private static string lastName = string.Empty;
+    private static bool lastAnswer;
+
     public static bool IsInFront(string processName)
     {
         IntPtr window = GetForegroundWindow();
@@ -19,6 +27,23 @@ public static class ForegroundProbe
             return false;
         }
 
+        lock (Gate)
+        {
+            if (window == lastWindow && processName == lastName)
+            {
+                return lastAnswer;
+            }
+
+            bool answer = Owns(window, processName);
+            lastWindow = window;
+            lastName = processName;
+            lastAnswer = answer;
+            return answer;
+        }
+    }
+
+    private static bool Owns(IntPtr window, string processName)
+    {
         GetWindowThreadProcessId(window, out int processId);
 
         // The owner can exit between the two calls, and some processes refuse to

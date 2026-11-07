@@ -4,24 +4,55 @@ using GDPilot.Core;
 
 namespace GDPilot.Output;
 
-/// <summary>Finds where the game is drawing, so the overlay can sit in one of its corners.</summary>
+/// <summary>
+/// Finds where the game is drawing, so the overlay can sit in one of its corners.
+/// Asked many times a second, so the window once found is kept while it lasts,
+/// and a game not running is looked for again only once a second: finding a
+/// process by name takes a snapshot of every process on the machine.
+/// </summary>
 public static class GameWindow
 {
+    private static readonly TimeSpan LookAgain = TimeSpan.FromSeconds(1);
+    private static readonly object Gate = new();
+    private static readonly Stopwatch SinceLook = new();
+    private static IntPtr found;
+    private static uint foundProcess;
+    private static string foundName = string.Empty;
+
     /// <summary>The game's main window, or zero if it is not running.</summary>
     public static IntPtr Handle(string processName)
     {
-        foreach (Process process in Process.GetProcessesByName(processName))
+        lock (Gate)
         {
-            using (process)
+            if (found != IntPtr.Zero && processName == foundName && IsWindow(found) && GetWindowThreadProcessId(found, out uint owner) != 0 && owner == foundProcess)
             {
-                if (process.MainWindowHandle != IntPtr.Zero)
+                return found;
+            }
+
+            found = IntPtr.Zero;
+
+            if (SinceLook.IsRunning && SinceLook.Elapsed < LookAgain && processName == foundName)
+            {
+                return IntPtr.Zero;
+            }
+
+            SinceLook.Restart();
+            foundName = processName;
+
+            foreach (Process process in Process.GetProcessesByName(processName))
+            {
+                using (process)
                 {
-                    return process.MainWindowHandle;
+                    if (process.MainWindowHandle != IntPtr.Zero && found == IntPtr.Zero)
+                    {
+                        found = process.MainWindowHandle;
+                        foundProcess = (uint)process.Id;
+                    }
                 }
             }
-        }
 
-        return IntPtr.Zero;
+            return found;
+        }
     }
 
     /// <summary>Which run of the game a window belongs to.</summary>
@@ -34,30 +65,22 @@ public static class GameWindow
     /// <summary>The game's client area in physical pixels, or null if it is not running or is minimised.</summary>
     public static ScreenRect? ClientBounds(string processName)
     {
-        foreach (Process process in Process.GetProcessesByName(processName))
+        IntPtr window = Handle(processName);
+
+        if (window == IntPtr.Zero || IsIconic(window) || !GetClientRect(window, out Bounds client))
         {
-            using (process)
-            {
-                IntPtr window = process.MainWindowHandle;
-
-                if (window == IntPtr.Zero || IsIconic(window) || !GetClientRect(window, out Bounds client))
-                {
-                    continue;
-                }
-
-                // The client rectangle is window-relative; its origin has to be placed on the screen.
-                Point origin = new();
-
-                if (!ClientToScreen(window, ref origin))
-                {
-                    continue;
-                }
-
-                return new ScreenRect(origin.X, origin.Y, client.Right - client.Left, client.Bottom - client.Top);
-            }
+            return null;
         }
 
-        return null;
+        // The client rectangle is window-relative; its origin has to be placed on the screen.
+        Point origin = new();
+
+        if (!ClientToScreen(window, ref origin))
+        {
+            return null;
+        }
+
+        return new ScreenRect(origin.X, origin.Y, client.Right - client.Left, client.Bottom - client.Top);
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -78,6 +101,9 @@ public static class GameWindow
 
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindow(IntPtr window);
 
     [DllImport("user32.dll")]
     private static extern bool GetClientRect(IntPtr window, out Bounds bounds);
