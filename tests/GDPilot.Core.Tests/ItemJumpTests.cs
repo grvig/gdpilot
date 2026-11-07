@@ -216,6 +216,43 @@ public sealed class ItemJumpTests
     }
 
     [Fact]
+    public void AFullBagIsWalkedOneCellAtATimeAndHoldsAtItsEdge()
+    {
+        OccupancyMap map = Map(
+            "######",
+            "######",
+            "######",
+            "######");
+        GridNavigator navigator = new(Ready, new FakeSource(map));
+
+        Assert.Equal(new PointerMoveTo(100, 100), navigator.Act(Mode.Inventory, "right"));
+        Assert.Equal(new PointerMoveTo(132, 100), navigator.Act(Mode.Inventory, "right"));
+        Assert.Equal(new PointerMoveTo(132, 132), navigator.Act(Mode.Inventory, "down"));
+
+        for (int press = 0; press < 4; press++)
+        {
+            navigator.Act(Mode.Inventory, "right");
+        }
+
+        Assert.Equal(new PointerMoveTo(260, 132), navigator.Act(Mode.Inventory, "right"));
+        Assert.False(navigator.FellBack);
+    }
+
+    [Fact]
+    public void AnEmptyBagStillGivesTheCursorACell()
+    {
+        OccupancyMap map = Map(
+            "......",
+            "......",
+            "......",
+            "......");
+        GridNavigator navigator = new(Ready, new FakeSource(map));
+
+        Assert.Equal(new PointerMoveTo(100, 100), navigator.Act(Mode.Inventory, "right"));
+        Assert.Equal(new PointerMoveTo(100, 100), navigator.Act(Mode.Inventory, "down"));
+    }
+
+    [Fact]
     public void PutDownTheDPadJumpsBetweenItemsAgain()
     {
         bool carrying = true;
