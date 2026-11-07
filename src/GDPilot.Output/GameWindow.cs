@@ -6,7 +6,7 @@ namespace GDPilot.Output;
 
 /// <summary>
 /// Finds where the game is drawing, so the overlay can sit in one of its corners.
-/// Asked many times a second, so the window once found is kept while it lasts,
+/// Asked many times a second, so the window once found is kept while it lasts and shows,
 /// and a game not running is looked for again only once a second: finding a
 /// process by name takes a snapshot of every process on the machine.
 /// </summary>
@@ -24,7 +24,7 @@ public static class GameWindow
     {
         lock (Gate)
         {
-            if (found != IntPtr.Zero && processName == foundName && IsWindow(found) && GetWindowThreadProcessId(found, out uint owner) != 0 && owner == foundProcess)
+            if (found != IntPtr.Zero && processName == foundName && IsWindow(found) && IsWindowVisible(found) && GetWindowThreadProcessId(found, out uint owner) != 0 && owner == foundProcess)
             {
                 return found;
             }
@@ -104,6 +104,9 @@ public static class GameWindow
 
     [DllImport("user32.dll")]
     private static extern bool IsWindow(IntPtr window);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr window);
 
     [DllImport("user32.dll")]
     private static extern bool GetClientRect(IntPtr window, out Bounds bounds);

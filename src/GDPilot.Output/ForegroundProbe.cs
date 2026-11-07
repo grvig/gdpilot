@@ -8,13 +8,15 @@ namespace GDPilot.Output;
 /// polls this rather than hooking focus events, because a poll cannot miss an
 /// event. It is asked every tick, and naming a window's process takes a snapshot
 /// of every process on the machine, which measured at about a tenth of a core
-/// idle on 2026-11-08; so the answer is kept for as long as the same window stays
-/// in front, which cannot change whose it is.
+/// idle on 2026-11-08; so the answer is kept for as long as the same window of the
+/// same process stays in front. The process is asked for each time, as that costs
+/// nothing, because Windows hands a closed window's number on to new windows.
 /// </summary>
 public static class ForegroundProbe
 {
     private static readonly object Gate = new();
     private static IntPtr lastWindow;
+    private static int lastProcess;
     private static string lastName = string.Empty;
     private static bool lastAnswer;
 
@@ -27,25 +29,26 @@ public static class ForegroundProbe
             return false;
         }
 
+        GetWindowThreadProcessId(window, out int processId);
+
         lock (Gate)
         {
-            if (window == lastWindow && processName == lastName)
+            if (window == lastWindow && processId == lastProcess && processName == lastName)
             {
                 return lastAnswer;
             }
 
-            bool answer = Owns(window, processName);
+            bool answer = Owns(processId, processName);
             lastWindow = window;
+            lastProcess = processId;
             lastName = processName;
             lastAnswer = answer;
             return answer;
         }
     }
 
-    private static bool Owns(IntPtr window, string processName)
+    private static bool Owns(int processId, string processName)
     {
-        GetWindowThreadProcessId(window, out int processId);
-
         // The owner can exit between the two calls, and some processes refuse to
         // be opened. Either way the game is not reliably in front.
         try
