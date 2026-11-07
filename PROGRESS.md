@@ -143,7 +143,7 @@ Safety:
 | Framing off the shoulder | Done: settles the locked enemy at 0.55 of the width, live |
 | Recentring on an empty press | Done: swung the camera back behind the character, live |
 | Gliding cursor and marker | Done, in Core, tested |
-| Soft aim | Done, in Core, tested; not yet seen live, as the enemies nearby had died |
+| Soft aim | Done, in Core, tested; seen live among living enemies on 2026-11-08 |
 | Dodge on B | Done: right, left and ahead aimed through the game's ring of ground, live |
 | Cost of the in-game part | Measured live: about 30 microseconds a frame; the switch's hitch cut from 1.8 to 0.4 ms |
 | Overlay | Windows moved only when they move; kept on top once a second |
@@ -283,8 +283,6 @@ Not yet verified:
 - **Rumble felt in the hand.** `--rumble-test` ran without error, but nobody
   was holding the pad; the same goes for lock-on's ticks.
 - **Lock-on from the real pad.** Every lock so far came from recorded traces.
-- **Soft aim among living enemies.** A dodge with Evade in slot 4 was checked
-  live on 2026-11-08.
 - **The pad-driven wizard in the game.** Its steps run live through `--at`;
   the stick-and-button loop around them needs someone at the pad.
 
@@ -424,6 +422,12 @@ let go at the end. The in-game part 65 to 88 microseconds a frame, flat, worst
 under a millisecond; four slow frames, each under 0.2 ms of its own work and the
 rest Windows holding the thread. The game rose from 2.3 to 3.4 GB and levelled off
 in the last half hour, the same scenery growth as before.
+
+Soft aim among living enemies, on Burial Hill: the right stick held about 15
+degrees off a Walking Dead put the cursor exactly on it, where with soft aim
+turned off the same stick left it on bare ground 84 pixels away. Swinging that
+way killed it, and the cursor went on to the next one in reach and killed that
+too, then back to the ground with none left near.
 
 The loader was taken back out of the game's folder at the end of the night, so the
 game is exactly as it was; `GDPilot.exe --install-loader` puts it back.
