@@ -43,6 +43,10 @@ public sealed class GameLink : IDisposable
     public bool Connected { get; private set; }
 
     private string? character;
+    private volatile bool carrying;
+
+    /// <summary>Whether the game says an item is on the cursor.</summary>
+    public bool Carrying => carrying;
 
     /// <summary>The panels the game last said were open, or null when it has not said or has gone.</summary>
     public PanelsReport? Panels => Volatile.Read(ref panels);
@@ -152,6 +156,7 @@ public sealed class GameLink : IDisposable
                 thirdPerson = false;
                 analogMovement = false;
                 health = -1;
+                carrying = false;
                 Volatile.Write(ref panels, null);
                 Volatile.Write(ref near, new TargetsReport(Array.Empty<SeenTarget>()));
                 Volatile.Write(ref things, Array.Empty<NearbyThing>());
@@ -206,6 +211,9 @@ public sealed class GameLink : IDisposable
                 break;
             case HealthReport life:
                 health = life.Percent;
+                break;
+            case CursorReport cursor:
+                carrying = cursor.Carrying;
                 break;
             case CharacterReport playing:
                 Volatile.Write(ref character, playing.Name);

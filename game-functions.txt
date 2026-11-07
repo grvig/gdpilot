@@ -113,3 +113,4 @@ Game.dll ?GetHotSlotOption@PlayerHotSlotCtrl@GAME@@QEBAPEAVHotSlotOption@2@I@Z
 # The Transfer stash: which view of the stash window is up, and its sacks.
 Game.dll ?IsTransferOpen@GameEngine@GAME@@QEBA_NXZ
 Game.dll ?GetTransferSack@GameEngine@GAME@@QEAAPEAVInventorySack@2@H@Z
+Game.dll ?Render@CursorHandlerItemMove@GAME@@UEBAXAEAVGraphicsCanvas@2@@Z

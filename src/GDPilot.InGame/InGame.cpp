@@ -459,6 +459,82 @@ void FindMarket()
     }
 }
 
+// An item carried on the cursor, picked up to be put down somewhere else. While
+// one is, the game draws it on the cursor through CursorHandlerItemMove::Render,
+// every frame and only then, read on 2026-11-08; so the bags' D-pad can step onto
+// empty cells to put it down rather than jump between items. The handler is made
+// in more than one place, its construction written out inline, and its destructor
+// is every cursor handler's, so drawing is the one thing that is its own to watch.
+using CarriedDraw = void (*)(const void* handler, void* canvas);
+CarriedDraw originalCarriedDraw = nullptr;
+std::atomic<ULONGLONG> carriedDrawnAt{0};
+std::atomic<bool> carryWanted{true};
+int sentCarry = -1;
+
+// A frame missed at a load is not the item going down; a quarter of a second is.
+constexpr ULONGLONG CarryLapse = 250;
+
+void CarriedDrawn(const void* handler, void* canvas)
+{
+    carriedDrawnAt = GetTickCount64();
+    originalCarriedDraw(handler, canvas);
+}
+
+void FindCarry()
+{
+    void* draw = reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"Game.dll"), "?Render@CursorHandlerItemMove@GAME@@UEBAXAEAVGraphicsCanvas@2@@Z"));
+
+    if (draw == nullptr || !StartsWith(draw, "48895c241048897424184c8974242055"))
+    {
+        Say("A carried item is not seen: the cursor's item handler has changed. The bags' D-pad jumps between items as before.");
+        return;
+    }
+
+    originalCarriedDraw = reinterpret_cast<CarriedDraw>(draw);
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(reinterpret_cast<PVOID*>(&originalCarriedDraw), reinterpret_cast<PVOID>(CarriedDrawn));
+    LONG result = DetourTransactionCommit();
+
+    if (result != NO_ERROR)
+    {
+        originalCarriedDraw = nullptr;
+        Say("A carried item is not seen: attaching to the cursor's item handler failed with error %ld.", result);
+        return;
+    }
+
+    Say("Attached to the cursor's item handler; a carried item is seen.");
+}
+
+void CheckCarry()
+{
+    if (originalCarriedDraw == nullptr)
+    {
+        return;
+    }
+
+    int carrying = 0;
+    ULONGLONG drawn = carriedDrawnAt;
+
+    if (drawn != 0 && GetTickCount64() - drawn < CarryLapse)
+    {
+        carrying = 1;
+    }
+
+    if (carrying != sentCarry || carryWanted.exchange(false))
+    {
+        sentCarry = carrying;
+        std::string said = "false";
+
+        if (carrying == 1)
+        {
+            said = "true";
+        }
+
+        Post("{\"protocol\":1,\"type\":\"cursor\",\"carrying\":" + said + "}\n");
+    }
+}
+
 // Whether the inventory flag, now up or not, belongs to a trader's window.
 bool TraderShowing(bool inventoryUp)
 {
@@ -3674,6 +3750,7 @@ void Work(void* camera, float elapsed)
     CheckLayouts(elapsed);
     CheckHealth(elapsed);
     CheckCharacter(elapsed);
+    CheckCarry();
     CheckTargets(camera, elapsed);
     CheckThings(camera, elapsed);
     ReportLockPoint(camera);
@@ -3851,6 +3928,7 @@ void Converse(HANDLE pipe)
     thingsWanted = true;
     sentHealth = -1;
     nameWanted = true;
+    carryWanted = true;
 
     while (healthy)
     {
@@ -3964,6 +4042,7 @@ DWORD WINAPI Start(LPVOID)
             FindCaravan();
             FindTransfer();
             FindMarket();
+            FindCarry();
             FindMarketSack();
             FindTalk();
             FindQuestions();

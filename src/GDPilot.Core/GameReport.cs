@@ -74,6 +74,8 @@ public abstract record GameReport
                 return new LockPointReport(root["id"]?.GetValue<uint>() ?? 0, root["x"]?.GetValue<double>() ?? -1, root["y"]?.GetValue<double>() ?? -1);
             case "interactables":
                 return Interactables(root);
+            case "cursor":
+                return new CursorReport(root["carrying"]?.GetValue<bool>() ?? false);
             case "character":
                 return new CharacterReport(root["name"]?.GetValue<string>() ?? string.Empty);
             case "abilities":
@@ -118,6 +120,10 @@ public abstract record GameReport
             case HealthReport health:
                 root["type"] = "health";
                 root["percent"] = health.Percent;
+                break;
+            case CursorReport cursor:
+                root["type"] = "cursor";
+                root["carrying"] = cursor.Carrying;
                 break;
             case CharacterReport character:
                 root["type"] = "character";
@@ -346,6 +352,9 @@ public sealed record PanelsReport(IReadOnlyList<string> Open) : GameReport;
 
 /// <summary>The player's life as a whole percentage of its limit, sent whenever it moves.</summary>
 public sealed record HealthReport(int Percent) : GameReport;
+
+/// <summary>Whether an item is on the cursor, picked up to be put down somewhere else.</summary>
+public sealed record CursorReport(bool Carrying) : GameReport;
 
 /// <summary>Who is being played, as the game names them, for bindings of their own.</summary>
 public sealed record CharacterReport(string Name) : GameReport;
