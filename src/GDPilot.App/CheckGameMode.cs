@@ -23,7 +23,7 @@ internal static class CheckGameMode
         }
 
         string list = Path.Combine(AppContext.BaseDirectory, "game-functions.txt");
-        Dictionary<string, ExportTable> tables = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, ExportTable?> tables = new(StringComparer.OrdinalIgnoreCase);
         int missing = 0;
         int found = 0;
 
@@ -38,13 +38,18 @@ internal static class CheckGameMode
 
             string[] parts = line.Split(' ', 2);
 
+            if (parts.Length < 2)
+            {
+                continue;
+            }
+
             if (!tables.TryGetValue(parts[0], out ExportTable? table))
             {
-                table = ExportTable.Read(File.ReadAllBytes(Path.Combine(folder, parts[0])));
+                table = Exports(folder, parts[0]);
                 tables[parts[0]] = table;
             }
 
-            if (table.Names.ContainsKey(parts[1]))
+            if (table is not null && table.Names.ContainsKey(parts[1]))
             {
                 found++;
             }
@@ -63,6 +68,33 @@ internal static class CheckGameMode
 
         Console.WriteLine($"All {found} functions are present. The in-game part can find everything it needs.");
         return 0;
+    }
+
+    /// <summary>
+    /// A DLL of the game's names, or null, said once, when a patch has taken it
+    /// away or left it unreadable: its functions are then all missing, which keeps
+    /// the in-game part off, as anything unexpected must.
+    /// </summary>
+    private static ExportTable? Exports(string folder, string file)
+    {
+        try
+        {
+            return ExportTable.Read(File.ReadAllBytes(Path.Combine(folder, file)));
+        }
+        catch (IOException problem)
+        {
+            Console.WriteLine($"  Could not read {file}: {problem.Message}");
+        }
+        catch (UnauthorizedAccessException problem)
+        {
+            Console.WriteLine($"  Could not read {file}: {problem.Message}");
+        }
+        catch (FormatException problem)
+        {
+            Console.WriteLine($"  Could not read {file}: {problem.Message}");
+        }
+
+        return null;
     }
 
     /// <summary>The running game's folder, or Steam's install of it.</summary>
