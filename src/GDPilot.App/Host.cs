@@ -62,6 +62,8 @@ internal static class Host
         DisplayWatch displayWatch = new();
         InGameAutoLoad autoLoad = new();
         string? character = null;
+        SettingsWatch? settingsWatch = WatchSettings();
+        string? settingsProblem = null;
         LiveDisplay? display = GameDisplay.Read(config);
 
         if (displayWatch.Changed(display))
@@ -179,6 +181,37 @@ internal static class Host
                         readiness = GridReadiness.Check(config, display!.Value);
                         navigator.Use(readiness);
                         Console.WriteLine($"Grids: {readiness.Message}");
+                    }
+
+                    if (settingsWatch?.Changed(now) is GDPilotConfig saved)
+                    {
+                        config = saved;
+
+                        foreach (Mode mode in Enum.GetValues<Mode>())
+                        {
+                            layers[mode] = config.ButtonsFor(mode.ToString(), character);
+                        }
+
+                        mapper.Use(config.Mapping());
+                        mapper.Wheel = config.Wheel();
+                        mapper.Lock = config.LockOn();
+                        mapper.SoftAim = config.SoftAim();
+                        mapper.TwinStick = config.Input.TwinStick;
+                        mapper.InteractReach = config.Input.InteractReach;
+
+                        if (display is LiveDisplay shown)
+                        {
+                            readiness = GridReadiness.Check(config, shown);
+                            navigator.Use(readiness);
+                        }
+
+                        settingsProblem = null;
+                        Console.WriteLine("Settings saved, and taken at once. The kill switch, the panel keys and the poll rate wait for a restart.");
+                    }
+                    else if (settingsWatch?.Problem is string problem && problem != settingsProblem)
+                    {
+                        settingsProblem = problem;
+                        Console.WriteLine($"Settings saved but not taken, so the last good ones stand: {problem}");
                     }
 
                     if (link.Character is string playing && playing != character)
@@ -389,6 +422,27 @@ internal static class Host
         {
             Task.Run(() => LoadInGameMode.Run(config));
         }
+    }
+
+    /// <summary>The person's own settings file, watched for saves; a run on the shipped settings alone has nothing to watch.</summary>
+    private static SettingsWatch? WatchSettings()
+    {
+        if (ConfigFile.LoadedFrom is not string path)
+        {
+            return null;
+        }
+
+        return new SettingsWatch(() => Written(path), () => ConfigFile.Read(path));
+    }
+
+    private static DateTime? Written(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        return File.GetLastWriteTimeUtc(path);
     }
 
     /// <summary>A replay is a test with an end of its own, so it leaves nothing beside the clock.</summary>

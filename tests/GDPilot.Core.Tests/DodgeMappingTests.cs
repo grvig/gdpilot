@@ -99,4 +99,18 @@ public sealed class DodgeMappingTests
         Assert.Contains(new KeyDown(KeyCode.D4), sent);
         Assert.DoesNotContain(sent, intent => intent is PointerMoveTo);
     }
+
+    [Fact]
+    public void SettingsTakenWhilePlayingChangeHowFarTheStickMustGoToWalk()
+    {
+        Mapper mapper = new(Settings, Combat);
+        GamepadSnapshot leaning = GamepadSnapshot.Rest with { LeftStick = new StickPosition(0, 0.4) };
+
+        Assert.Contains(mapper.Tick(leaning, Tick), intent => intent is KeyDown { Key: KeyCode.W });
+
+        mapper.Tick(GamepadSnapshot.Rest, Tick);
+        mapper.Use(Settings with { WalkThreshold = 0.6 });
+
+        Assert.DoesNotContain(mapper.Tick(leaning, Tick), intent => intent is KeyDown { Key: KeyCode.W });
+    }
 }

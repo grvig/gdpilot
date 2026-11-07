@@ -50,6 +50,12 @@ internal static class ConfigFile
         return GDPilotConfig.Parse("{}");
     }
 
+    /// <summary>One file read again as it was read at the start, laid over the shipped settings.</summary>
+    internal static GDPilotConfig Read(string path)
+    {
+        return GDPilotConfig.Parse(Layered(File.ReadAllText(path), Path.Combine(AppContext.BaseDirectory, "config.example.json")));
+    }
+
     private static string Layered(string own, string example)
     {
         if (!File.Exists(example))

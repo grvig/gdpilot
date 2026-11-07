@@ -20,15 +20,22 @@ public sealed record MappingSettings(
 /// </summary>
 public sealed class Mapper
 {
-    private readonly MappingSettings settings;
     private readonly HeldInputDiffer differ = new();
-    private readonly CursorMotion cursor;
+    private MappingSettings settings;
+    private CursorMotion cursor;
 
     public Mapper(MappingSettings settings, ButtonLayers buttons)
     {
         this.settings = settings;
         Buttons = buttons;
         cursor = new CursorMotion(settings.Cursor);
+    }
+
+    /// <summary>Takes settings saved while playing. Keys held stay held until the next tick decides them afresh.</summary>
+    public void Use(MappingSettings changed)
+    {
+        settings = changed;
+        cursor = new CursorMotion(changed.Cursor);
     }
 
     /// <summary>The held bindings for the current mode. The control loop swaps it as the mode changes.</summary>
