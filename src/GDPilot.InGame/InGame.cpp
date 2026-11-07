@@ -4021,9 +4021,35 @@ DWORD WINAPI Link(LPVOID)
     }
 }
 
+// Whether another copy of the in-game part is already at work in this game. The
+// drop-in loader and GDPilot both load it about twenty seconds after the game's
+// window appears, and two builds of it, each hooking the same functions, would
+// fight over every frame; the first to start keeps the game to itself.
+bool AnotherCopyRunning()
+{
+    wchar_t name[64];
+    swprintf_s(name, L"Local\\GDPilot.InGame.%lu", GetCurrentProcessId());
+    HANDLE claim = CreateMutexW(nullptr, FALSE, name);
+
+    if (claim == nullptr)
+    {
+        return false;
+    }
+
+    // Held, never closed, until the game exits and takes it away.
+    return GetLastError() == ERROR_ALREADY_EXISTS;
+}
+
 DWORD WINAPI Start(LPVOID)
 {
     OpenJournal();
+
+    if (AnotherCopyRunning())
+    {
+        Say("Another copy of the in-game part is already running in this game; this one stays idle.");
+        return 0;
+    }
+
     Say("GDPilot in-game part loaded.");
     QueryPerformanceFrequency(&ticksPerSecond);
 
@@ -4049,7 +4075,7 @@ DWORD WINAPI Start(LPVOID)
             FindHotSlots();
             FindCollision();
             FindHealth();
-    FindPlayerName();
+            FindPlayerName();
             FindTargets();
             FindMovement();
             FindInteractables();
