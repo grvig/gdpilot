@@ -140,6 +140,7 @@ internal static class Host
             RumblePolicy rumble = new();
             PadStyle padStyle = PadGlyphs.Chosen(config.Input.PadStyle) ?? PadGlyphs.StyleOf(sdl?.Kind ?? "", sdl?.Name);
             Console.WriteLine($"Buttons read as on a {padStyle} pad.");
+            PadWatch padWatch = new();
             CombatRumble fight = new();
             DropRumble drops = new();
             LegendFold fold = new();
@@ -181,6 +182,11 @@ internal static class Host
                         readiness = GridReadiness.Check(config, display!.Value);
                         navigator.Use(readiness);
                         Console.WriteLine($"Grids: {readiness.Message}");
+                    }
+
+                    if (sdl is not null)
+                    {
+                        padStyle = FollowPad(sdl, padWatch, mapper, config, padStyle);
                     }
 
                     if (settingsWatch?.Changed(now) is GDPilotConfig saved)
@@ -422,6 +428,37 @@ internal static class Host
         {
             Task.Run(() => LoadInGameMode.Run(config));
         }
+    }
+
+    /// <summary>
+    /// A pad pulled out lets go of everything by reading at rest. One plugged back
+    /// keeps its calibration if it is the same pad; another starts from the middle,
+    /// and has its own button names.
+    /// </summary>
+    private static PadStyle FollowPad(SdlGamepadSource sdl, PadWatch padWatch, Mapper mapper, GDPilotConfig config, PadStyle style)
+    {
+        PadChange change = padWatch.Changed(sdl.IsConnected, sdl.Name);
+
+        if (change == PadChange.Lost)
+        {
+            Console.WriteLine("Pad disconnected: everything it held is let go. Plug it back in to carry on.");
+            return style;
+        }
+
+        if (change != PadChange.Found)
+        {
+            return style;
+        }
+
+        if (!padWatch.SameAsBefore(sdl.Name))
+        {
+            mapper.LeftCentre = StickPosition.Centre;
+            mapper.RightCentre = StickPosition.Centre;
+        }
+
+        PadStyle found = PadGlyphs.Chosen(config.Input.PadStyle) ?? PadGlyphs.StyleOf(sdl.Kind, sdl.Name);
+        Console.WriteLine($"Pad connected: {sdl.Name}, read as a {found} pad.");
+        return found;
     }
 
     /// <summary>The person's own settings file, watched for saves; a run on the shipped settings alone has nothing to watch.</summary>

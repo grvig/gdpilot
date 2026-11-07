@@ -11,6 +11,8 @@ namespace GDPilot.Input;
 /// </summary>
 public sealed unsafe class SdlGamepadSource : IGamepadSource, IDisposable
 {
+    private static readonly TimeSpan LookEvery = TimeSpan.FromMilliseconds(250);
+    private readonly System.Diagnostics.Stopwatch sinceLook = new();
     private SDL_Gamepad* pad;
 
     public SdlGamepadSource()
@@ -94,6 +96,13 @@ public sealed unsafe class SdlGamepadSource : IGamepadSource, IDisposable
     /// <summary>Picks up a pad plugged in, or switched between X and D mode, after start.</summary>
     private bool Reconnect()
     {
+        // Asked at every tick while no pad is there, so the device list is only read a few times a second.
+        if (sinceLook.IsRunning && sinceLook.Elapsed < LookEvery)
+        {
+            return false;
+        }
+
+        sinceLook.Restart();
         Close();
         int count;
         SDL_JoystickID* ids = SDL_GetGamepads(&count);
