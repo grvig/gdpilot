@@ -11,7 +11,12 @@ public sealed class HostSmokeTests
     [Fact]
     public void TheHostStartsRunsAndStopsInADryRun()
     {
+        // Settings of its own in the folder it runs from, so the run is never a first run that writes into the person's own folder.
+        string folder = Path.Combine(Path.GetTempPath(), "GDPilotSmoke-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "config.example.json"), Path.Combine(folder, "config.json"));
         ProcessStartInfo start = new(Path.Combine(AppContext.BaseDirectory, "GDPilot.exe"), "--dry-run --seconds 1");
+        start.WorkingDirectory = folder;
         start.RedirectStandardOutput = true;
         start.RedirectStandardError = true;
         start.UseShellExecute = false;
@@ -24,5 +29,7 @@ public sealed class HostSmokeTests
         Assert.True(host.ExitCode == 0, $"Exit code {host.ExitCode}. Output:\n{output}\nErrors:\n{errors}");
         Assert.Contains("Dry run", output);
         Assert.Contains("Stopped. Everything held has been released.", output);
+        Assert.DoesNotContain("First run", output);
+        Directory.Delete(folder, true);
     }
 }
