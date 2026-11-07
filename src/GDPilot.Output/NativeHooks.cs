@@ -7,6 +7,7 @@ internal static class NativeHooks
     internal const int KeyboardLowLevel = 13;
     internal const uint KeyUpFlag = 0x80;
     internal const uint QuitMessage = 0x0012;
+    internal const uint TimerMessage = 0x0113;
 
     internal delegate IntPtr HookProcedure(int code, IntPtr message, IntPtr data);
 
@@ -49,6 +50,9 @@ internal static class NativeHooks
 
     [DllImport("kernel32.dll")]
     internal static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    internal static extern UIntPtr SetTimer(IntPtr window, UIntPtr id, uint milliseconds, IntPtr procedure);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     internal static extern IntPtr GetModuleHandle(string? moduleName);

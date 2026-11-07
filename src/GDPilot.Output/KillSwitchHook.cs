@@ -19,9 +19,12 @@ public sealed class KillSwitchHook : IDisposable
     private HookProcedure? procedure;
     private Exception? startFailure;
     private uint threadId;
+    private readonly TimeSpan renewEvery;
 
-    public KillSwitchHook(KeyChord chord, Action onTriggered)
+    /// <param name="renewEvery">How often the hook is put in afresh; a minute unless a test wants it sooner.</param>
+    public KillSwitchHook(KeyChord chord, Action onTriggered, TimeSpan? renewEvery = null)
     {
+        this.renewEvery = renewEvery ?? TimeSpan.FromMinutes(1);
         watcher = new ChordWatcher(chord);
         this.onTriggered = onTriggered;
         thread = new Thread(Run);
@@ -55,12 +58,45 @@ public sealed class KillSwitchHook : IDisposable
 
         started.Set();
 
-        while (hook != IntPtr.Zero && GetMessage(out Message _, IntPtr.Zero, 0, 0) > 0)
+        if (hook != IntPtr.Zero)
         {
+            SetTimer(IntPtr.Zero, UIntPtr.Zero, (uint)renewEvery.TotalMilliseconds, IntPtr.Zero);
+        }
+
+        while (hook != IntPtr.Zero && GetMessage(out Message message, IntPtr.Zero, 0, 0) > 0)
+        {
+            if (message.Id == TimerMessage)
+            {
+                hook = Renew(hook);
+            }
         }
 
         UnhookWindowsHookEx(hook);
     }
+
+    /// <summary>
+    /// Windows takes a low-level hook away without a word if it is ever slow to
+    /// answer, after a long stall of the whole machine for one. A kill switch that
+    /// has quietly gone is the worst kind of fault, so the hook is put in afresh
+    /// every so often, the new one before the old one comes out.
+    /// </summary>
+    private IntPtr Renew(IntPtr old)
+    {
+        IntPtr fresh = SetWindowsHookEx(KeyboardLowLevel, procedure!, GetModuleHandle(null), 0);
+
+        if (fresh == IntPtr.Zero)
+        {
+            return old;
+        }
+
+        UnhookWindowsHookEx(old);
+        Renewals++;
+        return fresh;
+    }
+
+
+    /// <summary>How many times the hook has been put in again; for tests.</summary>
+    public int Renewals { get; private set; }
 
     private IntPtr OnKey(int code, IntPtr message, IntPtr data)
     {

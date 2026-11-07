@@ -32,6 +32,19 @@ public sealed class KillSwitchHookLoopbackTests
     }
 
     [Fact]
+    public void AHookPutInAfreshStillFires()
+    {
+        using ManualResetEventSlim fired = new();
+        using KillSwitchHook hook = new(Chord, () => fired.Set(), TimeSpan.FromMilliseconds(150));
+        Thread.Sleep(700);
+
+        Press(KeyCode.LeftControl, KeyCode.LeftAlt, KeyCode.Pause);
+
+        Assert.True(hook.Renewals >= 2, $"Put in afresh {hook.Renewals} times.");
+        Assert.True(fired.Wait(TimeSpan.FromSeconds(2)), "The kill switch did not fire after being put in afresh.");
+    }
+
+    [Fact]
     public void PauseWithoutTheModifiersDoesNotFire()
     {
         using ManualResetEventSlim fired = new();
