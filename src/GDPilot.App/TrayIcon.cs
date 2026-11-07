@@ -61,6 +61,9 @@ internal sealed class TrayIcon : IDisposable
         };
 
         using NotifyIcon tray = new() { Icon = icon, Text = "GDPilot", ContextMenuStrip = menu, Visible = true };
+
+        // The tray only offers things; a fault behind one of its items must never end the run.
+        Application.ThreadException += (_, fault) => Console.Error.WriteLine($"The tray icon met a fault and carries on: {fault.Exception.Message}");
         context = new ApplicationContext();
         Application.Run(context);
         tray.Visible = false;

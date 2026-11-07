@@ -96,7 +96,29 @@ public sealed class OverlayHost : IDisposable
         foregroundWatch = (_, _, _, _, _, _, _) => Restack();
         foregroundHook = SetWinEventHook(ForegroundChanged, ForegroundChanged, IntPtr.Zero, foregroundWatch, 0, 0, OutOfContext);
         ready.Set();
+
+        // The overlay only shows things; a fault in drawing it must never end the run that reads the pad.
+        Dispatcher.CurrentDispatcher.UnhandledException += (_, fault) =>
+        {
+            fault.Handled = true;
+            Faults++;
+
+            if (Faults == 1)
+            {
+                Console.Error.WriteLine($"The overlay met a fault and carries on without that update: {fault.Exception.Message}");
+            }
+        };
+
         Dispatcher.Run();
+    }
+
+    /// <summary>How many faults the overlay has met and carried on past.</summary>
+    public int Faults { get; private set; }
+
+    /// <summary>For tests: makes the overlay's own thread meet a fault, as a drawing fault would.</summary>
+    internal void Fault()
+    {
+        window?.Dispatcher.BeginInvoke(() => throw new InvalidOperationException("a fault made on purpose"));
     }
 
     private void Apply(OverlayState state, ScreenRect? game, OverlayCorner corner, LiveDisplay? display)

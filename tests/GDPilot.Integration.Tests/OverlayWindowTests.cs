@@ -32,6 +32,21 @@ public sealed class OverlayWindowTests
     }
 
     [Fact]
+    public void AFaultOnTheOverlaysThreadIsCarriedPastAndTheOverlayKeepsDrawing()
+    {
+        ButtonLayers layers = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "key:Space" }, 0.5);
+
+        using OverlayHost overlay = new();
+        overlay.Fault();
+        Thread.Sleep(300);
+        overlay.Update(OverlayState.Build(Mode.Inventory, SuspendReason.None, layers), new ScreenRect(0, 0, 1280, 720), OverlayCorner.TopLeft, IntPtr.Zero);
+        Thread.Sleep(300);
+
+        Assert.Equal(1, overlay.Faults);
+        Assert.True(IsWindowVisible(overlay.Handle), "The overlay stopped drawing after the fault.");
+    }
+
+    [Fact]
     public void TheOverlayIsTopmostOnlyWhileTheGameIsInFront()
     {
         ButtonLayers layers = BindingTable.Parse(new Dictionary<string, string> { ["A"] = "key:Space" }, 0.5);
@@ -61,6 +76,9 @@ public sealed class OverlayWindowTests
             Assert.NotEqual(IntPtr.Zero, overlay.Handle);
         }
     }
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr window);
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetWindowLongPtr(IntPtr window, int index);

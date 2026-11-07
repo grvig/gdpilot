@@ -10,4 +10,8 @@
     <ProjectReference Include="..\GDPilot.Core\GDPilot.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="GDPilot.Integration.Tests" />
+  </ItemGroup>
+
 </Project>
