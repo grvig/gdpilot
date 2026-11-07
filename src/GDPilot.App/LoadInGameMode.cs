@@ -28,28 +28,59 @@ internal static class LoadInGameMode
                 return 1;
             }
 
-            if (GameLoader.IsLoaded(game, InGamePart.LoadedPrefix))
+            try
             {
-                Console.WriteLine("The in-game part is already loaded. It stays until the game exits; restart the game to load a new build.");
-                return 0;
+                return Load(game);
+            }
+            catch (System.ComponentModel.Win32Exception problem)
+            {
+                Console.Error.WriteLine($"Could not load the in-game part: {problem.Message}");
+            }
+            catch (InvalidOperationException problem)
+            {
+                Console.Error.WriteLine($"Could not load the in-game part: {problem.Message}");
+            }
+            catch (IOException problem)
+            {
+                Console.Error.WriteLine($"Could not load the in-game part: {problem.Message}");
+            }
+            catch (UnauthorizedAccessException problem)
+            {
+                Console.Error.WriteLine($"Could not load the in-game part: {problem.Message}");
             }
 
-            if (InGamePart.Stage() is not string staged)
-            {
-                Console.Error.WriteLine("GDPilot.InGame.dll is missing from beside GDPilot.exe.");
-                return 1;
-            }
+            return 1;
+        }
+    }
 
-            string? problem = GameLoader.Load(game, staged);
-
-            if (problem is not null)
-            {
-                Console.Error.WriteLine($"Could not load the in-game part: {problem}");
-                return 1;
-            }
-
-            Console.WriteLine($"Loaded. What it found is in {Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GDPilot", "in-game.log")}.");
+    /// <summary>
+    /// The game can be starting or closing as this runs, when its list of loaded
+    /// files cannot be read, and the staged copy can be in use; each is a reason
+    /// given, not a fault, and a later start of the game is tried afresh.
+    /// </summary>
+    private static int Load(Process game)
+    {
+        if (GameLoader.IsLoaded(game, InGamePart.LoadedPrefix))
+        {
+            Console.WriteLine("The in-game part is already loaded. It stays until the game exits; restart the game to load a new build.");
             return 0;
         }
+
+        if (InGamePart.Stage() is not string staged)
+        {
+            Console.Error.WriteLine("GDPilot.InGame.dll is missing from beside GDPilot.exe.");
+            return 1;
+        }
+
+        string? problem = GameLoader.Load(game, staged);
+
+        if (problem is not null)
+        {
+            Console.Error.WriteLine($"Could not load the in-game part: {problem}");
+            return 1;
+        }
+
+        Console.WriteLine($"Loaded. What it found is in {Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GDPilot", "in-game.log")}.");
+        return 0;
     }
 }
