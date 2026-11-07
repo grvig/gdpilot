@@ -27,6 +27,7 @@
   <ItemGroup>
     <!-- Copied so a test can prove the tracked example still parses. -->
     <None Include="..\..\config.example.json" Link="config.example.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\keybindings.txt" Link="keybindings.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
