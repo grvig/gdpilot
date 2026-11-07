@@ -158,7 +158,32 @@ internal static class Program
             }
         }
 
+        // Two copies would each read the pad and press keys, doubling everything; a dry run presses nothing, so it may run beside one.
+        using Mutex running = new(false, RunningName);
+
+        if (!dryRun && !Owns(running))
+        {
+            Console.Error.WriteLine("GDPilot is already running; its icon is beside the clock. Quit that one first.");
+            return 3;
+        }
+
         return Host.Run(config, dryRun, duration, replay);
+    }
+
+    /// <summary>One GDPilot at a time for each person signed in to Windows.</summary>
+    internal const string RunningName = @"Local\GDPilot.Running";
+
+    private static bool Owns(Mutex running)
+    {
+        try
+        {
+            return running.WaitOne(0);
+        }
+        catch (AbandonedMutexException)
+        {
+            // A copy that ended without letting go has gone all the same.
+            return true;
+        }
     }
 
     /// <summary>The given number of whole numbers after a flag, or null when the flag is absent or they do not read, which is said.</summary>

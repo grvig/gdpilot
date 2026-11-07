@@ -94,6 +94,8 @@ public sealed class GameLink : IDisposable
         }
     }
 
+    private static readonly TimeSpan RetryPause = TimeSpan.FromMilliseconds(500);
+
     public void Dispose()
     {
         stop.Cancel();
@@ -128,6 +130,9 @@ public sealed class GameLink : IDisposable
             catch (IOException problem)
             {
                 say($"In-game connection dropped: {problem.Message}");
+
+                // A pipe that cannot be made at all, as when its name is taken, is tried again after a pause rather than at once.
+                stop.Token.WaitHandle.WaitOne(RetryPause);
             }
             finally
             {
