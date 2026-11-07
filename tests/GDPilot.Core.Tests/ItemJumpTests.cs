@@ -193,4 +193,43 @@ public sealed class ItemJumpTests
             return map;
         }
     }
+
+    [Fact]
+    public void WhileAnItemIsCarriedTheDPadStepsOntoEmptyCellsToPutItDown()
+    {
+        bool carrying = false;
+        OccupancyMap map = Map(
+            "#.....",
+            "......",
+            "......",
+            "......");
+        GridNavigator navigator = new(Ready, new FakeSource(map)) { Carrying = () => carrying };
+        navigator.Act(Mode.Inventory, "right");
+
+        Assert.Equal(new PointerMoveTo(100, 100), navigator.Act(Mode.Inventory, "right"));
+
+        carrying = true;
+
+        Assert.Equal(new PointerMoveTo(132, 100), navigator.Act(Mode.Inventory, "right"));
+        Assert.Equal(new PointerMoveTo(132, 132), navigator.Act(Mode.Inventory, "down"));
+        Assert.False(navigator.FellBack);
+    }
+
+    [Fact]
+    public void PutDownTheDPadJumpsBetweenItemsAgain()
+    {
+        bool carrying = true;
+        OccupancyMap map = Map(
+            "#....#",
+            "......",
+            "......",
+            "......");
+        GridNavigator navigator = new(Ready, new FakeSource(map)) { Carrying = () => carrying };
+        navigator.Act(Mode.Inventory, "right");
+        navigator.Act(Mode.Inventory, "right");
+
+        carrying = false;
+
+        Assert.Equal(new PointerMoveTo(260, 100), navigator.Act(Mode.Inventory, "right"));
+    }
 }

@@ -38,6 +38,7 @@ public sealed class GridNavigator
     private int surface;
     private GridCell cell;
     private bool placed;
+    private bool carrying;
     private ScreenPoint spot;
     private SpotArea? snapping;
     private readonly List<ScreenPoint> seen = new();
@@ -53,10 +54,13 @@ public sealed class GridNavigator
     public bool Jumping { get; private set; }
 
     /// <summary>Whether jumping is on but the last press in this mode had to step, because the screen could not be trusted.</summary>
-    public bool FellBack => occupancy is not null && placed && !Jumping;
+    public bool FellBack => occupancy is not null && placed && !Jumping && !carrying;
 
     /// <summary>The tab the game says a mode is showing, or null when it does not say.</summary>
     public Func<Mode, int?>? ReportedTab { get; init; }
+
+    /// <summary>Whether the game says an item is on the cursor; the D-pad then steps onto empty cells too, to put it down.</summary>
+    public Func<bool>? Carrying { get; init; }
 
     /// <summary>How many tabs the game says a mode has, or null when it does not say.</summary>
     public Func<Mode, int?>? ReportedTabs { get; init; }
@@ -124,7 +128,15 @@ public sealed class GridNavigator
         }
 
         GridSpec grid = readiness.Grids[surfaces[surface]];
-        OccupancyMap? map = Occupancy(surfaces[surface], grid);
+        OccupancyMap? map = null;
+        carrying = Carrying?.Invoke() == true;
+
+        // An item being carried goes down on a cell, empty or not, so every cell is a stop.
+        if (!carrying)
+        {
+            map = Occupancy(surfaces[surface], grid);
+        }
+
         Jumping = map is not null;
 
         if (!placed)

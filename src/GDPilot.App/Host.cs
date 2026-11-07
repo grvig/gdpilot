@@ -100,7 +100,7 @@ internal static class Host
         }
 
         ScreenSpots spots = new();
-        GridNavigator navigator = new(readiness, jumping, spots) { ReportedTab = mode => occupancy.TabOf(mode.ToString()), ReportedTabs = mode => occupancy.TabsOf(mode.ToString()) };
+        GridNavigator navigator = new(readiness, jumping, spots) { Carrying = () => link.Carrying, ReportedTab = mode => occupancy.TabOf(mode.ToString()), ReportedTabs = mode => occupancy.TabsOf(mode.ToString()) };
         ModeController modes = new(config.PanelKeys(), mode => layers[mode], navigator);
         ConversationWatch conversation = new(() => ConversationShowing(readiness, spots));
         Mapper mapper = new(config.Mapping(), layers[Mode.Combat]) { Wheel = config.Wheel(), Lock = config.LockOn(), SoftAim = config.SoftAim(), TwinStick = config.Input.TwinStick, InteractReach = config.Input.InteractReach, HotbarSlot = key => HotbarSlot(readiness, key) };
