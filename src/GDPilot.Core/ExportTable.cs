@@ -23,7 +23,28 @@ public sealed class ExportTable
     /// <summary>Every exported name and the address it lives at, relative to where the DLL is loaded.</summary>
     public IReadOnlyDictionary<string, uint> Names { get; }
 
+    /// <summary>
+    /// Reads the names, or refuses with a FormatException: a file cut short or
+    /// damaged, as a patch that went wrong can leave one, points its tables past its
+    /// own end, and that is told apart from a fault here by being refused.
+    /// </summary>
     public static ExportTable Read(byte[] image)
+    {
+        try
+        {
+            return ReadChecked(image);
+        }
+        catch (ArgumentException)
+        {
+            throw new FormatException("The file ends before its own tables do, or they point outside it.");
+        }
+        catch (OverflowException)
+        {
+            throw new FormatException("The file's tables give sizes too large to be real.");
+        }
+    }
+
+    private static ExportTable ReadChecked(byte[] image)
     {
         int header = Int(image, 0x3C);
 
@@ -62,6 +83,13 @@ public sealed class ExportTable
 
         int directory = table.Offset(exports);
         int nameCount = Int(image, directory + 24);
+
+        // Each name takes four bytes of the file at least, so a count beyond that is damage, not a table.
+        if (nameCount < 0 || nameCount > image.Length / 4)
+        {
+            throw new FormatException("The file claims more exported names than it could hold.");
+        }
+
         int functions = table.Offset((uint)Int(image, directory + 28));
         int names = table.Offset((uint)Int(image, directory + 32));
         int ordinals = table.Offset((uint)Int(image, directory + 36));

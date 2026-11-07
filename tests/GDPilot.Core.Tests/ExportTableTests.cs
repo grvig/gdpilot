@@ -33,6 +33,55 @@ public sealed class ExportTableTests
         Assert.Throws<FormatException>(() => ExportTable.Read(new byte[0x200]));
     }
 
+    [Fact]
+    public void AFileCutShortAnywhereIsRefusedRatherThanFailingInside()
+    {
+        byte[] whole = Image();
+
+        for (int length = 0; length < whole.Length; length++)
+        {
+            ReadOrRefuse(whole[..length]);
+        }
+    }
+
+    [Fact]
+    public void ADamagedFileIsReadOrRefusedNeverFailingInside()
+    {
+        Random random = new(20261108);
+        int[] widths = { 1, 2, 4 };
+
+        for (int round = 0; round < 20000; round++)
+        {
+            byte[] image = Image();
+            int damage = random.Next(1, 4);
+
+            for (int hit = 0; hit < damage; hit++)
+            {
+                int at = random.Next(0, 0x2C0);
+                int width = widths[random.Next(widths.Length)];
+
+                for (int offset = 0; offset < width && at + offset < image.Length; offset++)
+                {
+                    image[at + offset] = (byte)random.Next(256);
+                }
+            }
+
+            ReadOrRefuse(image);
+        }
+    }
+
+    /// <summary>A FormatException is the one way a file may be turned away.</summary>
+    private static void ReadOrRefuse(byte[] image)
+    {
+        try
+        {
+            ExportTable.Read(image);
+        }
+        catch (FormatException)
+        {
+        }
+    }
+
     private static byte[] Image()
     {
         byte[] image = new byte[0x400];
