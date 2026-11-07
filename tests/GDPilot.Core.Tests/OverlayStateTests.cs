@@ -116,4 +116,19 @@ public sealed class OverlayStateTests
     {
         Assert.Equal(title, OverlayState.Build(mode, SuspendReason.None, Combat).Mode);
     }
+
+    [Fact]
+    public void AMissingPadIsTheFirstStatusSoItStaysWhenTheCardFolds()
+    {
+        OverlayState state = OverlayState.Build(Mode.Combat, SuspendReason.None, Combat, steering: true, padMissing: true);
+
+        Assert.Equal("No controller: connect one to play", state.Legend[0]);
+        Assert.Equal(2, state.Statuses);
+    }
+
+    [Fact]
+    public void WithThePadThereNothingIsSaidAboutIt()
+    {
+        Assert.DoesNotContain(OverlayState.Build(Mode.Combat, SuspendReason.None, Combat).Legend, line => line.Contains("controller"));
+    }
 }

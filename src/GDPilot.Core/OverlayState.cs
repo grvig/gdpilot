@@ -80,9 +80,15 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
     /// <param name="locked">The enemy held by lock-on, which changes it again.</param>
     /// <param name="steering">Whether the left stick walks in any direction through the game, rather than in eight.</param>
     /// <param name="tilting">Whether the right stick's up and down tilts the view, with the left trigger to zoom.</param>
-    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false, SeenTarget? locked = null, bool steering = false, bool tilting = false, PadStyle style = PadStyle.Xbox)
+    public static OverlayState Build(Mode mode, SuspendReason reasons, ButtonLayers layers, bool gridFellBack = false, bool thirdPerson = false, SeenTarget? locked = null, bool steering = false, bool tilting = false, PadStyle style = PadStyle.Xbox, bool padMissing = false)
     {
         List<string> legend = new();
+
+        // First, since nothing else on the card works without it.
+        if (padMissing)
+        {
+            legend.Add("No controller: connect one to play");
+        }
 
         if (locked is not null)
         {
