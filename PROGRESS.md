@@ -283,8 +283,8 @@ Not yet verified:
 - **Rumble felt in the hand.** `--rumble-test` ran without error, but nobody
   was holding the pad; the same goes for lock-on's ticks.
 - **Lock-on from the real pad.** Every lock so far came from recorded traces.
-- **Soft aim among living enemies**, and a dodge with a movement skill in
-  slot 4: the test character has none there.
+- **Soft aim among living enemies.** A dodge with Evade in slot 4 was checked
+  live on 2026-11-08.
 - **The pad-driven wizard in the game.** Its steps run live through `--at`;
   the stick-and-button loop around them needs someone at the pad.
 
@@ -408,6 +408,17 @@ Hardening, by reading and tests:
   followed, keeping its calibration if it is the same pad.
 - The in-game part's slow-frame line now says how much of a frame was its own work
   and how much Windows took the thread away.
+
+Also checked live: the game closed under a running GDPilot, which carried on and
+connected again when the game came back; a dodge with Evade in slot 4, its
+cooldown showing and the character dashing the stick's way; and the in-game part's
+memory, flat over ten minutes connected beside ten alone, so the game's own growth
+in the soak was its scenery, not GDPilot. GDPilot idle took a tenth of a core,
+nearly all of it naming the window in front every tick; it now takes about 4.4 per
+cent, the overlay half a per cent of that.
+
+The loader was taken back out of the game's folder at the end of the night, so the
+game is exactly as it was; `GDPilot.exe --install-loader` puts it back.
 
 Lost tonight: one scroll from Semitarded's second bag, picked up to test the carried
 item and still on the cursor when the game was closed. Nothing else was touched.
