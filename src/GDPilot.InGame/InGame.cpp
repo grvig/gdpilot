@@ -2511,6 +2511,8 @@ const unsigned char* fixedItemClass = nullptr;
 const unsigned char* leverClass = nullptr;
 const unsigned char* gateClass = nullptr;
 const unsigned char* portalClass = nullptr;
+const unsigned char* riftClass = nullptr;
+const unsigned char* dungeonDoorClass = nullptr;
 
 struct EntityList
 {
@@ -2542,6 +2544,9 @@ void FindInteractables()
     leverClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@FixedLever@GAME@@1VRTTI_ClassInfo@2@B"));
     gateClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@StaticTeleporter@GAME@@1VRTTI_ClassInfo@2@B"));
     portalClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@DynamicTeleporter@GAME@@1VRTTI_ClassInfo@2@B"));
+    // Not needed for the rest: without them a personal rift and a dungeon's way in read as things to use.
+    riftClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@FixedItemTeleport@GAME@@1VRTTI_ClassInfo@2@B"));
+    dungeonDoorClass = reinterpret_cast<const unsigned char*>(GetProcAddress(game, "?classInfo@FixedItemDungeonTeleport@GAME@@1VRTTI_ClassInfo@2@B"));
     const void* reached = reinterpret_cast<const unsigned char*>(game) + WorldReached;
 
     if (query == nullptr || coords == nullptr || engineGlobal == nullptr || itemClass == nullptr || oneShotClass == nullptr || fixedItemClass == nullptr || leverClass == nullptr || gateClass == nullptr || portalClass == nullptr || !StartsWith(query, "4d85c00f847a0100004c8bdc4d894b20") || !StartsWith(coords, "488d81d8000000c3") || box == nullptr || !StartsWith(box, "84d2740b807974") || !StartsWith(reached, "488b4950") || targetsInRadius == nullptr)
@@ -2580,6 +2585,12 @@ int KindOf(const void* entity)
 
     // Rift gates and town portals are teleporters of their own, read live beside Devil's Crossing's gate.
     if (IsA(entity, gateClass) || IsA(entity, portalClass))
+    {
+        return 4;
+    }
+
+    // A personal rift, torn with the Personal Riftgate key, and a dungeon's way in are fixed items that travel.
+    if ((riftClass != nullptr && IsA(entity, riftClass)) || (dungeonDoorClass != nullptr && IsA(entity, dungeonDoorClass)))
     {
         return 4;
     }
