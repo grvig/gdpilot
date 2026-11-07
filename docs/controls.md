@@ -19,6 +19,7 @@ game always shows what each button does in the mode you are in.
 | Back, held | The skill wheel |
 | Right stick click | Lock on to the enemy in view; again to let go |
 | Left trigger + right stick click | Switch between the game's camera and third person |
+| Left trigger + left bumper | Tear a personal rift where you stand, for rift travel from anywhere |
 | D-pad up, left, right, down | Inventory, devotion, skills, map |
 | Left trigger + D-pad up, down | Tell GDPilot a trader's or the stash's window is open (only needed without the in-game part) |
 | Left trigger + D-pad left, right | The journal, the factions |
@@ -171,7 +172,11 @@ slot can hold: the D-pad moves through it, A chooses and B closes it.
 
 ## Travelling by rift
 
-At a rift gate the map opens with the D-pad on the gates: A travels. The buttons
+At a rift gate the map opens with the D-pad on the gates: A travels. Away from any
+gate, left trigger and left bumper tear a personal rift through the game's own
+Personal Riftgate key (L by default); A at it opens the same map. The rift stays
+where it was torn, and is on that map to come back to. Checked live on 2026-11-08
+from Burial Hill to Twin Falls. The buttons
 on the overlay read as your pad prints them; `padStyle` under `input` can name
 another family than the one connected.
 
@@ -248,4 +253,7 @@ front of it, so it never floats over a browser or a chat.
 | Ctrl+Alt+Pause | Stop all input at once; again to resume |
 
 Input also pauses whenever the game is not the window in front, and any key
-GDPilot was holding is let go if it ever stalls.
+GDPilot was holding is let go if it ever stalls. A pad pulled out lets go of
+everything; plugged back in, it carries on, and the card says so while it is gone.
+Each was checked live on 2026-11-08 in the middle of a walk: the kill switch, the
+taskbar taking focus, and the kill switch while the camera turned.

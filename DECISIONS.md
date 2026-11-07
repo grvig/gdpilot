@@ -894,3 +894,31 @@ moment, but having to run it was the last thing standing between starting the ga
 and playing. GDPilot now loads it once for each run of the game, twenty seconds
 after the game's window appears, and does not try again if that fails, since the
 same game would fail the same way. `"loadInGame": false` turns this off.
+
+## 2026-11-08 — The drop-in loader is dinput8.dll, pinned
+
+The game's own DirectInput.dll asks Windows for dinput8.dll, and Windows looks in
+the game's folder first, so a pass-through dinput8.dll there is loaded with the game
+and no running process is reached into. Grim Dawn.exe imports nothing else that a
+file beside it could stand in for so plainly. The first build took the game down
+twenty seconds in: the game loads and frees DirectInput more than once while it
+starts, and freeing the loader took its waiting thread's code away. It pins itself,
+so it stays until the game exits. It acts only inside Grim Dawn.exe, loads nothing
+if GDPilot has not said where its in-game part is, and is only ever put where
+nothing is or over itself, and only ever taken away when it is its own.
+
+## 2026-11-08 — An item on the cursor makes every cell a stop
+
+With the in-game part, the bags' D-pad jumps between items, which left no way to
+reach an empty cell with the D-pad to put a picked-up item down. The game draws a
+carried item on the cursor through CursorHandlerItemMove::Render, every frame and
+only then. Counting the handlers in and out was tried first and failed live: the
+game writes the handler's construction out inline where it picks an item up, and
+its destructor is every cursor handler's. Drawing is the one thing that is the
+class's own. While it has drawn in the last quarter second, the D-pad steps cell by cell.
+
+## 2026-11-08 — One GDPilot at a time
+
+Two copies, as starting with Windows and starting by hand would make, would each
+read the pad and press every key twice. A second copy now says one is running and
+stops before touching anything. A dry run presses nothing, so it may run beside one.

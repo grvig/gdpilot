@@ -103,7 +103,8 @@ off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
 | 5 | The in-game part and the action camera | **Done.** Third person with turning, zoom, collision and following, all from the pad. |
 | 6 | Lock-on, camera-relative movement, smart interact | **Done.** Lock-on, walking in any direction, twin-stick aiming, tilting, the dodge and smart interact, all checked in the game. |
 | 7 | Radial skills, rumble, snapping in every menu | **Done,** but for three windows not yet reached: the skill wheel, rumble, and snapping in the skill tree, devotion map, conversations, traders, both stashes, the journal and other windows, both menus and a blacksmith's window. |
-| 8 | Shortcuts, profiles, first run, tray, release | **Under way.** Any display, first run, tray, starting with Windows, loading by itself and bindings per character are done. |
+| 8 | Shortcuts, profiles, first run, tray, release | **Done,** but for the feel session at the pad and publishing a release. |
+| 9 | Hardening | **Begun.** A soak, the whole trace set live, the kill switch mid-action, fuzzed reports. |
 
 **Working today:**
 
@@ -176,7 +177,8 @@ Other commands:
 
 | Command | What it does |
 | --- | --- |
-| `--setup` | Says what is ready to play and what to do about the rest; shown by itself on a first run |
+| `--setup` | Says what is ready to play and what to do about the rest, the game's own keys included; shown by itself on a first run |
+| `--install-loader`, `--remove-loader` | Puts the drop-in loader in the game's folder, or takes it away |
 | `--load-in-game` | Loads the in-game part into the running game now, rather than waiting for GDPilot to do it; see [docs/camera.md](docs/camera.md) |
 | `--check-game` | Checks an installed game version still has everything the in-game part needs |
 | `--targets` | Prints the enemies the in-game part sees and which one lock-on would take, and what A would interact with |
@@ -195,10 +197,23 @@ own, named as in the game:
 "characters": { "Semitarded": { "bindings": { "Combat": { "X": "key:5" } } } }
 ```
 
+Saved changes take hold at once, but for the kill switch, the panel keys and the
+poll rate, which wait for a restart; a file that does not read is refused with the
+reason, and the last good settings stand.
+
 GDPilot starts by hand or with Windows, from a tick in the tray icon's menu, which
 also pauses it and quits it. When Grim Dawn starts, GDPilot loads the in-game part
 by itself once the game has settled; `"loadInGame": false` under `input` leaves it
 to `--load-in-game`.
+
+Or the game can load it itself: `GDPilot.exe --install-loader` puts a small
+`dinput8.dll` in the game's x64 folder, which passes everything on to Windows' own
+and loads the in-game part once the game has settled, with nothing reaching into a
+running process. It changes no file of the game's, never replaces a `dinput8.dll`
+that is not GDPilot's, and `--remove-loader` takes it away again.
+
+`--setup`, and every first run, checks the game's own keybindings against the keys
+GDPilot presses, and names any to change.
 
 GDPilot expects the game set up like this:
 

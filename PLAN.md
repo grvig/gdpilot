@@ -676,8 +676,9 @@ the in-game part loading by itself, bindings per character, and `publish.cmd`. O
 resolutions and UI scales, listed under Phase 9, were done too, as the largest piece
 of the setup a stranger would hit first. Fast travel and quick-sell turned out to
 need no shortcut: at a gate the map opens with the D-pad on its gates, and the game's
-own Quicksell answers X at a trader. Left: portal on one button, settings that change
-while playing, the drop-in loader, feel tuning and the release itself.
+own Quicksell answers X at a trader. Done 2026-11-08 too: rift travel on one button, settings that change while
+playing, the drop-in loader and the check of the game's own keys. Left: feel tuning
+with the owner, and the release itself.
 
 ### The bar for "complete"
 

@@ -21,9 +21,9 @@ holds the phases and the rules for the in-game part.
 | 5. In-game part and action camera | Done: camera, turning, zoom, collision, following, panel and item reports, all checked live |
 | 6. Lock-on, camera-relative movement, smart interact | Done: all checked live |
 | 7. Radial skills, rumble, snapping in every menu | Done and checked live, but for three windows not yet reached and feeling it at the pad |
-| 8. Shortcuts, profiles, first run, release | Under way: any display, first run, tray, starting with Windows, loading by itself, bindings per character and the package are done; see "Other displays and Phase 8, 2026-11-07" |
+| 8. Shortcuts, profiles, first run, release | Done but for the feel session at the pad and publishing a release, both the owner's; see "Phase 8's end and hardening begun" |
 | Souls-level feel (PLAN.md section 17) | Done, but for tuning with the owner at the pad |
-| 9. Hardening | Not started; a bug pass closes each phase meanwhile |
+| 9. Hardening | Begun 2026-11-08: soak, full trace regression, kill switch and focus mid-action, fuzzed reports, thread faults |
 
 ## What exists
 
@@ -359,6 +359,62 @@ list was not captured at 1024x768 or 1280x1024. Tray: Pause, Settings file, Log
 folder and Start with Windows have not been clicked; the last has its own tests
 against a key of its own.
 
+## Phase 8's end and hardening begun, the night of 2026-11-08
+
+Phase 8's own work is done. New and checked live tonight:
+
+- **Rift travel on LT+LB**, through the game's Personal Riftgate key (L). From Burial
+  Hill: the rift torn, A at it, the D-pad on the gates of the world map, A to
+  travel. A personal rift and a dungeon's way in now read as travel.
+- **The drop-in loader.** `--install-loader` puts a pass-through dinput8.dll in the
+  game's x64 folder; the game loads it, it loads the in-game part once the game has
+  settled, and GDPilot need not be running. Its first build took the game down:
+  the game frees DirectInput more than once while starting, and the loader's
+  thread lost its code. It pins itself now. Keys, replays and `--load-in-game`
+  all checked with it in place.
+- **Settings saved while playing** take hold at once; a broken save is refused with
+  the reason and the last good settings stand.
+- **The game's own keys** are checked against GDPilot's on a first run and by
+  `--setup`, by each function's line in keybindings.txt, read off the game's own
+  keybinding screen.
+- **A carried item.** The bags' D-pad used to jump only between items, which left no
+  way to the empty cells to put a picked-up item down. The game draws a carried item
+  through CursorHandlerItemMove::Render, and while it does, the D-pad steps cell by
+  cell: armour moved four cells along the second bag and put down, live.
+
+Hardening, checked live:
+
+- Every trace in `tests/fixtures/traces` replayed against the game, town and combat,
+  with nothing held afterwards; `bag-exact.json` is a stored layout report, not a
+  trace, and replaying it used to crash GDPilot, now refused with the reason.
+- The kill switch in the middle of a walk and while the camera turned: keys let go,
+  the camera stopped, both back on release. The taskbar taking focus mid-walk.
+- No false main menu during a rift's loading screen.
+- A 45 minute soak of every window, walking and turning: GDPilot level at about
+  93 MB and 440 handles, no errors, 240 ticks a second against 250; the in-game part
+  44 microseconds a frame, worst under a millisecond, no slow frame.
+
+Hardening, by reading and tests:
+
+- A report line with a value of the wrong kind could end GDPilot; it is now a bad
+  line, and a fuzz test of 20,000 mangled lines holds it there.
+- The overlay's and the tray's threads carry past a fault rather than end the run.
+- The kill switch's hook is put in afresh every minute, since Windows drops a slow
+  low-level hook without a word.
+- One GDPilot at a time; an unknown option is refused by name rather than starting
+  everything; the smoke test no longer writes a first run's settings into the
+  person's own folder.
+- A pad pulled out lets go of everything, and the card says so; one plugged back is
+  followed, keeping its calibration if it is the same pad.
+- The in-game part's slow-frame line now says how much of a frame was its own work
+  and how much Windows took the thread away.
+
+Lost tonight: one scroll from Semitarded's second bag, picked up to test the carried
+item and still on the cursor when the game was closed. Nothing else was touched.
+
+Not possible tonight: pulling the pad out for real, dying, and anything with someone
+at the pad.
+
 ## Next session starts here
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
@@ -376,9 +432,8 @@ Left of Phase 7:
 2. **With someone at the pad:** the "Not yet verified" list above, and tuning:
    the rumble, the real sticks and the speeds.
 
-Next, in Phase 8: town portal on one button, settings that change while playing,
-the drop-in loader, a guided setting of the game's keys, the feel session with the
-owner, and a release, whose publishing is the owner's. Selling needs no shortcut:
+Next: Phase 9, hardening, PLAN.md section 17; the feel session with the owner at
+the pad; and a release, whose publishing is the owner's. Selling needs no shortcut:
 the game's own Quicksell answers X at a trader.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
