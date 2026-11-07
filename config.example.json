@@ -58,6 +58,7 @@
       "LT+Start": "panel:LootFilter",
       "RightStick": "lock:toggle",
       "LT+RightStick": "camera:toggle",
+      "LT+LeftBumper": "rift:L",
       "Back": "radial:hotbar"
     },
     "Inventory": {

@@ -230,6 +230,8 @@ public sealed record OverlayState(string Mode, string? Suspended, IReadOnlyList<
                 return $"Interact, else {Describe(new KeyBinding(interact.Fallback))}";
             case DodgeBinding dodge:
                 return $"Dodge ({Describe(new KeyBinding(dodge.Key))})";
+            case RiftBinding:
+                return "Rift: travel from here, and back";
             default:
                 return binding.ToString();
         }

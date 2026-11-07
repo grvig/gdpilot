@@ -5,6 +5,13 @@ public abstract record ButtonBinding;
 
 public sealed record KeyBinding(KeyCode Key) : ButtonBinding;
 
+/// <summary>
+/// "rift:L": holds the game's own Personal Riftgate key, which tears a rift where the
+/// character stands. A at it opens the map of gates; the rift stays, and is on that
+/// map to come back to. Named apart from a plain key so the card can say what it does.
+/// </summary>
+public sealed record RiftBinding(KeyCode Key) : ButtonBinding;
+
 /// <summary>Holds a mouse button, optionally with a modifier key held for the whole click.</summary>
 public sealed record PointerBinding(PointerButton Button, KeyCode Modifier = KeyCode.None) : ButtonBinding;
 
@@ -75,6 +82,10 @@ public sealed class ButtonLayers
             if (binding is KeyBinding key)
             {
                 keys.Add(key.Key);
+            }
+            else if (binding is RiftBinding rift)
+            {
+                keys.Add(rift.Key);
             }
             else if (binding is PointerBinding pointer)
             {

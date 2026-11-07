@@ -131,4 +131,22 @@ public sealed class OverlayStateTests
     {
         Assert.DoesNotContain(OverlayState.Build(Mode.Combat, SuspendReason.None, Combat).Legend, line => line.Contains("controller"));
     }
+
+    [Fact]
+    public void TheRiftSaysWhereItGoesAndHowToComeBack()
+    {
+        ButtonLayers layers = BindingTable.Parse(new Dictionary<string, string> { ["LT+LeftBumper"] = "rift:L" }, 0.5);
+
+        Assert.Contains("LT+LB: Rift: travel from here, and back", OverlayState.Build(Mode.Combat, SuspendReason.None, layers).Legend);
+    }
+
+    [Fact]
+    public void TheRiftKeyIsHeldWhileItsButtonIs()
+    {
+        ButtonLayers layers = BindingTable.Parse(new Dictionary<string, string> { ["LT+LeftBumper"] = "rift:L" }, 0.5);
+        GamepadSnapshot pressed = GamepadSnapshot.Rest with { Buttons = GamepadButtons.LeftBumper, LeftTrigger = 1 };
+
+        Assert.Contains(KeyCode.L, layers.Resolve(pressed).Keys);
+        Assert.DoesNotContain(KeyCode.L, layers.Resolve(pressed with { LeftTrigger = 0 }).Keys);
+    }
 }

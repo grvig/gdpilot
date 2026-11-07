@@ -37,6 +37,8 @@ internal static class BindingAction
                 return new LockBinding();
             case "dodge":
                 return new DodgeBinding(Key(parts[1], trigger));
+            case "rift":
+                return new RiftBinding(Key(parts[1], trigger));
             case "interact":
                 return new InteractBinding(Key(parts[1], trigger));
             default:
