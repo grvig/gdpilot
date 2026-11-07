@@ -3295,9 +3295,31 @@ int costFrames = 0;
 float sinceCostReport = 0;
 float sinceSlowFrame = 1000;
 
-void Account(LONGLONG ticks, float elapsed)
+// The game's thread can be paused by Windows in the middle of this work, which a
+// clock counts as cost. The cycles the thread really ran tell the two apart: the
+// most cycles ever seen in a microsecond is the processor's own rate, since a
+// pause only lowers it, so cycles over that rate is the time spent working.
+double cyclesPerMicrosecond = 0;
+
+double Working(ULONG64 cycles, double microseconds)
+{
+    if (microseconds > 20)
+    {
+        cyclesPerMicrosecond = std::fmax(cyclesPerMicrosecond, static_cast<double>(cycles) / microseconds);
+    }
+
+    if (cyclesPerMicrosecond <= 0)
+    {
+        return microseconds;
+    }
+
+    return std::fmin(microseconds, static_cast<double>(cycles) / cyclesPerMicrosecond);
+}
+
+void Account(LONGLONG ticks, ULONG64 cycles, float elapsed)
 {
     double microseconds = static_cast<double>(ticks) * 1000000.0 / static_cast<double>(ticksPerSecond.QuadPart);
+    double working = Working(cycles, microseconds);
     costTotal += microseconds;
     costWorst = std::fmax(costWorst, microseconds);
     costFrames++;
@@ -3307,7 +3329,7 @@ void Account(LONGLONG ticks, float elapsed)
     // At most one a minute, so a run of slow frames cannot fill the log.
     if (microseconds > 2000 && sinceSlowFrame > 60)
     {
-        Say("Cost: one frame took %.0f us.", microseconds);
+        Say("Cost: one frame took %.0f us, %.0f us of it working and the rest waiting on Windows.", microseconds, working);
         sinceSlowFrame = 0;
     }
 
@@ -3331,11 +3353,15 @@ void UpdatedCamera(void* camera)
     originalUpdate(camera);
     float elapsed = SecondsSinceLastFrame();
     LARGE_INTEGER started{};
+    ULONG64 cyclesBefore = 0;
+    QueryThreadCycleTime(GetCurrentThread(), &cyclesBefore);
     QueryPerformanceCounter(&started);
     Work(camera, elapsed);
     LARGE_INTEGER ended{};
     QueryPerformanceCounter(&ended);
-    Account(ended.QuadPart - started.QuadPart, elapsed);
+    ULONG64 cyclesAfter = 0;
+    QueryThreadCycleTime(GetCurrentThread(), &cyclesAfter);
+    Account(ended.QuadPart - started.QuadPart, cyclesAfter - cyclesBefore, elapsed);
 }
 
 // Analog movement. While a movement key is down the game walks the character,
