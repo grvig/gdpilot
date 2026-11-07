@@ -417,6 +417,14 @@ in the soak was its scenery, not GDPilot. GDPilot idle took a tenth of a core,
 nearly all of it naming the window in front every tick; it now takes about 4.4 per
 cent, the overlay half a per cent of that.
 
+A 90 minute soak on the night's last build, every window, the map, the menu,
+walking and turning, 10,419 steps: GDPilot level at 90 to 100 MB, 440 handles and
+17 threads from start to end, no errors, 239 ticks a second against 250, everything
+let go at the end. The in-game part 65 to 88 microseconds a frame, flat, worst
+under a millisecond; four slow frames, each under 0.2 ms of its own work and the
+rest Windows holding the thread. The game rose from 2.3 to 3.4 GB and levelled off
+in the last half hour, the same scenery growth as before.
+
 The loader was taken back out of the game's folder at the end of the night, so the
 game is exactly as it was; `GDPilot.exe --install-loader` puts it back.
 
