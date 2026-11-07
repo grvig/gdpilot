@@ -67,4 +67,18 @@ public sealed class FirstRunTests
 
         Assert.Equal(4, checks.Count);
     }
+
+    [Fact]
+    public void KeysToChangeInTheGameAreNamedTogether()
+    {
+        IReadOnlyList<(bool Ready, string Line)> checks = FirstRun.Checks(new FirstRun.Facts(true, true, true, "1920x1080@0.5", true, null, new[] { "Skill Window on K", "Personal Riftgate on L" }));
+
+        Assert.Contains(checks, check => !check.Ready && check.Line.Contains("set Skill Window on K, Personal Riftgate on L"));
+    }
+
+    [Fact]
+    public void KeysAsGDPilotWantsThemAddNothing()
+    {
+        Assert.Equal(4, FirstRun.Checks(new FirstRun.Facts(true, true, true, "1920x1080@0.5", true, null, Array.Empty<string>())).Count);
+    }
 }

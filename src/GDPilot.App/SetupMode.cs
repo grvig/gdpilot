@@ -52,7 +52,15 @@ internal static class SetupMode
             settings = File.ReadAllText(GameDisplay.SettingsPath);
         }
 
-        return new FirstRun.Facts(padConnected, running, display is not null, shown, FunctionsFound(config), settings);
+        string keys = Path.Combine(Path.GetDirectoryName(GameDisplay.SettingsPath)!, "keybindings.txt");
+        IReadOnlyList<string>? mismatches = null;
+
+        if (File.Exists(keys))
+        {
+            mismatches = GameKeys.Mismatches(File.ReadAllText(keys), GameKeys.Wanted(config));
+        }
+
+        return new FirstRun.Facts(padConnected, running, display is not null, shown, FunctionsFound(config), settings, mismatches);
     }
 
     /// <summary>The check's own report of each name is for after a patch; here only its answer matters.</summary>

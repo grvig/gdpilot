@@ -7,7 +7,7 @@ namespace GDPilot.Core;
 /// </summary>
 public static class FirstRun
 {
-    public readonly record struct Facts(bool PadConnected, bool GameRunning, bool SettingsRead, string? Display, bool FunctionsFound, string? Settings = null);
+    public readonly record struct Facts(bool PadConnected, bool GameRunning, bool SettingsRead, string? Display, bool FunctionsFound, string? Settings = null, IReadOnlyList<string>? KeyMismatches = null);
 
     /// <summary>The game's movement type "Keyboard" in its options.txt, the one GDPilot's keys walk with.</summary>
     private const string KeyboardMovement = "1";
@@ -53,6 +53,11 @@ public static class FirstRun
             {
                 checks.Add((false, "The game's movement type should be Keyboard, not Keyboard Only or Mouse. Change it in its options."));
             }
+        }
+
+        if (facts.KeyMismatches is { Count: > 0 } mismatches)
+        {
+            checks.Add((false, $"In the game's keybinding options, set {string.Join(", ", mismatches)}: these are the keys GDPilot presses for them."));
         }
 
         if (facts.FunctionsFound)
