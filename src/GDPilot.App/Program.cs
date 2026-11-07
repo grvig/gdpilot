@@ -10,13 +10,25 @@ internal static class Program
         // Before anything reads or sends a screen coordinate.
         DpiAwareness.EnablePerMonitor();
 
+        if (CommandLine.Unknown(args) is string unknown)
+        {
+            Console.Error.WriteLine($"GDPilot does not know {unknown}. It knows: {string.Join(", ", CommandLine.Options)}.");
+            return 2;
+        }
+
         bool dryRun = args.Contains("--dry-run");
         TimeSpan? duration = null;
-        int secondsAt = Array.IndexOf(args, "--seconds");
+        (double? seconds, string? secondsProblem) = CommandLine.Number(args, "--seconds");
 
-        if (secondsAt >= 0 && secondsAt + 1 < args.Length)
+        if (secondsProblem is not null)
         {
-            duration = TimeSpan.FromSeconds(double.Parse(args[secondsAt + 1], System.Globalization.CultureInfo.InvariantCulture));
+            Console.Error.WriteLine(secondsProblem);
+            return 2;
+        }
+
+        if (seconds is double given)
+        {
+            duration = TimeSpan.FromSeconds(given);
         }
 
         int detectAt = Array.IndexOf(args, "--detect");
@@ -125,23 +137,31 @@ internal static class Program
 
         if (replayAt >= 0 && replayAt + 1 < args.Length)
         {
-            replay = GamepadTrace.Parse(File.ReadAllText(args[replayAt + 1]));
+            try
+            {
+                replay = GamepadTrace.Parse(File.ReadAllText(args[replayAt + 1]));
+            }
+            catch (Exception problem) when (problem is FormatException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"Could not read the trace {args[replayAt + 1]}: {problem.Message}");
+                return 2;
+            }
         }
 
         return Host.Run(config, dryRun, duration, replay);
     }
 
-    /// <summary>The given number of whole numbers after a flag, or null when the flag is absent or short.</summary>
+    /// <summary>The given number of whole numbers after a flag, or null when the flag is absent or they do not read, which is said.</summary>
     private static int[]? Numbers(string[] args, string flag, int count)
     {
-        int at = Array.IndexOf(args, flag);
+        (int[]? values, string? problem) = CommandLine.Whole(args, flag, count);
 
-        if (at < 0 || at + count >= args.Length)
+        if (problem is not null)
         {
-            return null;
+            Console.Error.WriteLine(problem);
         }
 
-        return args.Skip(at + 1).Take(count).Select(value => int.Parse(value, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+        return values;
     }
 
     private static (int Columns, int Rows)? Counts(string[] args)
