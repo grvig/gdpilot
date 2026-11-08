@@ -1,247 +1,136 @@
 # GDPilot
 
-A controller-first overhaul for Grim Dawn: a third-person action camera,
-lock-on, radial skills, menus that snap to items, and controls that adapt to
-what's on screen. For Windows.
+Play Grim Dawn properly on a controller.
 
-Grim Dawn was built for a mouse. Its own gamepad support steers a fake mouse
-pointer around menus, can't reach most of the hotbar, and keeps the camera high
-above the character. GDPilot turns it into a game you play with a controller
-from start to finish: a camera behind your character that you aim with the
-right stick, skills on the face buttons and a radial wheel, and inventory,
-stash and trading where the D-pad lands on items instead of pixels.
+Grim Dawn's own gamepad mode drags a fake mouse pointer around the menus, can
+only reach part of your hotbar, and keeps the camera stuck up in the sky.
+GDPilot replaces all of that. You get a third-person camera, lock-on, the whole
+hotbar on your pad, and menus where the D-pad jumps straight to items instead of
+nudging a cursor around.
 
-## What GDPilot will do when it is finished
+Windows only. Pre-release: see [Known issues](#known-issues) before you start.
 
-### Play
+## Features
 
-- **A third-person action camera.** Drop the camera behind your character, over
-  either shoulder, and look around with the right stick. It stays out of walls,
-  and a button swaps back to the classic top-down view at any time.
-- **Lock-on.** Click the right stick to lock onto the enemy you face; flick
-  the stick to switch targets. Skills fire at whatever you have locked, the
-  camera turns to keep it in view, and when it falls the lock moves on.
-- **Movement in any direction.** The left stick walks at the exact angle it
-  points, not just eight ways, and away from the camera however it is turned.
-- **Every skill within reach.** The four face buttons are instant skills, with
-  four more on the left trigger plus face. Everything else on the hotbar sits on
-  a radial wheel: hold View, flick the right stick, release to cast, and keep
-  walking with the left stick while you choose. The wheel shows your real skill
-  icons, copied from the hotbar, and a face button pressed while pointing at a
-  slot swaps that skill onto it.
-- **One button for the obvious thing.** Pick up the nearest loot, talk to the
-  nearest character or open the nearest chest without aiming at it.
-- **Rumble that means something.** Low health, heavy hits, kills and lock-on
-  each have their own feel.
+**Combat**
+- Third-person camera behind your character, turned and zoomed with the right
+  stick. It stays clear of walls, and one button switches back to the normal
+  top-down view.
+- Lock-on with a right stick click. Flick the stick to switch targets. When a
+  target dies, the lock moves to the next enemy.
+- 360° movement. The left stick walks at its actual angle, not just eight
+  directions.
+- Twin-stick aiming in the normal camera, with soft aim that pulls your
+  attacks onto the enemy you're roughly pointing at.
+- Dodge on B. Put a movement skill in slot 4 and it fires the way you're
+  pushing the stick.
+- All ten hotbar slots: eight on the face buttons (with LT as a second layer),
+  plus a radial wheel on Back that shows your actual skill icons.
+- A on its own picks up loot, talks to people, opens chests and uses rift
+  gates, whatever is nearest.
+- Rumble for heavy hits, kills and low health.
 
-### Menus
+**Menus**
+- Bags, stash and traders: the D-pad jumps from item to item and skips empty
+  cells. A big item counts as one stop.
+- The skill tree, devotion map, conversations, blacksmith and game menu all
+  snap to the next thing in the direction you press.
+- Each window gets its own button layout as soon as it opens, and a small
+  card in the corner shows what every button does.
 
-- **Bindings that follow the open panel.** Combat, Inventory, Stash, Skills,
-  Devotion, WorldMap, Vendor and Dialog each have their own button table, and
-  opening a panel switches to it automatically.
-- **Inventory, stash and trading that snap to items.** The D-pad jumps to the
-  next item in that direction and skips empty cells. A sword three cells tall
-  is one stop. Buttons click, split stacks and switch stash tabs.
-- **Snapping everywhere else.** Skill tree nodes, devotion stars, dialogue
-  choices and the blacksmith's recipe list, all reachable with the D-pad.
-- **Shortcuts.** Fast travel to the nearest rift gate, selling a marked group of
-  items in one sweep, and town portal and return, each on one button.
-- **An overlay that looks like part of the game.** A small card drawn like one
-  of Grim Dawn's own panels shows the current mode and what every button does
-  there, then folds away to a line or two. It never covers the minimap, the
-  quests, the hotbar or an open panel, and never floats over other windows.
-### Setup
+**Other**
+- Rift travel from anywhere on LT + LB.
+- Different bindings for each character, and settings that apply as soon as
+  you save them.
+- Sits in the tray and can start with Windows.
 
-- **One install.** One download. GDPilot starts with Windows or by hand and
-  sits in the tray; when Grim Dawn starts, it connects by itself.
-- **Profiles per character**, and settings that change while you play.
-- **A guided first run** that sets up the game and calibrates the menus.
+## Install
 
-### Safety
+1. Download `GDPilot-0.9.0.zip` from
+   [Releases](https://github.com/grvig/gdpilot/releases) and unzip it anywhere.
+2. In Grim Dawn's options:
+   - Movement: **Keyboard** (not Keyboard Only), with WASD for movement. S
+     opens the skill window by default, so move that to K.
+   - Turn the game's own gamepad support off. Turn Steam Input off for Grim
+     Dawn too.
+   - Display: borderless windowed.
+3. Run `GDPilot.exe`. The first run checks your setup and tells you anything
+   to change, including keybinds.
+4. Start the game. GDPilot hooks in by itself about 20 seconds after the game
+   window appears.
 
-- Ctrl+Alt+Pause stops everything at once, even if the game itself has frozen.
-- Input pauses whenever the game is not the window in front.
-- A watchdog lets go of any held key, so no key is ever left stuck down.
+If you'd rather the game load GDPilot's camera part on its own, run
+`GDPilot.exe --install-loader` once. It adds a small `dinput8.dll` to the
+game's x64 folder and changes nothing else. `--remove-loader` takes it out.
 
-## How it works
+## Controls
 
-GDPilot is one install with two parts inside.
-
-- **The controller side** runs beside the game. It reads the pad, presses keys
-  and moves the mouse the way a player would, draws the overlay and owns the
-  kill switch. It never needs the game's internals, so a game update cannot
-  break it.
-- **The in-game part** loads into Grim Dawn when it starts. It moves the camera,
-  and reports what only the game knows: exactly where every item sits, which
-  panel is open, and where enemies are. It finds what it needs inside the game
-  by name, the way the game's own files label their functions, so most patches
-  should not stop it.
-
-If an update ever does stop the in-game part, it switches itself off and the
-controller side carries on: the classic camera comes back and menus are read
-off the screen instead. Nothing freezes and nothing guesses. `GDPilot.exe
---check-game` says straight away whether a new game version is still covered.
-
-## What it will never do
-
-- Change damage, drops, stats, balance or progression. The in-game part moves
-  the camera and reads positions; it changes nothing about how the game plays
-  out.
-- Modify or replace the game's files or archives.
-- Redistribute any game assets.
-- Give an edge in multiplayer beyond playing comfortably with a controller.
-
-## Where it stands
-
-| Phase | | Status |
-| --- | --- | --- |
-| 0 | Proof that Grim Dawn accepts synthesized input | **Done** |
-| 1 | Pad input, movement, cursor, buttons, safety | **Done** |
-| 2 | Panel tracking, per-panel bindings, overlay | **Done** |
-| 3 | Grid navigation by calibration | **Done.** Bags, vendor and stash, checked in the game. |
-| 4 | Reading item positions | **Done.** From the game itself, exactly, with the screen as a fallback. |
-| 5 | The in-game part and the action camera | **Done.** Third person with turning, zoom, collision and following, all from the pad. |
-| 6 | Lock-on, camera-relative movement, smart interact | **Done.** Lock-on, walking in any direction, twin-stick aiming, tilting, the dodge and smart interact, all checked in the game. |
-| 7 | Radial skills, rumble, snapping in every menu | **Done,** but for three windows not yet reached: the skill wheel, rumble, and snapping in the skill tree, devotion map, conversations, traders, both stashes, the journal and other windows, both menus and a blacksmith's window. |
-| 8 | Shortcuts, profiles, first run, tray, release | **Done,** but for the feel session at the pad and publishing a release. |
-| 9 | Hardening | **Begun.** A soak, the whole trace set live, the kill switch mid-action, fuzzed reports. |
-
-**Working today:**
-
-- **Lock-on.** Click the right stick to lock onto the enemy you face. A ring
-  marks its chest with a bar of its life, the cursor stays on it so every
-  attack and skill lands on it, and in third person the camera glides round to
-  frame it just right of your character. Flick the stick to switch to the next
-  enemy that way; when one falls, the lock moves to the next. Enemies behind
-  walls are never offered, and a click with nothing to lock swings the camera
-  back behind you. See [docs/controls.md](docs/controls.md).
-- **Smart interact on A.** Pick up the nearest loot, talk, travel through a
-  rift gate or use a shrine without aiming; a prompt says what A will do.
-- **Aiming with the right stick** in the game's own camera: it points at the
-  ground round your character, so skills go where it points. In third person
-  it turns and tilts the view, with LT to zoom.
-- **Soft aim and a dodge.** Without a lock, swings drift onto the enemy you
-  roughly face. B fires your movement skill as a dodge the way the left stick
-  points, no cursor needed.
-- **Walking in any direction.** The left stick steers your character at its
-  exact angle through the game's own walking, instead of WASD's eight ways.
-- **Rumble from the fight**: ticks as enemies near you are wounded, a knock for
-  heavy blows, a thump as they die.
-- **The third-person camera.** Hold the left trigger and click the right stick
-  and the camera drops behind your character. The right stick turns and zooms it, walking turns
-  with it, it swings round as you walk sideways, and it stays in front of
-  walls and clutter. Do it again for the classic view, restored exactly. See
-  [docs/camera.md](docs/camera.md).
-- **The skill wheel.** Hold Back for a wheel of the whole hotbar, drawn with
-  your real skill icons; point the right stick and let go to cast.
-- **Rumble** for heavy blows, and a heartbeat when life runs low.
-- **GDPilot always knows which panel is open**, because the game tells it, and
-  an item larger than one cell is one stop on the D-pad.
-
-[docs/controls.md](docs/controls.md) lists every control.
-
-- The left stick walks and the right stick drives a curved cursor; every button
-  is configurable, with a second layer on the left trigger.
-- The D-pad opens panels in combat, and each panel switches to its own buttons.
-- In the bags, the stash and while trading, the D-pad jumps from item to item
-  over empty cells, the bumpers switch stash tabs, and LT+A splits stacks. With
-  the in-game part, the stash and a trader open their own buttons by
-  themselves and their items come from the game. Measured at 1920×1080 at UI
-  scale 0.5, and moved to whatever display the game runs at; see
-  [docs/calibration.md](docs/calibration.md).
-- In the skill tree, on the devotion map, in a conversation, at a blacksmith
-  and in the game's menu, the D-pad snaps to the nearest skill, star, reply,
-  recipe or entry in its direction, and each window brings up its own buttons
-  by itself.
-- The overlay, the kill switch, the focus pause and the stuck-key watchdog.
-- `--replay` plays a recorded pad performance through the whole program, and
-  `--check-game` checks an installed game version.
-
-It is a console program built from source for now. [PROGRESS.md](PROGRESS.md)
-has the detail, and [PLAN.md](PLAN.md) the full design.
-
-## Trying it now
-
-You need the .NET 8 SDK. From the repository root:
-
-```
-dotnet build
-dotnet run --project src/GDPilot.App -- --dry-run
-```
-
-`--dry-run` prints what would be sent instead of sending it, so it is safe with
-the game closed. Without it, GDPilot drives the game whenever the game is in
-front.
-
-Other commands:
-
-| Command | What it does |
+| Button | In the world |
 | --- | --- |
-| `--setup` | Says what is ready to play and what to do about the rest, the game's own keys included; shown by itself on a first run |
-| `--install-loader`, `--remove-loader` | Puts the drop-in loader in the game's folder, or takes it away |
-| `--load-in-game` | Loads the in-game part into the running game now, rather than waiting for GDPilot to do it; see [docs/camera.md](docs/camera.md) |
-| `--check-game` | Checks an installed game version still has everything the in-game part needs |
-| `--targets` | Prints the enemies the in-game part sees and which one lock-on would take, and what A would interact with |
-| `--calibrate <Grid>` | Measures a menu grid by hand, should a display ever need its own |
-| `--occupancy <Grid>` | Prints which cells of an open grid hold items |
-| `--replay <trace>` | Plays a recorded pad performance instead of reading the pad |
+| Left stick | Walk |
+| Right stick | Aim (normal camera) / look around (third person) |
+| RB / LB | Attack / right click |
+| A | Interact with whatever is nearest |
+| X, Y | Slots 2, 3 |
+| B | Dodge (slot 4) |
+| LT + A, X, Y, B | Slots 1, 5, 6, 7 |
+| Back (hold) | Skill wheel |
+| Right stick click | Lock on |
+| LT + right stick click | Third-person camera on/off |
+| LT + LB | Personal rift |
+| D-pad | Inventory, devotion, skills, map |
+| Start | Close the top window, or the game menu |
 
-Settings live in `config.json`, in the working directory, beside the executable
-or in `%LOCALAPPDATA%\GDPilot`, where a first run puts a copy for you to edit; the
-tray icon opens it. Yours are laid over the shipped
-[config.example.json](config.example.json), so an update's new windows and buttons
-reach you without losing what you changed. A character can have bindings of their
-own, named as in the game:
+Everything can be rebound in `config.json` (right-click the tray icon to open
+it). Full list: [docs/controls.md](docs/controls.md).
 
-```json
-"characters": { "Semitarded": { "bindings": { "Combat": { "X": "key:5" } } } }
-```
+**Ctrl+Alt+Pause stops all input instantly**, even if the game freezes. Press it
+again to resume. GDPilot also lets go of everything whenever the game isn't the
+window in front.
 
-Saved changes take hold at once, but for the kill switch, the panel keys and the
-poll rate, which wait for a restart; a file that does not read is refused with the
-reason, and the last good settings stand.
+## Known issues
 
-GDPilot starts by hand or with Windows, from a tick in the tray icon's menu, which
-also pauses it and quits it. When Grim Dawn starts, GDPilot loads the in-game part
-by itself once the game has settled; `"loadInGame": false` under `input` leaves it
-to `--load-in-game`.
+This is a pre-release. Most of it has been tested in-game, but:
 
-Or the game can load it itself: `GDPilot.exe --install-loader` puts a small
-`dinput8.dll` in the game's x64 folder, which passes everything on to Windows' own
-and loads the in-game part once the game has settled, with nothing reaching into a
-running process. It changes no file of the game's, never replaces a `dinput8.dll`
-that is not GDPilot's, and `--remove-loader` takes it away again.
+- It hasn't had much play time on a real pad yet. Stick feel, dead zones and
+  rumble strength may need tuning, all in `config.json`.
+- Dying and respawning, and unplugging the pad mid-fight, haven't been tested
+  in-game.
+- The camera and item features need the in-game part. If a game patch breaks
+  it, GDPilot turns that part off and falls back to the normal camera and
+  reading the screen. `GDPilot.exe --check-game` tells you if a new game
+  version is still supported.
 
-`--setup`, and every first run, checks the game's own keybindings against the keys
-GDPilot presses, and names any to change.
-
-GDPilot expects the game set up like this:
-
-- **Movement type:** Keyboard (not Keyboard Only), with Forward, Backward, Left
-  and Right on W, S, A and D. S opens the skill window by default, so move that
-  to another key, such as K.
-- **Gamepad:** in-game controller support off, and Steam Input off for Grim
-  Dawn.
-- **Display:** borderless windowed.
+Bugs and feedback: [Issues](https://github.com/grvig/gdpilot/issues).
 
 ## Requirements
 
-- Windows 11 x64; Windows 10 will probably work but is untested
-- Grim Dawn v1.3 or later, the 64-bit Steam version
-- An Xbox or PlayStation layout gamepad; both work through SDL
+- Windows 11, 64-bit (Windows 10 should work but is untested)
+- Grim Dawn 1.3 or later, 64-bit Steam version
+- An Xbox or PlayStation style controller
+
+## Fair play
+
+GDPilot moves the camera and reads where things are. It never changes damage,
+drops, stats or anything else about how the game plays, and it doesn't modify
+any game files.
+
+Antivirus software sometimes flags tools that load into a game. The full source
+is here if you want to check what it does.
+
+## Building from source
+
+Needs the .NET 8 SDK and Visual Studio's C++ build tools. `publish.cmd` builds
+the zip. `dotnet run --project src/GDPilot.App -- --dry-run` prints what would
+be sent instead of sending it. [PROGRESS.md](PROGRESS.md) and
+[PLAN.md](PLAN.md) cover where development is at.
 
 ## Credits
 
-The in-game part builds on the camera work of
-[GrimAction](https://github.com/Ophemist/GrimAction) by Ophemist, used under
-its MIT licence.
+The camera builds on [GrimAction](https://github.com/Ophemist/GrimAction) by
+Ophemist, used under its MIT licence.
 
-## Disclaimer
-
-GDPilot is an unofficial tool. It is not affiliated with, endorsed by, or
-associated with Crate Entertainment. Antivirus programs can flag any tool that
-loads into another program; GDPilot's source is public so anyone can check
-what it does.
+Not affiliated with or endorsed by Crate Entertainment.
 
 ## Licence
 
