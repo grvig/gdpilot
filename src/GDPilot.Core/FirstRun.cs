@@ -12,6 +12,7 @@ public static class FirstRun
     /// <summary>The game's movement type "Keyboard" in its options.txt, the one GDPilot's keys walk with.</summary>
     private const string KeyboardMovement = "1";
 
+
     public static IReadOnlyList<(bool Ready, string Line)> Checks(Facts facts)
     {
         List<(bool Ready, string Line)> checks = new();
@@ -25,23 +26,7 @@ public static class FirstRun
             checks.Add((false, "No controller found. Connect one; GDPilot picks it up as soon as it appears."));
         }
 
-        if (!facts.GameRunning)
-        {
-            checks.Add((false, "Grim Dawn is not running. Start it whenever you like; GDPilot connects by itself."));
-            return checks;
-        }
-
-        checks.Add((true, "Grim Dawn is running."));
-
-        if (facts.SettingsRead && facts.Display is not null)
-        {
-            checks.Add((true, $"The game runs at {facts.Display}, and its menus are placed for that."));
-        }
-        else
-        {
-            checks.Add((false, "The game's options.txt could not be read, so its menus cannot be placed. Change any setting in the game's options once to have it written."));
-        }
-
+        // What the game saved last time can be read with it closed, and a new player is told to start GDPilot first.
         if (facts.Settings is string settings)
         {
             if (GameSettings.Value(settings, "gamepadSupport") == "true")
@@ -60,13 +45,31 @@ public static class FirstRun
             checks.Add((false, $"In the game's keybinding options, set {string.Join(", ", mismatches)}: these are the keys GDPilot presses for them."));
         }
 
-        if (facts.FunctionsFound)
+        if (facts.GameRunning)
         {
-            checks.Add((true, "This version of the game has everything the in-game part needs."));
+            checks.Add((true, "Grim Dawn is running."));
+
+            if (facts.SettingsRead && facts.Display is not null)
+            {
+                checks.Add((true, $"The game runs at {facts.Display}, and its menus are placed for that."));
+            }
+            else
+            {
+                checks.Add((false, "The game's options.txt could not be read, so its menus cannot be placed. Change any setting in the game's options once to have it written."));
+            }
+
+            if (facts.FunctionsFound)
+            {
+                checks.Add((true, "This version of the game has everything the in-game part needs."));
+            }
+            else
+            {
+                checks.Add((false, "This version of the game is missing something the in-game part needs. The camera and lock-on stay off until GDPilot is updated; everything else works."));
+            }
         }
         else
         {
-            checks.Add((false, "This version of the game is missing something the in-game part needs. The camera and lock-on stay off until GDPilot is updated; everything else works."));
+            checks.Add((false, "Grim Dawn is not running. Start it whenever you like; GDPilot connects by itself."));
         }
 
         return checks;

@@ -34,6 +34,18 @@ public sealed class FirstRunTests
     }
 
     [Fact]
+    public void WithTheGameClosedItsSavedSettingsAndKeysAreStillPointedOut()
+    {
+        string settings = "gamepadSupport            = true\nmovementType              = 0\n";
+        IReadOnlyList<(bool Ready, string Line)> checks = FirstRun.Checks(new FirstRun.Facts(true, false, false, null, false, settings, new[] { "Skill Window on K" }));
+
+        Assert.Contains(checks, check => !check.Ready && check.Line.Contains("Grim Dawn is not running"));
+        Assert.Contains(checks, check => !check.Ready && check.Line.Contains("controller support"));
+        Assert.Contains(checks, check => !check.Ready && check.Line.Contains("movement type"));
+        Assert.Contains(checks, check => !check.Ready && check.Line.Contains("Skill Window on K"));
+    }
+
+    [Fact]
     public void AGameMissingAFunctionKeepsTheRestOfGDPilotWorking()
     {
         IReadOnlyList<(bool Ready, string Line)> checks = FirstRun.Checks(new FirstRun.Facts(true, true, true, "1280x720@0.5", false));
