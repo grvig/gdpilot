@@ -12,6 +12,8 @@ public static class FirstRun
     /// <summary>The game's movement type "Keyboard" in its options.txt, the one GDPilot's keys walk with.</summary>
     private const string KeyboardMovement = "1";
 
+    /// <summary>The game's display mode "Borderless Window" in its options.txt, over which a window can be drawn.</summary>
+    private const string BorderlessScreen = "2";
 
     public static IReadOnlyList<(bool Ready, string Line)> Checks(Facts facts)
     {
@@ -32,6 +34,11 @@ public static class FirstRun
             if (GameSettings.Value(settings, "gamepadSupport") == "true")
             {
                 checks.Add((false, "The game's own controller support is on, and would answer the pad as well. Turn off Gamepad in its options."));
+            }
+
+            if (GameSettings.Value(settings, "screenMode") is string screen && screen != BorderlessScreen)
+            {
+                checks.Add((false, "The game's display mode should be Borderless Window: GDPilot's card and wheel cannot show over full screen. Change it in its options."));
             }
 
             if (GameSettings.Value(settings, "movementType") is string movement && movement != KeyboardMovement)

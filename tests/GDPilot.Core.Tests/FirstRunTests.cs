@@ -46,6 +46,16 @@ public sealed class FirstRunTests
     }
 
     [Fact]
+    public void AnyDisplayModeButBorderlessIsPointedOut()
+    {
+        IReadOnlyList<(bool Ready, string Line)> fullScreen = FirstRun.Checks(new FirstRun.Facts(true, false, false, null, false, "screenMode = 0"));
+        IReadOnlyList<(bool Ready, string Line)> borderless = FirstRun.Checks(new FirstRun.Facts(true, false, false, null, false, "screenMode = 2"));
+
+        Assert.Contains(fullScreen, check => !check.Ready && check.Line.Contains("Borderless"));
+        Assert.DoesNotContain(borderless, check => check.Line.Contains("Borderless"));
+    }
+
+    [Fact]
     public void AGameMissingAFunctionKeepsTheRestOfGDPilotWorking()
     {
         IReadOnlyList<(bool Ready, string Line)> checks = FirstRun.Checks(new FirstRun.Facts(true, true, true, "1280x720@0.5", false));
