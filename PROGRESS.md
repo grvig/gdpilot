@@ -463,6 +463,24 @@ difference of 0.2 per cent inside a spread of 3 per cent, so nothing measurable.
 The game's own names offer no way to where a devotion star is drawn, so the map
 stays with its finder.
 
+A soak of 150 minutes on Semitarded, every window, walking and turning from a
+trace, 3,300 mode changes: GDPilot held at about 100 MB with handles and threads
+flat, nothing was left held, the in-game part cost 46 microseconds a frame from
+start to end, and the loop ran at 235 Hz. The game's own memory rose from 2.6 GB
+to 3.1 GB, flattening as it went. The in-game part keeps nothing that grows while
+connected, but no run without GDPilot was made to compare.
+
+Reading the in-game part for leaks found one a soak cannot see, as it only happens
+with GDPilot away: lines kept queueing with nobody to send them to, and arrived
+out of date on the next connection. Shown on the old build, 24 lines on connecting
+where 16 were old window changes; 8 on the new one, with an open window still
+reported.
+
+Not done: the windows behind the broken bridge at Twin Falls, which need a story
+quest first; windows at other resolutions; a real unplug of the pad mid-fight, which
+is covered by tests only. A note by the clock works in code and its log line was
+seen, but this machine has Windows notifications off, so the note itself was not.
+
 ## Next session starts here
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
