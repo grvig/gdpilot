@@ -445,6 +445,18 @@ item and still on the cursor when the game was closed. Nothing else was touched.
 Not possible tonight: pulling the pad out for real, dying, and anything with someone
 at the pad.
 
+## Hardening continued, the night of 2026-11-09
+
+A new player's path, from the packaged build in a folder with a space and an accent
+in its name, with no settings and no in-game folder: the first run, the pad, the
+in-game part loaded by itself with GDPilot started first, then the drop-in loader
+with GDPilot not running, then its removal.
+
+Death and respawn, checked live on padtest: the game asks nothing, the character
+comes back in town at full life some seconds later, so nothing on the pad is needed.
+Dying in third person with a lock on, under GDPilot: the lock let go, the camera
+stayed behind the character, nothing was held, and walking and zoom worked after.
+
 ## Next session starts here
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.

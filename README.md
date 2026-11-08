@@ -94,8 +94,7 @@ This is a pre-release. Most of it has been tested in-game, but:
 
 - It hasn't had much play time on a real pad yet. Stick feel, dead zones and
   rumble strength may need tuning, all in `config.json`.
-- Dying and respawning, and unplugging the pad mid-fight, haven't been tested
-  in-game.
+- Unplugging the pad mid-fight is handled but hasn't been tried for real.
 - The camera and item features need the in-game part. If a game patch breaks
   it, GDPilot turns that part off and falls back to the normal camera and
   reading the screen. `GDPilot.exe --check-game` tells you if a new game
