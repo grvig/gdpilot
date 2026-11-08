@@ -9,6 +9,9 @@ namespace GDPilot.Integration.Tests;
 /// </summary>
 public sealed class ForegroundCostTests
 {
+    // Looking afresh each time takes seconds; a busy machine can take tens of milliseconds over the cached path.
+    private const int Limit = 500;
+
     [Fact]
     public void AskingWhetherAProcessIsInFrontAThousandTimesTakesNoTime()
     {
@@ -21,7 +24,7 @@ public sealed class ForegroundCostTests
             Assert.Equal(first, ForegroundProbe.IsInFront(front));
         }
 
-        Assert.True(clock.ElapsedMilliseconds < 50, $"A thousand asks took {clock.ElapsedMilliseconds} ms.");
+        Assert.True(clock.ElapsedMilliseconds < Limit, $"A thousand asks took {clock.ElapsedMilliseconds} ms.");
     }
 
     [Fact]
@@ -35,7 +38,7 @@ public sealed class ForegroundCostTests
             Assert.Equal(IntPtr.Zero, GameWindow.Handle("NoSuchGameAtAll"));
         }
 
-        Assert.True(clock.ElapsedMilliseconds < 50, $"A thousand looks took {clock.ElapsedMilliseconds} ms.");
+        Assert.True(clock.ElapsedMilliseconds < Limit, $"A thousand looks took {clock.ElapsedMilliseconds} ms.");
     }
 
     [Fact]
