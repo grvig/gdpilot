@@ -462,8 +462,9 @@ Left of Phase 7:
 2. **With someone at the pad:** the "Not yet verified" list above, and tuning:
    the rumble, the real sticks and the speeds.
 
-Next: Phase 9, hardening, PLAN.md section 17; the feel session with the owner at
-the pad; and a release, whose publishing is the owner's. Selling needs no shortcut:
+0.9.0 was published as a pre-release on 2026-11-08, before the feel session, with
+its known gaps listed. Next: Phase 9, hardening, PLAN.md section 17; the feel
+session with the owner at the pad; then 1.0. Selling needs no shortcut:
 the game's own Quicksell answers X at a trader.
 
 Only start Grim Dawn for a live check, and close it as soon as the check is
