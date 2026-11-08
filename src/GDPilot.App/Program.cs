@@ -9,6 +9,14 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        AppDomain.CurrentDomain.UnhandledException += (_, thrown) =>
+        {
+            if (thrown.ExceptionObject is Exception fault)
+            {
+                Record(fault);
+            }
+        };
+
         int code = Guarded(args);
 
         if (ClosingWindow.ShouldWait(code, ConsoleOwners.Count(), Console.IsInputRedirected || Console.IsErrorRedirected))
