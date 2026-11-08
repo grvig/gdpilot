@@ -325,6 +325,13 @@ std::vector<std::string> outbox;
 
 void Post(const std::string& line)
 {
+    // With GDPilot away nothing empties the outbox, and on connecting it is told
+    // the present state afresh, so these would only pile up for as long as the game runs.
+    if (!linked)
+    {
+        return;
+    }
+
     {
         std::lock_guard<std::mutex> hold(outboxGuard);
         outbox.push_back(line);
@@ -4003,6 +4010,12 @@ DWORD WINAPI Link(LPVOID)
         {
             Sleep(500);
             continue;
+        }
+
+        // What the last connection left unsent is out of date by now.
+        {
+            std::lock_guard<std::mutex> hold(outboxGuard);
+            outbox.clear();
         }
 
         linked = true;
