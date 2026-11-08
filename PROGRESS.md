@@ -457,6 +457,12 @@ comes back in town at full life some seconds later, so nothing on the pad is nee
 Dying in third person with a lock on, under GDPilot: the lock let go, the camera
 stayed behind the character, nothing was held, and walking and zoom worked after.
 
+Frame rate, the game standing in town for 11 minute blocks with and without GDPilot
+and its overlay: about 21,270 frames per five minutes without and 21,220 with, a
+difference of 0.2 per cent inside a spread of 3 per cent, so nothing measurable.
+The game's own names offer no way to where a devotion star is drawn, so the map
+stays with its finder.
+
 ## Next session starts here
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
