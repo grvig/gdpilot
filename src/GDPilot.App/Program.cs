@@ -9,7 +9,15 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        return Guarded(args);
+        int code = Guarded(args);
+
+        if (ClosingWindow.ShouldWait(code, ConsoleOwners.Count(), Console.IsInputRedirected || Console.IsErrorRedirected))
+        {
+            Console.Error.WriteLine("Press Enter to close this window.");
+            Console.ReadLine();
+        }
+
+        return code;
     }
 
     /// <summary>
