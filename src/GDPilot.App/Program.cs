@@ -183,6 +183,7 @@ internal static class Program
         if (ConfigFile.FirstRun)
         {
             SetupMode.Run(config);
+            Console.WriteLine("From the next start GDPilot runs from its icon beside the clock, without this window.");
         }
 
         Console.WriteLine($"GDPilot. Kill switch: {config.KillSwitch}. Press Ctrl+C to quit.");
@@ -217,7 +218,32 @@ internal static class Program
             return 3;
         }
 
+        bool plainRun = !dryRun && replay is null && duration is null;
+
+        if (ClosingWindow.ShouldGoToTray(ConfigFile.FirstRun, plainRun, ConsoleOwners.Count(), Console.IsInputRedirected || Console.IsErrorRedirected))
+        {
+            LeaveTheWindow();
+        }
+
         return Host.Run(config, dryRun, duration, replay);
+    }
+
+    /// <summary>What would have gone to the window goes to a file the tray's Log folder opens.</summary>
+    private static void LeaveTheWindow()
+    {
+        try
+        {
+            Directory.CreateDirectory(ConfigFile.OwnFolder);
+            StreamWriter log = new(Path.Combine(ConfigFile.OwnFolder, "gdpilot.log"), false);
+            log.AutoFlush = true;
+            Console.SetOut(log);
+            Console.SetError(log);
+            ConsoleOwners.Leave();
+        }
+        catch (Exception problem) when (problem is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"Staying in this window, as the log could not be opened: {problem.Message}");
+        }
     }
 
     /// <summary>One GDPilot at a time for each person signed in to Windows.</summary>

@@ -55,7 +55,8 @@ Windows only. Pre-release: see [Known issues](#known-issues) before you start.
      Dawn too.
    - Display: borderless windowed.
 3. Run `GDPilot.exe`. The first run checks your setup and tells you anything
-   to change, including keybinds.
+   to change, including keybinds. After that it runs from a small icon by the
+   clock (look under the ^ arrow). Right-click it for settings or to quit.
 4. Start the game. GDPilot hooks in by itself about 20 seconds after the game
    window appears.
 

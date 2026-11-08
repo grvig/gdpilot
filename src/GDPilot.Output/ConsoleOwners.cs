@@ -11,6 +11,15 @@ public static class ConsoleOwners
         return (int)GetConsoleProcessList(owners, (uint)owners.Length);
     }
 
+    /// <summary>Gives up the console, whose window goes with its last program.</summary>
+    public static void Leave()
+    {
+        FreeConsole();
+    }
+
     [DllImport("kernel32.dll")]
     private static extern uint GetConsoleProcessList(uint[] processes, uint count);
+
+    [DllImport("kernel32.dll")]
+    private static extern bool FreeConsole();
 }

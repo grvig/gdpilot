@@ -12,4 +12,14 @@ public static class ClosingWindow
     {
         return exitCode != 0 && programsOnConsole == 1 && !redirected;
     }
+
+    /// <summary>
+    /// Whether an ordinary start, from Explorer or with Windows, gives up its window
+    /// and lives in the tray. A first run keeps it, as its setup notes are there to be
+    /// read, and so does anyone who started GDPilot from a command prompt.
+    /// </summary>
+    public static bool ShouldGoToTray(bool firstRun, bool plainRun, int programsOnConsole, bool redirected)
+    {
+        return !firstRun && plainRun && programsOnConsole == 1 && !redirected;
+    }
 }
