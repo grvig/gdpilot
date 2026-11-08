@@ -5,7 +5,49 @@ namespace GDPilot.App;
 
 internal static class Program
 {
+    private const int FaultExit = 70;
+
     private static int Main(string[] args)
+    {
+        return Guarded(args);
+    }
+
+    /// <summary>
+    /// A fault nothing else caught stops here rather than leaving the program:
+    /// .NET can end a process on an unhandled exception without running any cleanup
+    /// on the way, and the cleanup is what lets go of the keys GDPilot holds down.
+    /// </summary>
+    private static int Guarded(string[] args)
+    {
+        try
+        {
+            return Run(args);
+        }
+        catch (Exception fault)
+        {
+            Record(fault);
+            return FaultExit;
+        }
+    }
+
+    private static void Record(Exception fault)
+    {
+        string log = Path.Combine(ConfigFile.OwnFolder, "crash.log");
+        Console.Error.WriteLine($"GDPilot stopped on a fault: {fault.Message}");
+
+        try
+        {
+            Directory.CreateDirectory(ConfigFile.OwnFolder);
+            File.AppendAllText(log, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {fault}{Environment.NewLine}{Environment.NewLine}");
+            Console.Error.WriteLine($"The details are in {log}.");
+        }
+        catch (Exception problem) when (problem is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine(fault);
+        }
+    }
+
+    private static int Run(string[] args)
     {
         // Before anything reads or sends a screen coordinate.
         DpiAwareness.EnablePerMonitor();
