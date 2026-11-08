@@ -63,7 +63,7 @@ public sealed unsafe class SdlGamepadSource : IGamepadSource, IDisposable
 
         if (!IsConnected && !Reconnect())
         {
-            return GamepadSnapshot.Rest;
+            return GamepadSnapshot.Rest with { Gone = true };
         }
 
         return new GamepadSnapshot(

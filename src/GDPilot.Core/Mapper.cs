@@ -746,6 +746,12 @@ public sealed class Mapper
 
     public List<InputIntent> Tick(GamepadSnapshot snapshot, TimeSpan elapsed)
     {
+        // A wheel casts when let go, and a pad pulled out reads as everything let go at once.
+        if (snapshot.Gone)
+        {
+            Wheel?.Close();
+        }
+
         StickPosition left = StickShaping.ApplyRadialDeadzone(snapshot.LeftStick, LeftCentre, settings.LeftDeadzone);
         StickPosition right = StickShaping.ApplyRadialDeadzone(snapshot.RightStick, RightCentre, settings.RightDeadzone);
 

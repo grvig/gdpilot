@@ -129,6 +129,23 @@ public sealed class RadialMenuTests
     }
 
     [Fact]
+    public void APadPulledOutWithTheWheelOpenCastsNothing()
+    {
+        Mapper mapper = new(Settings, Combat) { Wheel = new RadialMenu(Hotbar) };
+        TimeSpan tick = TimeSpan.FromMilliseconds(10);
+        mapper.Tick(GamepadSnapshot.Rest with { Buttons = GamepadButtons.Back, RightStick = new StickPosition(1, 0) }, tick);
+        List<InputIntent> sent = new();
+
+        for (int index = 0; index < 6; index++)
+        {
+            sent.AddRange(mapper.Tick(GamepadSnapshot.Rest with { Gone = true }, tick));
+        }
+
+        Assert.False(mapper.Wheel!.Open);
+        Assert.Empty(sent);
+    }
+
+    [Fact]
     public void ASuspensionWithTheWheelOpenClosesItWithoutCasting()
     {
         Mapper mapper = new(Settings, Combat) { Wheel = new RadialMenu(Hotbar) };
