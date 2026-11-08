@@ -44,9 +44,9 @@ internal static class Program
         {
             config = ConfigFile.Load(Console.Out);
         }
-        catch (FormatException problem)
+        catch (Exception problem) when (problem is FormatException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException)
         {
-            Console.Error.WriteLine($"The configuration is not valid: {problem.Message}");
+            Console.Error.WriteLine($"The settings file could not be read: {problem.Message}");
             return 2;
         }
 

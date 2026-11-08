@@ -55,4 +55,26 @@ public sealed class HostSmokeTests
         Assert.Contains("already running", errors);
         Directory.Delete(folder, true);
     }
+
+    [Fact]
+    public void ASettingsFileWithATypoIsRefusedWithTheReasonAtStart()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "GDPilotTypo-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "config.json"), """{ "input": { "pollHz": 250, } oops """);
+        ProcessStartInfo start = new(Path.Combine(AppContext.BaseDirectory, "GDPilot.exe"), "--dry-run --seconds 1");
+        start.WorkingDirectory = folder;
+        start.RedirectStandardOutput = true;
+        start.RedirectStandardError = true;
+        start.UseShellExecute = false;
+
+        using Process host = Process.Start(start)!;
+        string errors = host.StandardError.ReadToEnd();
+        Assert.True(host.WaitForExit(15000), "A bad settings file did not stop the start.");
+
+        Assert.Equal(2, host.ExitCode);
+        Assert.Contains("settings file could not be read", errors);
+        Assert.DoesNotContain("   at ", errors);
+        Directory.Delete(folder, true);
+    }
 }
