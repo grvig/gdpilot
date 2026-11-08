@@ -12,6 +12,8 @@ namespace GDPilot.App;
 /// </summary>
 internal sealed class TrayIcon : IDisposable
 {
+    private const int LongestNote = 250;
+
     private readonly Thread thread;
     private readonly Action togglePause;
     private readonly Func<bool> paused;
@@ -19,6 +21,7 @@ internal sealed class TrayIcon : IDisposable
     private readonly string settingsFile;
     private readonly StartupEntry startup = new();
     private ApplicationContext? context;
+    private NotifyIcon? shown;
 
     public TrayIcon(Action togglePause, Func<bool> paused, Action quit, string settingsFile)
     {
@@ -61,13 +64,29 @@ internal sealed class TrayIcon : IDisposable
         };
 
         using NotifyIcon tray = new() { Icon = icon, Text = "GDPilot", ContextMenuStrip = menu, Visible = true };
+        shown = tray;
 
         // The tray only offers things; a fault behind one of its items must never end the run.
         Application.ThreadException += (_, fault) => Console.Error.WriteLine($"The tray icon met a fault and carries on: {fault.Exception.Message}");
         context = new ApplicationContext();
         Application.Run(context);
+        shown = null;
         tray.Visible = false;
         DestroyIcon(handle);
+    }
+
+    /// <summary>A note by the clock, for what would otherwise reach only a log nobody is watching.</summary>
+    public void Say(string text)
+    {
+        string brief = text;
+
+        // Windows refuses a longer one.
+        if (brief.Length > LongestNote)
+        {
+            brief = brief[..LongestNote];
+        }
+
+        shown?.ShowBalloonTip(8000, "GDPilot", brief, ToolTipIcon.Warning);
     }
 
     /// <summary>A gold G on stone, in the overlay's colours, so no picture file has to travel with the program.</summary>

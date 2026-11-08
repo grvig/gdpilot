@@ -223,6 +223,7 @@ internal static class Host
                     {
                         settingsProblem = problem;
                         Console.WriteLine($"Settings saved but not taken, so the last good ones stand: {problem}");
+                        tray?.Say($"Settings not taken, the last good ones stand: {problem}");
                     }
 
                     if (link.Character is string playing && playing != character)
@@ -239,7 +240,7 @@ internal static class Host
 
                     if (config.Input.LoadInGame && !dryRun && replay is null)
                     {
-                        LoadInGameWhenDue(config, autoLoad, gameHandle, link.Connected, now);
+                        LoadInGameWhenDue(config, autoLoad, gameHandle, link.Connected, now, tray);
                     }
                 }
 
@@ -420,7 +421,7 @@ internal static class Host
     }
 
     /// <summary>Off the loop's own thread, since loading takes as long as the game needs and the pad must not wait for it.</summary>
-    private static void LoadInGameWhenDue(GDPilotConfig config, InGameAutoLoad autoLoad, IntPtr gameHandle, bool connected, TimeSpan now)
+    private static void LoadInGameWhenDue(GDPilotConfig config, InGameAutoLoad autoLoad, IntPtr gameHandle, bool connected, TimeSpan now, TrayIcon? tray)
     {
         int? process = null;
 
@@ -431,7 +432,13 @@ internal static class Host
 
         if (autoLoad.Due(process, connected, now))
         {
-            Task.Run(() => LoadInGameMode.Run(config));
+            Task.Run(() =>
+            {
+                if (LoadInGameMode.Run(config) != 0)
+                {
+                    tray?.Say("The camera and lock-on are off, as the in-game part could not be loaded. The reason is in gdpilot.log, under Log folder in this icon's menu.");
+                }
+            });
         }
     }
 
