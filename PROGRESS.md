@@ -499,7 +499,7 @@ Left of Phase 7:
    the rumble, the real sticks and the speeds.
 
 0.9.0 was published as a pre-release on 2026-11-08, before the feel session, with
-its known gaps listed. Next: Phase 9, hardening, PLAN.md section 17; the feel
+its known gaps listed, and 0.9.1 on 2026-11-09 with the night's fixes. Next: Phase 9, hardening, PLAN.md section 17; the feel
 session with the owner at the pad; then 1.0. Selling needs no shortcut:
 the game's own Quicksell answers X at a trader.
 
