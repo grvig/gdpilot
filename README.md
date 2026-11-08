@@ -46,7 +46,7 @@ Windows only. Pre-release: see [Known issues](#known-issues) before you start.
 
 ## Install
 
-1. Download `GDPilot-0.9.0.zip` from
+1. Download `GDPilot-0.9.1.zip` from
    [Releases](https://github.com/grvig/gdpilot/releases) and unzip it anywhere.
 2. In Grim Dawn's options:
    - Movement: **Keyboard** (not Keyboard Only), with WASD for movement. S
