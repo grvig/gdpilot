@@ -87,7 +87,8 @@ it). Full list: [docs/controls.md](docs/controls.md).
 
 **Ctrl+Alt+Pause stops all input instantly**, even if the game freezes. Press it
 again to resume. GDPilot also lets go of everything whenever the game isn't the
-window in front.
+window in front. No Pause key on your laptop? Change `killSwitch` in
+`config.json`, or pause from the tray icon.
 
 ## Known issues
 
