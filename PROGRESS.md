@@ -481,6 +481,12 @@ quest first; windows at other resolutions; a real unplug of the pad mid-fight, w
 is covered by tests only. A note by the clock works in code and its log line was
 seen, but this machine has Windows notifications off, so the note itself was not.
 
+Camera and lock-on defaults now come from Dark Souls where a source exists, with
+each one's origin and what could not be sourced in DECISIONS.md. Seen live on
+Semitarded: third person at 7 units and 43 degrees, locked onto an enemy, nothing held
+after. How close the camera sits and how the lock turns are for the owner to judge at
+the pad; the left trigger still zooms out.
+
 ## Next session starts here
 
 The combat checkpoint is complete. Next, PLAN.md section 17, Phase 7.
