@@ -14,11 +14,11 @@ public enum LockChange
 }
 
 /// <summary>
-/// Lock-on's distances, in world units: how near an enemy must be to be locked
-/// onto, and how far a locked one may get before the lock breaks. The gap
-/// between them keeps a lock from flickering at the edge of reach.
+/// Lock-on's reach, in world units, and how long in seconds a lock lasts once
+/// its enemy is beyond that reach or out of view. The wait keeps a lock from
+/// flickering at the edge of reach.
 /// </summary>
-public sealed record LockSettings(double Range = 26.25, double BreakRange = 32, double KeepSeconds = 2);
+public sealed record LockSettings(double Range = 26.25, double KeepSeconds = 2);
 
 /// <summary>
 /// Lock-on the way action games do it. A press locks onto the enemy the player
@@ -31,7 +31,7 @@ public sealed record LockSettings(double Range = 26.25, double BreakRange = 32, 
 ///
 /// When the held enemy dies, the lock moves straight on to the enemy nearest
 /// where it fell, so a fight flows from one to the next. It breaks when the
-/// enemy gets beyond reach or stays out of view.
+/// enemy stays beyond reach or out of view.
 /// </summary>
 public sealed class LockOn
 {
@@ -54,7 +54,7 @@ public sealed class LockOn
     private readonly LockSettings settings;
     private bool armed = true;
     private TimeSpan missingFor;
-    private TimeSpan outOfViewFor;
+    private TimeSpan awayFor;
 
     public LockOn(LockSettings settings)
     {
@@ -81,7 +81,7 @@ public sealed class LockOn
 
         Target = Best(seen, aimX, aimY);
         missingFor = TimeSpan.Zero;
-        outOfViewFor = TimeSpan.Zero;
+        awayFor = TimeSpan.Zero;
 
         if (Target is null)
         {
@@ -134,7 +134,7 @@ public sealed class LockOn
             // Gone from the game's list: dead, or no longer something a skill could hit.
             Target = Nearest(seen, held);
             missingFor = TimeSpan.Zero;
-            outOfViewFor = TimeSpan.Zero;
+            awayFor = TimeSpan.Zero;
 
             if (Target is null)
             {
@@ -147,16 +147,16 @@ public sealed class LockOn
         missingFor = TimeSpan.Zero;
         Target = now;
 
-        if (now.OnScreen)
+        if (now.OnScreen && now.Distance <= settings.Range)
         {
-            outOfViewFor = TimeSpan.Zero;
+            awayFor = TimeSpan.Zero;
         }
         else
         {
-            outOfViewFor += elapsed;
+            awayFor += elapsed;
         }
 
-        if (now.Distance > settings.BreakRange || outOfViewFor >= TimeSpan.FromSeconds(settings.KeepSeconds))
+        if (awayFor >= TimeSpan.FromSeconds(settings.KeepSeconds))
         {
             Target = null;
             return LockChange.Lost;

@@ -194,8 +194,23 @@ public sealed class LockOnTests
     {
         LockOn lockOn = LockedOnto(new[] { Enemy(1, 0.5, 0.4) }, 1);
 
-        Assert.Equal(LockChange.None, lockOn.Update(new[] { Enemy(1, 0.5, 0.3, distance: 30) }, Still, Frame));
-        Assert.Equal(LockChange.Lost, lockOn.Update(new[] { Enemy(1, 0.5, 0.2, distance: 33) }, Still, Frame));
+        SeenTarget[] far = { Enemy(1, 0.5, 0.3, distance: 40) };
+
+        Assert.Equal(LockChange.None, lockOn.Update(far, Still, TimeSpan.FromSeconds(1.5)));
+        Assert.Equal(LockChange.Lost, lockOn.Update(far, Still, TimeSpan.FromSeconds(0.5)));
+    }
+
+    [Fact]
+    public void ComingBackWithinReachStartsTheWaitAgain()
+    {
+        LockOn lockOn = LockedOnto(new[] { Enemy(1, 0.5, 0.4) }, 1);
+        SeenTarget[] far = { Enemy(1, 0.5, 0.3, distance: 40) };
+        SeenTarget[] near = { Enemy(1, 0.5, 0.3, distance: 20) };
+
+        lockOn.Update(far, Still, TimeSpan.FromSeconds(1.5));
+        lockOn.Update(near, Still, Frame);
+
+        Assert.Equal(LockChange.None, lockOn.Update(far, Still, TimeSpan.FromSeconds(1.5)));
     }
 
     [Fact]

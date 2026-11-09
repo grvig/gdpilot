@@ -102,7 +102,7 @@ public sealed class GDPilotConfig
     /// <summary>Lock-on, reaching as far as the configuration says.</summary>
     public LockOn LockOn()
     {
-        return new LockOn(new LockSettings(Input.LockRange, Input.LockRange * 4 / 3));
+        return new LockOn(new LockSettings(Input.LockRange));
     }
 
     public ButtonLayers ButtonsFor(string mode, string? character = null)

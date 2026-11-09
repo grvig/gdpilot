@@ -53,7 +53,7 @@ public sealed class InputConfig
 
     /// <summary>
     /// How near an enemy must be, in world units, for lock-on to take it. A lock
-    /// breaks a third further out, so it does not flicker at the edge.
+    /// lets go two seconds after its enemy goes beyond this, so it does not flicker at the edge.
     /// </summary>
     public double LockRange { get; init; } = 26.25;
 
