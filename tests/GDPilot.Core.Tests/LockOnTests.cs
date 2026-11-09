@@ -204,7 +204,7 @@ public sealed class LockOnTests
         LockOn lockOn = LockedOnto(new[] { Enemy(1, 0.5, 0.4) }, 1);
         SeenTarget[] hidden = { Enemy(1, 1.2, 0.4, onScreen: false) };
 
-        Assert.Equal(LockChange.None, lockOn.Update(hidden, Still, TimeSpan.FromSeconds(2)));
-        Assert.Equal(LockChange.Lost, lockOn.Update(hidden, Still, TimeSpan.FromSeconds(1)));
+        Assert.Equal(LockChange.None, lockOn.Update(hidden, Still, TimeSpan.FromSeconds(1.5)));
+        Assert.Equal(LockChange.Lost, lockOn.Update(hidden, Still, TimeSpan.FromSeconds(0.5)));
     }
 }

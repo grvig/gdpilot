@@ -18,7 +18,7 @@ public enum LockChange
 /// onto, and how far a locked one may get before the lock breaks. The gap
 /// between them keeps a lock from flickering at the edge of reach.
 /// </summary>
-public sealed record LockSettings(double Range = 26.25, double BreakRange = 32);
+public sealed record LockSettings(double Range = 26.25, double BreakRange = 32, double KeepSeconds = 2);
 
 /// <summary>
 /// Lock-on the way action games do it. A press locks onto the enemy the player
@@ -47,11 +47,9 @@ public sealed class LockOn
 
     /// <summary>
     /// How long a held enemy may be missing from the reports before it counts as
-    /// gone, so one late report never drops a lock, and how long it may stay out
-    /// of view before the lock lets go.
+    /// gone, so one late report never drops a lock.
     /// </summary>
     private static readonly TimeSpan LostGrace = TimeSpan.FromMilliseconds(250);
-    private static readonly TimeSpan OutOfViewLimit = TimeSpan.FromSeconds(3);
 
     private readonly LockSettings settings;
     private bool armed = true;
@@ -158,7 +156,7 @@ public sealed class LockOn
             outOfViewFor += elapsed;
         }
 
-        if (now.Distance > settings.BreakRange || outOfViewFor >= OutOfViewLimit)
+        if (now.Distance > settings.BreakRange || outOfViewFor >= TimeSpan.FromSeconds(settings.KeepSeconds))
         {
             Target = null;
             return LockChange.Lost;
