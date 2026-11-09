@@ -70,7 +70,7 @@ void WriteDefaultSettings()
         "[camera]\n"
         "distance_min=4\n"
         "distance_max=30\n"
-        "distance_start=10\n"
+        "distance_start=7\n"
         "; Tilt in degrees at the nearest and the farthest zoom.\n"
         "pitch_min=12\n"
         "pitch_max=40\n"
@@ -288,7 +288,7 @@ void Behind(float values[])
 {
     float nearest = Setting(L"distance_min", 4);
     float farthest = Setting(L"distance_max", 30);
-    float start = Setting(L"distance_start", 10);
+    float start = Setting(L"distance_start", 7);
     float blend = (start - nearest) / (farthest - nearest);
     values[0] = start;
     values[1] = Setting(L"pitch_min", 12);
