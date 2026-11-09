@@ -18,7 +18,7 @@ public enum LockChange
 /// onto, and how far a locked one may get before the lock breaks. The gap
 /// between them keeps a lock from flickering at the edge of reach.
 /// </summary>
-public sealed record LockSettings(double Range = 25, double BreakRange = 32);
+public sealed record LockSettings(double Range = 26.25, double BreakRange = 32);
 
 /// <summary>
 /// Lock-on the way action games do it. A press locks onto the enemy the player

@@ -55,7 +55,7 @@ public sealed class InputConfig
     /// How near an enemy must be, in world units, for lock-on to take it. A lock
     /// breaks a third further out, so it does not flicker at the edge.
     /// </summary>
-    public double LockRange { get; init; } = 25;
+    public double LockRange { get; init; } = 26.25;
 
     /// <summary>
     /// Whether, in third person without a lock, the cursor drifts onto an enemy

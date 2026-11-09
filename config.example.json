@@ -17,7 +17,7 @@
     "tiltSpeed": 60,
     "rumble": true,
     "aimHeight": 0.38,
-    "lockRange": 25,
+    "lockRange": 26.25,
     "softAim": true,
     "analogMovement": true,
     "twinStick": true,
