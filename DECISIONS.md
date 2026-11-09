@@ -922,3 +922,37 @@ class's own. While it has drawn in the last quarter second, the D-pad steps cell
 Two copies, as starting with Windows and starting by hand would make, would each
 read the pad and press every key twice. A second copy now says one is running and
 stops before touching anything. A dry run presses nothing, so it may run beside one.
+
+## 2026-11-09 — Camera and lock-on numbers taken from Dark Souls where a source exists
+
+The owner asked for the real numbers in place of chosen ones. These are the defaults
+of the games' own LockCamParam table and of the first game's debug values.
+
+| Setting | Was | Now | Source value |
+| --- | --- | --- | --- |
+| `field_of_view` | 50 | 43 | `camFovY` 43 degrees, vertical; also the Dark Souls 3 default |
+| `distance_start` | 10 | 7 | `camDistTarget` 4 metres |
+| `lockRange` | 25 | 26.25 | `chrLockRangeMaxRadius` 15 metres |
+| Lock kept out of reach or view | break at a third further, 3 s out of view | 2 s | `lockTgtKeepTime` 2 seconds |
+| `lock_turn_speed` | 8 | 12 | `TargetChaseRateAtLockXZ` 0.4 a frame at 30 frames a second |
+
+The game's field of view needed no conversion: its native 0.524 radians is 30 degrees
+vertical, which at 16:9 predicts the 50.9 degrees across that 113 logged projections
+measured as 50.4 to 51.0. Distances are converted at 1.75 units to the metre, from the
+character's height of 3.15 units read from the game and a person of 1.8 metres; the
+1.8 is an assumption. The table's figures are the declared defaults of the Elden Ring
+structure, and Sekiro and Dark Souls use the same fields, so a row a particular game
+ships may differ. `TargetChaseRateAtLockXZ` chases a point rather than an angle, so 12
+is the nearest match and not the same quantity.
+
+Left as they were, for want of a number that could be traced or a setting it would
+apply to: look, tilt and follow speeds; dead zones, where one post unavailable to check
+gives Elden Ring's camera 20 per cent; the 8 degree framing off the shoulder, as the
+table has no sideways shift; and `lockRotXShiftRatio` 0.6, `rotRangeMinX` -40 and
+`chrOrgOffset_Y` 1.42, as the lock here turns the camera sideways only and has no look
+point height to set. A `camera.ini` already on a disk keeps its old values.
+
+Sources: https://dasaav-dsv.github.io/libER/dd/dab/structfrom_1_1paramdef_1_1LOCK__CAM__PARAM__ST.html,
+https://www.soulsmodding.com/doku.php?id=ds1-refmat%3Aparam%3Alockcamparam,
+https://gist.github.com/Meowmaritus/cba4bd018cc76d07a96eb9c4c2a59f49,
+https://www.nexusmods.com/darksouls3/mods/10.
