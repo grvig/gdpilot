@@ -83,7 +83,7 @@ void WriteDefaultSettings()
         "; Lock-on: how far above an enemy's feet the cursor and the camera aim,\n"
         "; and how quickly the camera turns to face it.\n"
         "lock_aim_height=1\n"
-        "lock_turn_speed=8\n"
+        "lock_turn_speed=12\n"
         "; How far right of the middle of the view a locked enemy is framed, in degrees.\n"
         "lock_offset=8\n",
         file);
@@ -234,7 +234,7 @@ bool togglePressed = false;
 // Lock-on's settings, from camera.ini: how far above a target's feet the cursor
 // and the camera aim, and how quickly the camera turns to face it.
 float aimHeight = 1;
-float lockTurn = 8;
+float lockTurn = 12;
 
 // How far right of the middle of the view a locked enemy is framed, in
 // radians, so the character never stands between the camera and its target.
@@ -1887,7 +1887,7 @@ void TurnOn(void* camera)
     collideObjects = Setting(L"collision_objects", 1) != 0;
     collisionSurface = static_cast<unsigned int>(Setting(L"collision_surface", 1));
     collisionStart = Setting(L"collision_start", 1.5f);
-    lockTurn = Setting(L"lock_turn_speed", 8);
+    lockTurn = Setting(L"lock_turn_speed", 12);
     lockOffset = Setting(L"lock_offset", 8) * 3.14159265f / 180;
     aimHeight = Setting(L"lock_aim_height", 1);
     Say("Third person: distance %.1f to %.1f from %.1f, pitch %.1f to %.1f, view %.1f degrees.", behind[2], behind[3], behind[0], behind[4], behind[5], behind[10] * 180 / 3.14159265f);
