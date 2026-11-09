@@ -74,7 +74,8 @@ void WriteDefaultSettings()
         "; Tilt in degrees at the nearest and the farthest zoom.\n"
         "pitch_min=12\n"
         "pitch_max=40\n"
-        "field_of_view=50\n"
+        "; The vertical angle of the view, in degrees, as the game keeps it.\n"
+        "field_of_view=43\n"
         "; 1 keeps the camera in front of anything between it and the character.\n"
         "collision=1\n"
         "collision_skin=0.35\n"
@@ -299,7 +300,7 @@ void Behind(float values[])
     values[7] = blend;
     values[8] = nearest;
     values[9] = farthest;
-    values[10] = Setting(L"field_of_view", 50) * 3.14159265f / 180;
+    values[10] = Setting(L"field_of_view", 43) * 3.14159265f / 180;
 }
 
 using SetZoom = void (*)(void* camera, float distance);
